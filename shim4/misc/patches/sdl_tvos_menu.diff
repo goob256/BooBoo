@@ -1,0 +1,12 @@
+diff -ur SDL2-2.0.10/src/video/uikit/SDL_uikitview.m SDL2-2.0.10-goob/src/video/uikit/SDL_uikitview.m
+--- SDL2-2.0.10/src/video/uikit/SDL_uikitview.m	2019-07-28 20:26:20.000000000 -0600
++++ SDL2-2.0.10-goob/src/video/uikit/SDL_uikitview.m	2019-07-28 20:25:34.000000000 -0600
+@@ -261,7 +261,7 @@
+         return SDL_SCANCODE_RETURN;
+     case UIPressTypeMenu:
+         /* HIG says: "returns to previous screen" */
+-        return SDL_SCANCODE_ESCAPE;
++        return SDL_SCANCODE_MENU;
+     case UIPressTypePlayPause:
+         /* HIG says: "secondary button behavior" */
+         return SDL_SCANCODE_PAUSE;

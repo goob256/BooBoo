@@ -1,0 +1,5 @@
+#!/bin/sh
+mkdir ~/code/3
+cd ~/code/3crystals/data
+compress_dir
+cp ~/code/3crystals/data.cpa ~/code/3crystals/build/3crystals ~/code/3crystals/docs/3rd_party.html ~/code/3

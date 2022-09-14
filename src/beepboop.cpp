@@ -1,0 +1,2765 @@
+#include <cctype>
+
+#include <shim4/shim4.h>
+
+#include "beepboop.h"
+
+static int mml_id = 0;
+static int image_id = 0;
+static std::map<int, audio::MML *> mmls;
+static std::map<int, gfx::Image *> images;
+
+static std::string itos(int i)
+{
+	char buf[1000];
+	snprintf(buf, 1000, "%d", i);
+	return buf;
+}
+
+static void skip_whitespace(PROGRAM &prg)
+{
+	while (prg.p < prg.code.length() && isspace(prg.code[prg.p])) {
+		if (prg.code[prg.p] == '\n') {
+			prg.line++;
+		}
+		prg.p++;
+	}
+}
+
+static std::string remove_quotes(std::string s)
+{
+	std::string ret;
+
+	if (s.length() == 0) {
+		return ret;
+	}
+	
+	if (s[0] == '"') {
+		ret = s.substr(1);
+	}
+	else {
+		ret = s;
+	}
+
+	if (ret.length() == 0) {
+		return ret;
+	}
+
+	if (ret[ret.length()-1] == '"') {
+		ret = ret.substr(0, ret.length()-1);
+	}
+
+	return ret;
+}
+
+static std::string unescape(std::string s)
+{
+	std::string ret;
+	int p = 0;
+	char buf[2];
+	buf[1] = 0;
+
+	if (s.length() == 0) {
+		return "";
+	}
+
+	while (p < s.length()) {
+		if (s[p] == '\\') {
+			if (p+1 < s.length()) {
+				if (s[p+1] == '\\' || s[p+1] == '"') {
+					p++;
+					buf[0] = s[p];
+					ret += buf;
+					p++;
+				}
+				else {
+					buf[0] = '\\';
+					ret += buf;
+					p++;
+				}
+			}
+			else {
+				buf[0] = '\\';
+				ret += buf;
+				return ret;
+			}
+		}
+		else {
+			buf[0] = s[p];
+			ret += buf;
+			p++;
+		}
+	}
+
+	return ret;
+}
+
+static std::string token(PROGRAM &prg)
+{
+	skip_whitespace(prg);
+
+	if (prg.p >= prg.code.length()) {
+		return "";
+	}
+
+	std::string tok;
+	char s[2];
+	s[1] = 0;
+
+	if (prg.code[prg.p] == ';') {
+		prg.p++;
+		return ";";
+	}
+	else if (prg.code[prg.p] == '-') {
+		prg.p++;
+		if (prg.p < prg.code.length() && isdigit(prg.code[prg.p])) {
+			tok = "-";
+			while (prg.p < prg.code.length() && (isdigit(prg.code[prg.p]) || prg.code[prg.p] == '.')) {
+				s[0] = prg.code[prg.p];
+				tok += s;
+				prg.p++;
+			}
+			return tok;
+		}
+		else {
+			return "-";
+		}
+	}
+	else if (prg.code[prg.p] == '=') {
+		prg.p++;
+		return "=";
+	}
+	else if (prg.code[prg.p] == '+') {
+		prg.p++;
+		return "+";
+	}
+	else if (prg.code[prg.p] == '*') {
+		prg.p++;
+		return "*";
+	}
+	else if (prg.code[prg.p] == '/') {
+		prg.p++;
+		return "/";
+	}
+	else if (prg.code[prg.p] == '%') {
+		prg.p++;
+		return "%";
+	}
+	else if (prg.code[prg.p] == '?') {
+		prg.p++;
+		return "?";
+	}
+	else if (isdigit(prg.code[prg.p])) {
+		while (prg.p < prg.code.length() && (isdigit(prg.code[prg.p]) || prg.code[prg.p] == '.')) {
+			s[0] = prg.code[prg.p];
+			tok += s;
+			prg.p++;
+		}
+		return tok;
+	}
+	else if (isalpha(prg.code[prg.p]) || prg.code[prg.p] == '_') {
+		while (prg.p < prg.code.length() && (isdigit(prg.code[prg.p]) || isalpha(prg.code[prg.p]) || prg.code[prg.p] == '_')) {
+			s[0] = prg.code[prg.p];
+			tok += s;
+			prg.p++;
+		}
+		return tok;
+	}
+	else if (prg.code[prg.p] == '"') {
+		int prev = -1;
+		int prev_prev = -1;
+
+		std::string tok = "\"";
+		prg.p++;
+
+		while (prg.p < prg.code.length() && (prg.code[prg.p] != '"' || (prev == '\\' && prev_prev != '\\'))) {
+			s[0] = prg.code[prg.p];
+			tok += s;
+			prev_prev = prev;
+			prev = prg.code[prg.p];
+			prg.p++;
+		}
+
+		tok += "\"";
+
+		prg.p++;
+
+		return tok;
+	}
+	else if (tok == "") {
+		return "";
+	}
+	else {
+		throw PARSE_EXCEPTION("Parse error on line " + itos(prg.line+prg.start_line) + " (pc=" + itos(prg.p) + ", tok=\"" + tok + "\")");
+	}
+}
+
+EXCEPTION::EXCEPTION(std::string error) :
+	error(error)
+{
+}
+
+PARSE_EXCEPTION::PARSE_EXCEPTION(std::string error) :
+	EXCEPTION(error)
+{
+}
+
+std::vector<LABEL> find_labels(PROGRAM prg)
+{
+	std::vector<LABEL> labels;
+	std::string tok;
+
+	prg.p = 0;
+	prg.line = 1;
+
+	while ((tok = token(prg)) != "") {
+		if (tok == ";") {
+			while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
+				prg.p++;
+			}
+			prg.line++;
+			if (prg.p < prg.code.length()) {
+				prg.p++;
+			}
+		}
+		else if (tok == "function") {
+			while ((tok = token(prg)) != "") {
+				if (tok == ";") {
+					while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
+						prg.p++;
+					}
+					prg.line++;
+					if (prg.p < prg.code.length()) {
+						prg.p++;
+					}
+				}
+				else if (tok == "end") {
+					break;
+				}
+			}
+		}
+		else if (tok == "label") {
+			std::string name = token(prg);
+
+			if (name == "") {
+				throw PARSE_EXCEPTION("Expected label parameters on line " + itos(prg.line+prg.start_line));
+			}
+
+			if (name[0] != '_' && isalpha(name[0]) == false) {
+				throw PARSE_EXCEPTION("Invalid label name on line " + itos(prg.line+prg.start_line));
+			}
+
+			LABEL l;
+			l.name = name;
+			l.line_number = prg.line;
+
+			labels.push_back(l);
+		}
+	}
+
+	return labels;
+}
+
+static void set_string_or_number(PROGRAM &prg, std::string name, std::string value)
+{
+	if (value.length() == 0) {
+		return;
+	}
+
+	int di = -1;
+
+	for (size_t i = 0; i < prg.variables.size(); i++) {
+		if (prg.variables[i].name == name) {
+			di = i;
+			break;
+		}
+	}
+
+	if (di < 0) {
+		throw PARSE_EXCEPTION("Unknown variable \"" + name + "\" on line " + itos(prg.line+prg.start_line));
+	}
+
+	VARIABLE &v1 = prg.variables[di];
+
+	double val;
+
+	if (value[0] == '-' || isdigit(value[0])) {
+		val = atof(value.c_str());
+	}
+	else {
+		int index = -1;
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == value) {
+				index = i;
+				break;
+			}
+		}
+		if (index < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + value + "\" on line " + itos(prg.line+prg.start_line));
+		}
+		VARIABLE &v2 = prg.variables[index];
+		if (v2.type == VARIABLE::NUMBER) {
+			val = v2.n;
+		}
+		else if (v2.type == VARIABLE::STRING) {
+			val = atof(v2.s.c_str());
+		}
+		else {
+			throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+		}
+	}
+
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = val;
+	}
+	else {
+		throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+	}
+}
+
+static void set_string_or_number(PROGRAM &prg, std::string name, double value)
+{
+	int di = -1;
+
+	for (size_t i = 0; i < prg.variables.size(); i++) {
+		if (prg.variables[i].name == name) {
+			di = i;
+			break;
+		}
+	}
+
+	if (di < 0) {
+		throw PARSE_EXCEPTION("Unknown variable \"" + name + "\" on line " + itos(prg.line+prg.start_line));
+	}
+
+	VARIABLE &v1 = prg.variables[di];
+
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = value;
+	}
+	else {
+		throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+	}
+}
+
+bool interpret(PROGRAM &prg)
+{
+	std::string tok = token(prg);
+
+	if (tok == "") {
+		return false;
+	}
+
+	if (tok == "var") {
+		VARIABLE v;
+
+		std::string type = token(prg);
+		std::string name =  token(prg);
+
+		v.name = name;
+		v.function = prg.name;
+
+		if (type == "number") {
+			v.type = VARIABLE::NUMBER;
+		}
+		else if (type == "string") {
+			v.type = VARIABLE::STRING;
+		}
+		else if (type == "struct") {
+			v.type = VARIABLE::STRUCT;
+		}
+		else if (type == "vector") {
+			v.type = VARIABLE::VECTOR;
+		}
+		else {
+			throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+		}
+
+		bool found = false;
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == v.name) {
+				prg.variables[i] = v;
+				found = true;
+				break;
+			}
+		}
+		if (found == false) {
+			prg.variables.push_back(v);
+		}
+	}
+	else if (tok == "=") {
+		std::string dest =  token(prg);
+		std::string src =  token(prg);
+
+		if (dest == "" || src == "") {
+			throw PARSE_EXCEPTION("Expected = parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == dest) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + dest + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		if (src[0] == '-' || isdigit(src[0])) {
+			VARIABLE &v1 = prg.variables[di];
+
+			if (v1.type == VARIABLE::NUMBER) {
+				v1.n = atof(src.c_str());
+			}
+			else if (v1.type == VARIABLE::STRING) {
+				v1.s = src;
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+		else if (src[0] == '"') {
+			VARIABLE &v1 = prg.variables[di];
+
+			if (v1.type == VARIABLE::NUMBER) {
+				v1.n = atof(remove_quotes(src).c_str());
+			}
+			else if (v1.type == VARIABLE::STRING) {
+				v1.s = remove_quotes(unescape(src));
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+		else {
+			int si = -1;
+
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == src) {
+					si = i;
+					break;
+				}
+			}
+
+			if (si < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + src + "\" on line " + itos(prg.line+prg.start_line));
+			}
+
+			VARIABLE &v1 = prg.variables[di];
+			VARIABLE &v2 = prg.variables[si];
+
+			if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+				v1.n = v2.n;
+			}
+			else if (v1.type == VARIABLE::STRING && v2.type == VARIABLE::NUMBER) {
+				v1.s = itos(v2.n);
+			}
+			else if (v1.type == VARIABLE::STRING && v2.type == VARIABLE::STRING) {
+				v1.s = v2.s;
+			}
+			else {
+				throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+			}
+		}
+	}
+	else if (tok == "+") {
+		std::string dest =  token(prg);
+		std::string src =  token(prg);
+
+		if (dest == "" || src == "") {
+			throw PARSE_EXCEPTION("Expected + parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == dest) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + dest + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		if (src[0] == '-' || isdigit(src[0])) {
+			VARIABLE &v1 = prg.variables[di];
+
+			if (v1.type == VARIABLE::NUMBER) {
+				v1.n += atof(src.c_str());
+			}
+			else if (v1.type == VARIABLE::STRING) {
+				v1.s += src;
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+		else if (src[0] == '"') {
+			VARIABLE &v1 = prg.variables[di];
+
+			if (v1.type == VARIABLE::NUMBER) {
+				v1.n += atof(remove_quotes(src).c_str());
+			}
+			else if (v1.type == VARIABLE::STRING) {
+				v1.s += remove_quotes(unescape(src));
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+		else {
+			int si = -1;
+
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == src) {
+					si = i;
+					break;
+				}
+			}
+
+			if (si < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + src + "\" on line " + itos(prg.line+prg.start_line));
+			}
+
+			VARIABLE &v1 = prg.variables[di];
+			VARIABLE &v2 = prg.variables[si];
+
+			if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+				v1.n += v2.n;
+			}
+			else if (v1.type == VARIABLE::STRING && v2.type == VARIABLE::NUMBER) {
+				v1.s += itos(v2.n);
+			}
+			else if (v1.type == VARIABLE::STRING && v2.type == VARIABLE::STRING) {
+				v1.s += v2.s;
+			}
+			else {
+				throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+			}
+		}
+	}
+	else if (tok == "-") {
+		std::string dest =  token(prg);
+		std::string src =  token(prg);
+
+		if (dest == "" || src == "") {
+			throw PARSE_EXCEPTION("Expected - parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == dest) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + dest + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		if (src[0] == '-' || isdigit(src[0])) {
+			VARIABLE &v1 = prg.variables[di];
+
+			if (v1.type == VARIABLE::NUMBER) {
+				v1.n -= atof(src.c_str());
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+		else if (src[0] == '"') {
+			VARIABLE &v1 = prg.variables[di];
+
+			if (v1.type == VARIABLE::NUMBER) {
+				v1.n -= atof(remove_quotes(src).c_str());
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+		else {
+			int si = -1;
+
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == src) {
+					si = i;
+					break;
+				}
+			}
+
+			if (si < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + src + "\" on line " + itos(prg.line+prg.start_line));
+			}
+
+			VARIABLE &v1 = prg.variables[di];
+			VARIABLE &v2 = prg.variables[si];
+
+			if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+				v1.n -= v2.n;
+			}
+			else {
+				throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+			}
+		}
+	}
+	else if (tok == "*") {
+		std::string dest =  token(prg);
+		std::string src =  token(prg);
+
+		if (dest == "" || src == "") {
+			throw PARSE_EXCEPTION("Expected * parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == dest) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + dest + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		if (src[0] == '-' || isdigit(src[0])) {
+			VARIABLE &v1 = prg.variables[di];
+
+			if (v1.type == VARIABLE::NUMBER) {
+				v1.n *= atof(src.c_str());
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+		else if (src[0] == '"') {
+			VARIABLE &v1 = prg.variables[di];
+
+			if (v1.type == VARIABLE::NUMBER) {
+				v1.n *= atof(remove_quotes(src).c_str());
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+		else {
+			int si = -1;
+
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == src) {
+					si = i;
+					break;
+				}
+			}
+
+			if (si < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + src + "\" on line " + itos(prg.line+prg.start_line));
+			}
+
+			VARIABLE &v1 = prg.variables[di];
+			VARIABLE &v2 = prg.variables[si];
+
+			if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+				v1.n *= v2.n;
+			}
+			else {
+				throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+			}
+		}
+	}
+	else if (tok == "/") {
+		std::string dest =  token(prg);
+		std::string src =  token(prg);
+
+		if (dest == "" || src == "") {
+			throw PARSE_EXCEPTION("Expected / parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == dest) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + dest + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		if (src[0] == '-' || isdigit(src[0])) {
+			VARIABLE &v1 = prg.variables[di];
+
+			if (v1.type == VARIABLE::NUMBER) {
+				v1.n /= atof(src.c_str());
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+		else if (src[0] == '"') {
+			VARIABLE &v1 = prg.variables[di];
+
+			if (v1.type == VARIABLE::NUMBER) {
+				v1.n /= atof(remove_quotes(src).c_str());
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+		else {
+			int si = -1;
+
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == src) {
+					si = i;
+					break;
+				}
+			}
+
+			if (si < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + src + "\" on line " + itos(prg.line+prg.start_line));
+			}
+
+			VARIABLE &v1 = prg.variables[di];
+			VARIABLE &v2 = prg.variables[si];
+
+			if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+				v1.n /= v2.n;
+			}
+			else {
+				throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+			}
+		}
+	}
+	else if (tok == "%") {
+		std::string dest =  token(prg);
+		std::string src =  token(prg);
+
+		if (dest == "" || src == "") {
+			throw PARSE_EXCEPTION("Expected %% parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == dest) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + dest + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		if (src[0] == '-' || isdigit(src[0])) {
+			VARIABLE &v1 = prg.variables[di];
+
+			if (v1.type == VARIABLE::NUMBER) {
+				v1.n = (int)v1.n % (int)atof(src.c_str());
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+		else if (src[0] == '"') {
+			VARIABLE &v1 = prg.variables[di];
+
+			if (v1.type == VARIABLE::NUMBER) {
+				v1.n = (int)v1.n % (int)atof(remove_quotes(src).c_str());
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+		else {
+			int si = -1;
+
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == src) {
+					si = i;
+					break;
+				}
+			}
+
+			if (si < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + src + "\" on line " + itos(prg.line+prg.start_line));
+			}
+
+			VARIABLE &v1 = prg.variables[di];
+			VARIABLE &v2 = prg.variables[si];
+
+			if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+				v1.n = (int)v1.n % (int)v2.n;
+			}
+			else {
+				throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+			}
+		}
+	}
+	else if (tok == "neg") {
+		std::string name = token(prg);
+		
+		if (name == "") {
+			throw PARSE_EXCEPTION("Expected neg parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == name) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + name + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		VARIABLE &v1 = prg.variables[di];
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = -v1.n;
+		}
+		else {
+			throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+		}
+	}
+	else if (tok == "sin") {
+		std::string dest = token(prg);
+		std::string vs = token(prg);
+		float v;
+		
+		if (dest == "" || vs == "") {
+			throw PARSE_EXCEPTION("Expected sin parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == dest) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + dest + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(vs);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				if (prg.variables[index].type == VARIABLE::NUMBER) {
+					values.push_back(prg.variables[index].n);
+				}
+				else if (prg.variables[index].type == VARIABLE::STRING) {
+					values.push_back(atof(prg.variables[index].s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Invalid type for comparison on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		VARIABLE &v1 = prg.variables[di];
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = sin(values[0]);
+		}
+		else {
+			throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+		}
+	}
+	else if (tok == "cos") {
+		std::string dest = token(prg);
+		std::string vs = token(prg);
+		float v;
+		
+		if (dest == "" || vs == "") {
+			throw PARSE_EXCEPTION("Expected cos paramters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == dest) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + dest + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(vs);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				if (prg.variables[index].type == VARIABLE::NUMBER) {
+					values.push_back(prg.variables[index].n);
+				}
+				else if (prg.variables[index].type == VARIABLE::STRING) {
+					values.push_back(atof(prg.variables[index].s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Invalid type for comparison on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		VARIABLE &v1 = prg.variables[di];
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = cos(values[0]);
+		}
+		else {
+			throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+		}
+	}
+	else if (tok == "atan2") {
+		std::string dest = token(prg);
+		std::string vs1 = token(prg);
+		std::string vs2 = token(prg);
+		float v;
+		
+		if (dest == "" || vs1 == "" || vs2 == "") {
+			throw PARSE_EXCEPTION("Expected atan2 parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == dest) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + dest + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(vs1);
+		strings.push_back(vs2);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				if (prg.variables[index].type == VARIABLE::NUMBER) {
+					values.push_back(prg.variables[index].n);
+				}
+				else if (prg.variables[index].type == VARIABLE::STRING) {
+					values.push_back(atof(prg.variables[index].s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Invalid type for comparison on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		VARIABLE &v1 = prg.variables[di];
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = atan2(values[0], values[1]);
+		}
+		else {
+			throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+		}
+	}
+	else if (tok == "pow") {
+		std::string dest = token(prg);
+		std::string vs1 = token(prg);
+		std::string vs2 = token(prg);
+		float v;
+		
+		if (dest == "" || vs1 == "" || vs2 == "") {
+			throw PARSE_EXCEPTION("Expected pow parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == dest) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + dest + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(vs1);
+		strings.push_back(vs2);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				if (prg.variables[index].type == VARIABLE::NUMBER) {
+					values.push_back(prg.variables[index].n);
+				}
+				else if (prg.variables[index].type == VARIABLE::STRING) {
+					values.push_back(atof(prg.variables[index].s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Invalid type for comparison on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		VARIABLE &v1 = prg.variables[di];
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = pow(values[0], values[1]);
+		}
+		else {
+			throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+		}
+	}
+	else if (tok == "sqrt") {
+		std::string dest = token(prg);
+		std::string vs1 = token(prg);
+		float v;
+		
+		if (dest == "" || vs1 == "") {
+			throw PARSE_EXCEPTION("Expected sqrt parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == dest) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + dest + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(vs1);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				if (prg.variables[index].type == VARIABLE::NUMBER) {
+					values.push_back(prg.variables[index].n);
+				}
+				else if (prg.variables[index].type == VARIABLE::STRING) {
+					values.push_back(atof(prg.variables[index].s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Invalid type for comparison on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		VARIABLE &v1 = prg.variables[di];
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = sqrt(values[0]);
+		}
+		else {
+			throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+		}
+	}
+	else if (tok == "label") {
+		std::string name = token(prg);
+
+		if (name == "") {
+			throw PARSE_EXCEPTION("Expected label paramters on line " + itos(prg.line+prg.start_line));
+		}
+
+		if (name[0] != '_' && isalpha(name[0]) == false) {
+			throw PARSE_EXCEPTION("Invalid label name on line " + itos(prg.line+prg.start_line));
+		}
+
+		LABEL l;
+		l.name = name;
+		l.line_number = prg.line;
+
+		//prg.labels.push_back(l);
+		//already got these
+	}
+	else if (tok == "goto") {
+		std::string name = token(prg);
+
+		if (name == "") {
+			throw PARSE_EXCEPTION("Expected goto paramters on line " + itos(prg.line+prg.start_line));
+		}
+
+		for (size_t i = 0; i < prg.labels.size(); i++) {
+			if (prg.labels[i].name == name) {
+				prg.line = 1;
+				prg.p = 0;
+				while (prg.p < prg.code.length()) {
+					if (prg.line == prg.labels[i].line_number) {
+						break;
+					}
+					if (prg.code[prg.p] == '\n') {
+						prg.line++;
+					}
+					prg.p++;
+				}
+			}
+		}
+	}
+	else if (tok == "?") {
+		std::string a = token(prg);
+		std::string b = token(prg);
+
+		if (a == "" || b == "") {
+			throw PARSE_EXCEPTION("Expected ? parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(a);
+		strings.push_back(b);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				if (prg.variables[index].type == VARIABLE::NUMBER) {
+					values.push_back(prg.variables[index].n);
+				}
+				else if (prg.variables[index].type == VARIABLE::STRING) {
+					values.push_back(atof(prg.variables[index].s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Invalid type for comparison on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		if (values[0] < values[1]) {
+			prg.compare_flag = -1;
+		}
+		else if (values[0] == values[1]) {
+			prg.compare_flag = 0;
+		}
+		else {
+			prg.compare_flag = 1;
+		}
+	}
+	else if (tok == "je") {
+		std::string label = token(prg);
+
+		if (label == "") {
+			throw PARSE_EXCEPTION("Expected je parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		if (prg.compare_flag == 0) {
+			for (size_t i = 0; i < prg.labels.size(); i++) {
+				if (prg.labels[i].name == label) {
+					prg.line = 1;
+					prg.p = 0;
+					while (prg.p < prg.code.length()) {
+						if (prg.line == prg.labels[i].line_number) {
+							break;
+						}
+						if (prg.code[prg.p] == '\n') {
+							prg.line++;
+						}
+						prg.p++;
+					}
+				}
+			}
+		}
+	}
+	else if (tok == "jne") {
+		std::string label = token(prg);
+
+		if (label == "") {
+			throw PARSE_EXCEPTION("Expected jne parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		if (prg.compare_flag != 0) {
+			for (size_t i = 0; i < prg.labels.size(); i++) {
+				if (prg.labels[i].name == label) {
+					prg.line = 1;
+					prg.p = 0;
+					while (prg.p < prg.code.length()) {
+						if (prg.line == prg.labels[i].line_number) {
+							break;
+						}
+						if (prg.code[prg.p] == '\n') {
+							prg.line++;
+						}
+						prg.p++;
+					}
+				}
+			}
+		}
+	}
+	else if (tok == "jl") {
+		std::string label = token(prg);
+
+		if (label == "") {
+			throw PARSE_EXCEPTION("Expected jl parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		if (prg.compare_flag < 0) {
+			for (size_t i = 0; i < prg.labels.size(); i++) {
+				if (prg.labels[i].name == label) {
+					prg.line = 1;
+					prg.p = 0;
+					while (prg.p < prg.code.length()) {
+						if (prg.line == prg.labels[i].line_number) {
+							break;
+						}
+						if (prg.code[prg.p] == '\n') {
+							prg.line++;
+						}
+						prg.p++;
+					}
+				}
+			}
+		}
+	}
+	else if (tok == "jle") {
+		std::string label = token(prg);
+
+		if (label == "") {
+			throw PARSE_EXCEPTION("Expected jle parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		if (prg.compare_flag <= 0) {
+			for (size_t i = 0; i < prg.labels.size(); i++) {
+				if (prg.labels[i].name == label) {
+					prg.line = 1;
+					prg.p = 0;
+					while (prg.p < prg.code.length()) {
+						if (prg.line == prg.labels[i].line_number) {
+							break;
+						}
+						if (prg.code[prg.p] == '\n') {
+							prg.line++;
+						}
+						prg.p++;
+					}
+				}
+			}
+		}
+	}
+	else if (tok == "jg") {
+		std::string label = token(prg);
+
+		if (label == "") {
+			throw PARSE_EXCEPTION("Expected jg parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		if (prg.compare_flag > 0) {
+			for (size_t i = 0; i < prg.labels.size(); i++) {
+				if (prg.labels[i].name == label) {
+					prg.line = 1;
+					prg.p = 0;
+					while (prg.p < prg.code.length()) {
+						if (prg.line == prg.labels[i].line_number) {
+							break;
+						}
+						if (prg.code[prg.p] == '\n') {
+							prg.line++;
+						}
+						prg.p++;
+					}
+				}
+			}
+		}
+	}
+	else if (tok == "jge") {
+		std::string label = token(prg);
+
+		if (label == "") {
+			throw PARSE_EXCEPTION("Expected jge parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		if (prg.compare_flag >= 0) {
+			for (size_t i = 0; i < prg.labels.size(); i++) {
+				if (prg.labels[i].name == label) {
+					prg.line = 1;
+					prg.p = 0;
+					while (prg.p < prg.code.length()) {
+						if (prg.line == prg.labels[i].line_number) {
+							break;
+						}
+						if (prg.code[prg.p] == '\n') {
+							prg.line++;
+						}
+						prg.p++;
+					}
+				}
+			}
+		}
+	}
+	else if (tok == "return") {
+		std::string value = token(prg);
+
+		if (value == "") {
+			throw PARSE_EXCEPTION("Expected return parameters on line " + itos(prg.line+prg.start_line));
+		}
+		
+		if (value[0] == '-' || isdigit(value[0])) {
+			prg.result.type = VARIABLE::NUMBER;
+			prg.result.name = "result";
+			prg.result.n = atof(value.c_str());
+		}
+		else {
+			int index = -1;
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == value) {
+					index = i;
+					break;
+				}
+			}
+			if (index < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + value + "\" on line " + itos(prg.line+prg.start_line));
+			}
+			prg.result = prg.variables[index];
+		}
+
+		return false;
+	}
+	else if (tok == "call") {
+		std::string tok2 = token(prg);
+		std::string function_name;
+		std::string result_name;
+		
+		if (tok2 == "") {
+			throw PARSE_EXCEPTION("Expected call parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		if (tok2 == "=") {
+			result_name = token(prg);
+			function_name = token(prg);
+			if (result_name == "" || function_name == "") {
+				throw PARSE_EXCEPTION("Expected call parameters on line " + itos(prg.line+prg.start_line));
+			}
+
+			bool found = false;
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == result_name) {
+					found = true;
+					break;
+				}
+			}
+			if (found == false) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + result_name + "\" on line " + itos(prg.line+prg.start_line));
+			}
+		}
+		else {
+			function_name = tok2;
+		}
+
+		for (size_t i = 0; i < prg.functions.size(); i++) {
+			if (prg.functions[i].name == function_name) {
+				PROGRAM p = prg.functions[i];
+				p.p = 0;
+				p.line = 1;
+				p.variables = prg.variables;
+				p.functions = prg.functions;
+	
+				for (size_t j = 0; j < prg.functions[i].parameters.size(); j++) {
+					std::string param = token(prg);
+					
+					if (param == "") {
+						throw PARSE_EXCEPTION("Expected call parameters on line " + itos(prg.line+prg.start_line));
+					}
+					
+					VARIABLE var;
+
+					var.function = function_name;
+
+					if (param[0] == '-' || isdigit(param[0])) {
+						var.name = prg.functions[i].parameters[j];
+						var.type = VARIABLE::NUMBER;
+						var.n = atof(param.c_str());
+					}
+					else {
+						bool found = false;
+
+						for (size_t k = 0; k < prg.variables.size(); k++) {
+							if (prg.variables[k].name == param) {
+								var =  prg.variables[k];
+								var.name = prg.functions[i].parameters[j];
+								found = true;
+								break;
+							}
+						}
+					
+						if (found == false) {
+							throw PARSE_EXCEPTION("Unknown variable \"" + param + "\" on line " + itos(prg.line+prg.start_line));
+						}
+					}
+
+					int index = -1;
+					for (size_t i = 0; i < p.variables.size(); i++) {
+						if (p.variables[i].name == var.name) {
+							index = i;
+							break;
+						}
+					}
+
+					if (index < 0) {
+						p.variables.push_back(var);
+					}
+					else {
+						p.variables[index] = var;
+					}
+				}
+
+				p.labels = find_labels(p);
+
+				try {
+					while (interpret(p)) {
+					}
+				}
+				catch (EXCEPTION e) {
+					gui::fatalerror("ERROR", e.error.c_str(), gui::OK, true);
+				}
+
+				for (size_t i = 0; i < p.variables.size(); i++) {
+					if (p.variables[i].function == "main") {
+						for (size_t j = 0; j < prg.variables.size(); j++) {
+							if (p.variables[i].name == prg.variables[j].name) {
+								prg.variables[j] = p.variables[i];
+								break;
+							}
+						}
+					}
+				}
+
+				if (result_name != "") {
+					for (size_t i = 0; i < prg.variables.size(); i++) {
+						if (prg.variables[i].name == result_name) {
+							std::string bak = prg.variables[i].name;
+							prg.variables[i] = p.result;
+							prg.variables[i].name = bak;
+							break;
+						}
+					}
+				}
+
+				break;
+			}
+		}
+	}
+	else if (tok == "rand") {
+		std::string dest = token(prg);
+		std::string min_incl = token(prg);
+		std::string max_incl = token(prg);
+
+		if (dest == "" || min_incl == "" || max_incl == "") {
+			throw PARSE_EXCEPTION("Expected rand parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == dest) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + dest + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(min_incl);
+		strings.push_back(max_incl);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				VARIABLE &v1 = prg.variables[index];
+
+				if (v1.type == VARIABLE::NUMBER) {
+					values.push_back(v1.n);
+				}
+				else if (v1.type == VARIABLE::STRING) {
+					values.push_back(atof(v1.s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		VARIABLE &v1 = prg.variables[di];
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = util::rand(values[0], values[1]);
+		}
+		else if (v1.type == VARIABLE::STRING) {
+			v1.s = itos(util::rand(values[0], values[1]));
+		}
+		else {
+			throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+		}
+	}
+	else if (tok == "function") {
+		int start_line = prg.line;
+		std::string name = token(prg);
+
+		if (name == "") {
+			throw PARSE_EXCEPTION("Expected function parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		PROGRAM p;
+		
+		std::string tok2;
+
+		while ((tok2 = token(prg)) != "") {
+			if (tok2 == "start") {
+				break;
+			}
+			if (tok2[0] != '_' && !isalpha(tok2[0])) {
+				throw PARSE_EXCEPTION("Invalid variable name " + tok2 + " on line " + itos(prg.line+prg.start_line));
+			}
+			p.parameters.push_back(tok2);
+		}
+		
+		if (tok2 != "start") {
+			throw PARSE_EXCEPTION("Function not terminated on line " + itos(prg.line+prg.start_line));
+		}
+
+		int save_p = prg.p;
+		int end_p = prg.p;
+
+		while ((tok2 = token(prg)) != "") {
+			if (tok2 == "end") {
+				break;
+			}
+			end_p = prg.p;
+		}
+
+		if (tok2 != "end") {
+			throw PARSE_EXCEPTION("Function not terminated on line " + itos(prg.line+prg.start_line));
+		}
+
+		p.name = name;
+		p.p = 0;
+		p.line = 1;
+		p.start_line = start_line;
+		p.code = prg.code.substr(save_p, end_p-save_p);
+		p.labels = find_labels(p);
+		prg.functions.push_back(p);
+	}
+	else if (tok == "clear") {
+		std::string r =  token(prg);
+		std::string g =  token(prg);
+		std::string b =  token(prg);
+		
+		if (r == "" || g == "" || b == "") {
+			throw PARSE_EXCEPTION("Expected clear parameters on line " + itos(prg.line+prg.start_line));
+		}
+		
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(r);
+		strings.push_back(g);
+		strings.push_back(b);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				VARIABLE &v1 = prg.variables[index];
+
+				if (v1.type == VARIABLE::NUMBER) {
+					values.push_back(v1.n);
+				}
+				else if (v1.type == VARIABLE::STRING) {
+					values.push_back(atof(v1.s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		SDL_Colour c;
+		c.r = values[0];
+		c.g = values[1];
+		c.b = values[2];
+		c.a = 255;
+
+		gfx::clear(c);
+	}
+	else if (tok == "start_primitives") {
+		gfx::draw_primitives_start();
+	}
+	else if (tok == "end_primitives") {
+		gfx::draw_primitives_end();
+	}
+	else if (tok == "line") {
+		std::string r =  token(prg);
+		std::string g =  token(prg);
+		std::string b =  token(prg);
+		std::string a =  token(prg);
+		std::string x =  token(prg);
+		std::string y =  token(prg);
+		std::string x2 =  token(prg);
+		std::string y2 =  token(prg);
+		std::string thickness = token(prg);
+		
+		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || x2 == "" || y2 == "" || thickness == "") {
+			throw PARSE_EXCEPTION("Expected line parameters on line " + itos(prg.line+prg.start_line));
+		}
+		
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(r);
+		strings.push_back(g);
+		strings.push_back(b);
+		strings.push_back(a);
+		strings.push_back(x);
+		strings.push_back(y);
+		strings.push_back(x2);
+		strings.push_back(y2);
+		strings.push_back(thickness);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				VARIABLE &v1 = prg.variables[index];
+
+				if (v1.type == VARIABLE::NUMBER) {
+					values.push_back(v1.n);
+				}
+				else if (v1.type == VARIABLE::STRING) {
+					values.push_back(atof(v1.s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		SDL_Colour c;
+		c.r = values[0];
+		c.g = values[1];
+		c.b = values[2];
+		c.a = values[3];
+
+		util::Point<float> p1, p2;
+
+		p1.x = values[4];
+		p1.y = values[5];
+		p2.x = values[6];
+		p2.y = values[7];
+
+		float thick = values[8];
+
+		gfx::draw_line(c, p1, p2, thick);
+	}
+	else if (tok == "filled_triangle") {
+		std::string r1 =  token(prg);
+		std::string g1 =  token(prg);
+		std::string b1 =  token(prg);
+		std::string a1 =  token(prg);
+		std::string r2 =  token(prg);
+		std::string g2 =  token(prg);
+		std::string b2 =  token(prg);
+		std::string a2 =  token(prg);
+		std::string r3 =  token(prg);
+		std::string g3 =  token(prg);
+		std::string b3 =  token(prg);
+		std::string a3 =  token(prg);
+		std::string x =  token(prg);
+		std::string y =  token(prg);
+		std::string x2 =  token(prg);
+		std::string y2 =  token(prg);
+		std::string x3 =  token(prg);
+		std::string y3 =  token(prg);
+		
+		if (r1 == "" || g1 == "" || b1 == "" || a1 == "" || r2 == "" || g2 == "" || b2 == "" || a2 == "" || r3 == "" || g3 =="" || b3 == "" || a3 == "" || x == "" || y == "" || x2 == "" || y2 == "" || x3 == "" || y3 == "") {
+			throw PARSE_EXCEPTION("Expected filled_triangle parameters on line " + itos(prg.line+prg.start_line));
+		}
+		
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(r1);
+		strings.push_back(g1);
+		strings.push_back(b1);
+		strings.push_back(a1);
+		strings.push_back(r2);
+		strings.push_back(g2);
+		strings.push_back(b2);
+		strings.push_back(a2);
+		strings.push_back(r3);
+		strings.push_back(g3);
+		strings.push_back(b3);
+		strings.push_back(a3);
+		strings.push_back(x);
+		strings.push_back(y);
+		strings.push_back(x2);
+		strings.push_back(y2);
+		strings.push_back(x3);
+		strings.push_back(y3);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				VARIABLE &v1 = prg.variables[index];
+
+				if (v1.type == VARIABLE::NUMBER) {
+					values.push_back(v1.n);
+				}
+				else if (v1.type == VARIABLE::STRING) {
+					values.push_back(atof(v1.s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		SDL_Colour c[3];
+		c[0].r = values[0];
+		c[0].g = values[1];
+		c[0].b = values[2];
+		c[0].a = values[3];
+		c[1].r = values[4];
+		c[1].g = values[5];
+		c[1].b = values[6];
+		c[1].a = values[7];
+		c[2].r = values[8];
+		c[2].g = values[9];
+		c[2].b = values[10];
+		c[2].a = values[11];
+
+		util::Point<float> p1, p2, p3;
+
+		p1.x = values[12];
+		p1.y = values[13];
+		p2.x = values[14];
+		p2.y = values[15];
+		p3.x = values[16];
+		p3.y = values[17];
+
+		gfx::draw_filled_triangle(c, p1, p2, p3);
+	}
+	else if (tok == "rectangle") {
+		std::string r =  token(prg);
+		std::string g =  token(prg);
+		std::string b =  token(prg);
+		std::string a =  token(prg);
+		std::string x =  token(prg);
+		std::string y =  token(prg);
+		std::string w =  token(prg);
+		std::string h =  token(prg);
+		std::string thickness =  token(prg);
+		
+		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || w == "" || h == "" || thickness == "") {
+			throw PARSE_EXCEPTION("Expected rectangle parameters on line " + itos(prg.line+prg.start_line));
+		}
+		
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(r);
+		strings.push_back(g);
+		strings.push_back(b);
+		strings.push_back(a);
+		strings.push_back(x);
+		strings.push_back(y);
+		strings.push_back(w);
+		strings.push_back(h);
+		strings.push_back(thickness);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				VARIABLE &v1 = prg.variables[index];
+
+				if (v1.type == VARIABLE::NUMBER) {
+					values.push_back(v1.n);
+				}
+				else if (v1.type == VARIABLE::STRING) {
+					values.push_back(atof(v1.s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		SDL_Colour c;
+		c.r = values[0];
+		c.g = values[1];
+		c.b = values[2];
+		c.a = values[3];
+
+		util::Point<float> p;
+		util::Size<float> sz;
+
+		p.x = values[4];
+		p.y = values[5];
+		sz.w = values[6];
+		sz.h = values[7];
+
+		float thick = values[8];
+
+		gfx::draw_rectangle(c, p, sz, thick);
+	}
+	else if (tok == "filled_rectangle") {
+		std::string r1 =  token(prg);
+		std::string g1 =  token(prg);
+		std::string b1 =  token(prg);
+		std::string a1 =  token(prg);
+		std::string r2 =  token(prg);
+		std::string g2 =  token(prg);
+		std::string b2 =  token(prg);
+		std::string a2 =  token(prg);
+		std::string r3 =  token(prg);
+		std::string g3 =  token(prg);
+		std::string b3 =  token(prg);
+		std::string a3 =  token(prg);
+		std::string r4 =  token(prg);
+		std::string g4 =  token(prg);
+		std::string b4 =  token(prg);
+		std::string a4 =  token(prg);
+		std::string x =  token(prg);
+		std::string y =  token(prg);
+		std::string w =  token(prg);
+		std::string h =  token(prg);
+		
+		if (r1 == "" || g1 == "" || b1 == "" || a1 == "" || r2 == "" || g2 == "" || b2 == "" || a2 == "" || r3 == "" || g3 =="" || b3 == "" || a3 == "" || r4 == "" || g4 == "" || b4 == "" || a4 == "" || x == "" || y == "" || w == "" || h == "") {
+			throw PARSE_EXCEPTION("Expected filled_rectangle parameters on line " + itos(prg.line+prg.start_line));
+		}
+		
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(r1);
+		strings.push_back(g1);
+		strings.push_back(b1);
+		strings.push_back(a1);
+		strings.push_back(r2);
+		strings.push_back(g2);
+		strings.push_back(b2);
+		strings.push_back(a2);
+		strings.push_back(r3);
+		strings.push_back(g3);
+		strings.push_back(b3);
+		strings.push_back(a3);
+		strings.push_back(r4);
+		strings.push_back(g4);
+		strings.push_back(b4);
+		strings.push_back(a4);
+		strings.push_back(x);
+		strings.push_back(y);
+		strings.push_back(w);
+		strings.push_back(h);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				VARIABLE &v1 = prg.variables[index];
+
+				if (v1.type == VARIABLE::NUMBER) {
+					values.push_back(v1.n);
+				}
+				else if (v1.type == VARIABLE::STRING) {
+					values.push_back(atof(v1.s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		SDL_Colour c[4];
+		c[0].r = values[0];
+		c[0].g = values[1];
+		c[0].b = values[2];
+		c[0].a = values[3];
+		c[1].r = values[4];
+		c[1].g = values[5];
+		c[1].b = values[6];
+		c[1].a = values[7];
+		c[2].r = values[8];
+		c[2].g = values[9];
+		c[2].b = values[10];
+		c[2].a = values[11];
+		c[3].r = values[12];
+		c[3].g = values[13];
+		c[3].b = values[14];
+		c[3].a = values[15];
+
+		util::Point<float> p;
+
+		p.x = values[16];
+		p.y = values[17];
+
+		util::Size<float> sz;
+
+		sz.w = values[18];
+		sz.h = values[19];
+
+		gfx::draw_filled_rectangle(c, p, sz);
+	}
+	else if (tok == "ellipse") {
+		std::string r =  token(prg);
+		std::string g =  token(prg);
+		std::string b =  token(prg);
+		std::string a =  token(prg);
+		std::string x =  token(prg);
+		std::string y =  token(prg);
+		std::string rx =  token(prg);
+		std::string ry =  token(prg);
+		std::string thickness =  token(prg);
+		
+		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || rx == "" || ry == "" || thickness == "") {
+			throw PARSE_EXCEPTION("Expected ellipse parameters on line " + itos(prg.line+prg.start_line));
+		}
+		
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(r);
+		strings.push_back(g);
+		strings.push_back(b);
+		strings.push_back(a);
+		strings.push_back(x);
+		strings.push_back(y);
+		strings.push_back(rx);
+		strings.push_back(ry);
+		strings.push_back(thickness);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				VARIABLE &v1 = prg.variables[index];
+
+				if (v1.type == VARIABLE::NUMBER) {
+					values.push_back(v1.n);
+				}
+				else if (v1.type == VARIABLE::STRING) {
+					values.push_back(atof(v1.s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		SDL_Colour c;
+		c.r = values[0];
+		c.g = values[1];
+		c.b = values[2];
+		c.a = values[3];
+
+		util::Point<float> p;
+
+		p.x = values[4];
+		p.y = values[5];
+
+		float _rx = values[6];
+		float _ry = values[7];
+		float thick = values[8];
+
+		gfx::draw_ellipse(c, p, _rx, _ry, thick);
+	}
+	else if (tok == "filled_ellipse") {
+		std::string r =  token(prg);
+		std::string g =  token(prg);
+		std::string b =  token(prg);
+		std::string a =  token(prg);
+		std::string x =  token(prg);
+		std::string y =  token(prg);
+		std::string rx =  token(prg);
+		std::string ry =  token(prg);
+		
+		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || rx == "" || ry == "") {
+			throw PARSE_EXCEPTION("Expected filled_ellipse parameters on line " + itos(prg.line+prg.start_line));
+		}
+		
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(r);
+		strings.push_back(g);
+		strings.push_back(b);
+		strings.push_back(a);
+		strings.push_back(x);
+		strings.push_back(y);
+		strings.push_back(rx);
+		strings.push_back(ry);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				VARIABLE &v1 = prg.variables[index];
+
+				if (v1.type == VARIABLE::NUMBER) {
+					values.push_back(v1.n);
+				}
+				else if (v1.type == VARIABLE::STRING) {
+					values.push_back(atof(v1.s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		SDL_Colour c;
+		c.r = values[0];
+		c.g = values[1];
+		c.b = values[2];
+		c.a = values[3];
+
+		util::Point<float> p;
+
+		p.x = values[4];
+		p.y = values[5];
+
+		float _rx = values[6];
+		float _ry = values[7];
+
+		gfx::draw_filled_ellipse(c, p, _rx, _ry);
+	}
+	else if (tok == "circle") {
+		std::string r =  token(prg);
+		std::string g =  token(prg);
+		std::string b =  token(prg);
+		std::string a =  token(prg);
+		std::string x =  token(prg);
+		std::string y =  token(prg);
+		std::string radius =  token(prg);
+		std::string thickness =  token(prg);
+		
+		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || radius == "" || thickness == "") {
+			throw PARSE_EXCEPTION("Expected circle parameters on line " + itos(prg.line+prg.start_line));
+		}
+		
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(r);
+		strings.push_back(g);
+		strings.push_back(b);
+		strings.push_back(a);
+		strings.push_back(x);
+		strings.push_back(y);
+		strings.push_back(radius);
+		strings.push_back(thickness);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				VARIABLE &v1 = prg.variables[index];
+
+				if (v1.type == VARIABLE::NUMBER) {
+					values.push_back(v1.n);
+				}
+				else if (v1.type == VARIABLE::STRING) {
+					values.push_back(atof(v1.s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		SDL_Colour c;
+		c.r = values[0];
+		c.g = values[1];
+		c.b = values[2];
+		c.a = values[3];
+
+		util::Point<float> p;
+
+		p.x = values[4];
+		p.y = values[5];
+		float _r = values[6];
+		float thick = values[7];
+
+		gfx::draw_circle(c, p, _r, thick);
+	}
+	else if (tok == "filled_circle") {
+		std::string r =  token(prg);
+		std::string g =  token(prg);
+		std::string b =  token(prg);
+		std::string a =  token(prg);
+		std::string x =  token(prg);
+		std::string y =  token(prg);
+		std::string radius =  token(prg);
+		
+		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || radius == "") {
+			throw PARSE_EXCEPTION("Expected filled_circle parameters on line " + itos(prg.line+prg.start_line));
+		}
+		
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(r);
+		strings.push_back(g);
+		strings.push_back(b);
+		strings.push_back(a);
+		strings.push_back(x);
+		strings.push_back(y);
+		strings.push_back(radius);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				VARIABLE &v1 = prg.variables[index];
+
+				if (v1.type == VARIABLE::NUMBER) {
+					values.push_back(v1.n);
+				}
+				else if (v1.type == VARIABLE::STRING) {
+					values.push_back(atof(v1.s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		SDL_Colour c;
+		c.r = values[0];
+		c.g = values[1];
+		c.b = values[2];
+		c.a = values[3];
+
+		util::Point<float> p;
+
+		p.x = values[4];
+		p.y = values[5];
+		float _r = values[6];
+
+		gfx::draw_filled_circle(c, p, _r);
+	}
+	else if (tok == ";") {
+		while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
+			prg.p++;
+		}
+		prg.line++;
+		if (prg.p < prg.code.length()) {
+			prg.p++;
+		}
+	}
+	else if (tok == "play_music") {
+		std::string name = token(prg);
+
+		if (name == "") {
+			throw PARSE_EXCEPTION("Expected play_music parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		audio::play_music(remove_quotes(unescape(name)));
+	}
+	else if (tok == "stop_music") {
+		audio::stop_music();
+	}
+	else if (tok == "load_mml") {
+		std::string var = token(prg);
+		std::string name = token(prg);
+
+		if (var == "" || name == "") {
+			throw PARSE_EXCEPTION("Expected load_mml parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int vi = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == var) {
+				vi = i;
+				break;
+			}
+		}
+
+		if (vi < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + var + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		VARIABLE &v1 = prg.variables[vi];
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = mml_id;
+		}
+		else if (v1.type == VARIABLE::STRING) {
+			v1.s = itos(mml_id);
+		}
+		else {
+			throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+		}
+
+		audio::MML *mml = new audio::MML(remove_quotes(unescape(name)));
+
+		mmls[mml_id++] = mml;
+	}
+	else if (tok == "load_image") {
+		std::string var = token(prg);
+		std::string name = token(prg);
+
+		if (var == "" || name == "") {
+			throw PARSE_EXCEPTION("Expected load_image parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int vi = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == var) {
+				vi = i;
+				break;
+			}
+		}
+
+		if (vi < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + var + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		VARIABLE &v1 = prg.variables[vi];
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = image_id;
+		}
+		else if (v1.type == VARIABLE::STRING) {
+			v1.s = itos(image_id);
+		}
+		else {
+			throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+		}
+
+		gfx::Image *img = new gfx::Image(remove_quotes(unescape(name)));
+
+		images[image_id++] = img;
+	}
+	else if (tok == "play_mml") {
+		std::string id = token(prg);
+
+		if (id == "") {
+			throw PARSE_EXCEPTION("Expected play_mml parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(id);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				if (prg.variables[index].type == VARIABLE::NUMBER) {
+					values.push_back(prg.variables[index].n);
+				}
+				else if (prg.variables[index].type == VARIABLE::STRING) {
+					values.push_back(atof(prg.variables[index].s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Invalid type for comparison on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		audio::MML *mml = mmls[values[0]];
+
+		mml->play(false);
+	}
+	else if (tok == "draw_image") {
+		std::string id = token(prg);
+		std::string x = token(prg);
+		std::string y = token(prg);
+
+		if (id == "" || x == "" || y == "") {
+			throw PARSE_EXCEPTION("Expected draw_image parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(id);
+		strings.push_back(x);
+		strings.push_back(y);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				if (prg.variables[index].type == VARIABLE::NUMBER) {
+					values.push_back(prg.variables[index].n);
+				}
+				else if (prg.variables[index].type == VARIABLE::STRING) {
+					values.push_back(atof(prg.variables[index].s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Invalid type for comparison on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		gfx::Image *img = images[values[0]];
+
+		img->draw(util::Point<float>(values[1], values[2]));
+	}
+	else if (tok == "poll_joystick") {
+		std::string num = token(prg);
+		std::string x1 = token(prg);
+		std::string y1 = token(prg);
+		std::string x2 = token(prg);
+		std::string y2 = token(prg);
+		std::string l = token(prg);
+		std::string r = token(prg);
+		std::string u = token(prg);
+		std::string d = token(prg);
+		std::string a = token(prg);
+		std::string b = token(prg);
+		std::string x = token(prg);
+		std::string y = token(prg);
+		std::string lb = token(prg);
+		std::string rb = token(prg);
+		std::string back = token(prg);
+		std::string start = token(prg);
+	
+		if (num == "" || x1 == "" || y1 == "" || x2 == "" || y2 == "" || l == "" || r == "" || u == "" || d == "" || a == "" || b == "" || x == "" || y == "" || lb == "" || rb == "" || back == "" || start == "") {
+			throw PARSE_EXCEPTION("Expected poll_joystick parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(num);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				if (prg.variables[index].type == VARIABLE::NUMBER) {
+					values.push_back(prg.variables[index].n);
+				}
+				else if (prg.variables[index].type == VARIABLE::STRING) {
+					values.push_back(atof(prg.variables[index].s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Invalid type for comparison on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		std::vector<std::string> names;
+		names.push_back(x1);
+		names.push_back(y1);
+		names.push_back(x2);
+		names.push_back(y2);
+		names.push_back(l);
+		names.push_back(r);
+		names.push_back(u);
+		names.push_back(d);
+		names.push_back(a);
+		names.push_back(b);
+		names.push_back(x);
+		names.push_back(y);
+		names.push_back(lb);
+		names.push_back(rb);
+		names.push_back(back);
+		names.push_back(start);
+
+		for (size_t i = 0; i < names.size(); i++) {
+			bool found = false;
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == names[i]) {
+					found = true;
+					break;
+				}
+			}
+			if (found == false) {
+				throw PARSE_EXCEPTION("Invalid variable name " + names[i] + " on line " + itos(prg.line+prg.start_line));
+			}
+		}
+
+		SDL_JoystickID id = input::get_controller_id(values[0]);
+		SDL_Joystick *joy = input::get_sdl_joystick(id);
+		bool connected = joy != nullptr;
+
+		if (connected == false) {
+			set_string_or_number(prg, x1, 0);
+			set_string_or_number(prg, y1, 0);
+			set_string_or_number(prg, x2, 0);
+			set_string_or_number(prg, y2, 0);
+			set_string_or_number(prg, a, 0);
+			set_string_or_number(prg, l, 0);
+			set_string_or_number(prg, r, 0);
+			set_string_or_number(prg, u, 0);
+			set_string_or_number(prg, d, 0);
+			set_string_or_number(prg, b, 0);
+			set_string_or_number(prg, x, 0);
+			set_string_or_number(prg, y, 0);
+			set_string_or_number(prg, lb, 0);
+			set_string_or_number(prg, rb, 0);
+			set_string_or_number(prg, back, 0);
+			set_string_or_number(prg, start, 0);
+		}
+		else {
+
+			Sint16 si_x1 = SDL_JoystickGetAxis(joy, 0);
+			Sint16 si_y1 = SDL_JoystickGetAxis(joy, 1);
+			Sint16 si_x2 = SDL_JoystickGetAxis(joy, 2);
+			Sint16 si_y2 = SDL_JoystickGetAxis(joy, 3);
+
+			double x1f;
+			double y1f;
+			double x2f;
+			double y2f;
+
+			if (si_x1 < 0) {
+				x1f = si_x1 / 32768.0;
+			}
+			else {
+				x1f = si_x1 / 32767.0;
+			}
+
+			if (si_y1 < 0) {
+				y1f = si_y1 / 32768.0;
+			}
+			else {
+				y1f = si_y1 / 32767.0;
+			}
+
+			if (si_x2 < 0) {
+				x2f = si_x2 / 32768.0;
+			}
+			else {
+				x2f = si_x2 / 32767.0;
+			}
+
+			if (si_y2 < 0) {
+				y2f = si_y2 / 32768.0;
+			}
+			else {
+				y2f = si_y2 / 32767.0;
+			}
+
+			set_string_or_number(prg, x1, x1f);
+			set_string_or_number(prg, y1, y1f);
+			set_string_or_number(prg, x2, x2f);
+			set_string_or_number(prg, y2, y2f);
+
+			double _lb = SDL_JoystickGetButton(joy, TGUI_B_L);
+			double _rb = SDL_JoystickGetButton(joy, TGUI_B_R);
+			double ub = SDL_JoystickGetButton(joy, TGUI_B_U);
+			double db = SDL_JoystickGetButton(joy, TGUI_B_D);
+			double ab = SDL_JoystickGetButton(joy, TGUI_B_A);
+			double bb = SDL_JoystickGetButton(joy, TGUI_B_B);
+			double xb = SDL_JoystickGetButton(joy, TGUI_B_X);
+			double yb = SDL_JoystickGetButton(joy, TGUI_B_Y);
+			double lbb = SDL_JoystickGetButton(joy, TGUI_B_LB);
+			double rbb = SDL_JoystickGetButton(joy, TGUI_B_RB);
+			double backb = SDL_JoystickGetButton(joy, TGUI_B_BACK);
+			double startb = SDL_JoystickGetButton(joy, TGUI_B_START);
+
+			set_string_or_number(prg, l, _lb);
+			set_string_or_number(prg, r, _rb);
+			set_string_or_number(prg, u, ub);
+			set_string_or_number(prg, d, db);
+			set_string_or_number(prg, a, ab);
+			set_string_or_number(prg, b, bb);
+			set_string_or_number(prg, x, xb);
+			set_string_or_number(prg, y, yb);
+			set_string_or_number(prg, lb, lbb);
+			set_string_or_number(prg, rb, rbb);
+			set_string_or_number(prg, rb, backb);
+			set_string_or_number(prg, rb, startb);
+		}
+	}
+	else if (tok == "num_joysticks") {
+		std::string dest = token(prg);
+		
+		if (dest == "") {
+			throw PARSE_EXCEPTION("Expected sin parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == dest) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + dest + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		VARIABLE &v1 = prg.variables[di];
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = input::get_num_joysticks();
+		}
+		else {
+			throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
+		}
+	}
+	else if (tok == "inspect") {
+		std::string name = token(prg);
+		
+		if (name == "") {
+			throw PARSE_EXCEPTION("Expected inspect parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == name) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + name + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		VARIABLE &v1 = prg.variables[di];
+
+		char buf[1000];
+
+		if (v1.type == VARIABLE::NUMBER) {
+			snprintf(buf, 1000, "%g", v1.n);
+		}
+		else if (v1.type == VARIABLE::STRING) {
+			snprintf(buf, 1000, "\"%s\"", v1.s);
+		}
+		else {
+			strcpy(buf, "Unknown");
+		}
+
+		gui::popup("INSPECTOR", buf, gui::OK);
+	}
+	else {
+		throw PARSE_EXCEPTION("Invalid token \"" + tok + "\" on line " + itos(prg.line+prg.start_line));
+	}
+
+	return true;
+}

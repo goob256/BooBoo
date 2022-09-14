@@ -1,0 +1,67 @@
+#!/bin/bash
+
+TGUI_FLAGS=""
+SHIM_FLAGS=""
+TTH_FLAGS=""
+PI=0
+
+if uname -a | grep raspberry > /dev/null ; then
+	USER_INCLUDE_PATH="~/code/3crystals/external/include"
+else
+	USER_INCLUDE_PATH="~/code/steamworks/public;~/code/3crystals/external/include;/usr/include/SDL2"
+fi
+
+while [ "${1-}" ] ; do
+	case "$1" in
+		"debug")
+			FLAGS="$FLAGS -DDEBUG=on"
+			;;
+		"pi")
+			FLAGS="$FLAGS -DRASPBERRYPI=on"
+			PI=1
+			;;
+		"release")
+			FLAGS="$FLAGS -DCMAKE_BUILD_TYPE=Release"
+			;;
+		"tools")
+			SHIM_FLAGS="$SHIM_FLAGS -DWANT_TOOLS=on"
+			;;
+		"demo")
+			TTH_FLAGS="$TTH_FLAGS -DDEMO=on"
+			;;
+		"steam")
+			FLAGS="$FLAGS -DSTEAMWORKS=on"
+			;;
+	esac
+	shift
+done
+if [ $PI -eq 0 ]; then
+	if uname -a | grep raspberry > /dev/null ; then
+		FLAGS="$FLAGS -DRASPBERRYPI_NORMAL=on"
+	fi
+fi
+
+TGUI_FLAGS="$FLAGS $TGUI_FLAGS"
+SHIM_FLAGS="$FLAGS $SHIM_FLAGS"
+TTH_FLAGS="$FLAGS $TTH_FLAGS"
+
+pushd . > /dev/null
+
+cd ~/code/3crystals
+cd tgui6
+rm -rf build
+mkdir build
+cd build
+cmake .. -DUSER_INCLUDE_PATH="$USER_INCLUDE_PATH;~/code/3crystals/shim4/external/SDL2_ttf-2.0.14" $TGUI_FLAGS
+cd ../../shim4
+rm -rf build
+mkdir build
+cd build
+cmake .. -DUSER_INCLUDE_PATH="$USER_INCLUDE_PATH;/usr/include/freetype2;/code/3crystals/shim4/external/SDL2_ttf-2.0.14;~/code/3crystals/tgui6/include" -DUSER_LIBRARY_PATH="~/code/3crystals/tgui6/build" $SHIM_FLAGS
+cd ../..
+rm -rf build
+mkdir build
+cd build
+cmake .. -DUSER_INCLUDE_PATH="$USER_INCLUDE_PATH;~/code/3crystals/shim4/external/SDL2_ttf-2.0.14;~/code/3crystals/tgui6/include;~/code/3crystals/shim4/include;~/code/3crystals/wedge3/include" -DUSER_LIBRARY_PATH="~/code/3crystals/tgui6/build;~/code/3crystals/shim4/build;~/code/3crystals/wedge3/build;~/code/steamworks/redistributable_bin/linux64" $TTH_FLAGS
+
+popd > /dev/null

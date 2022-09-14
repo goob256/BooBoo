@@ -1,0 +1,15 @@
+uniform sampler2D tex;
+
+varying vec4 colour;
+varying vec2 texcoord;
+
+void main()
+{
+	vec4 c = texture2D(tex, texcoord);
+	if (c.a == 0.0) {
+		discard;
+	}
+	else {
+		gl_FragColor = c * colour;
+	}
+}

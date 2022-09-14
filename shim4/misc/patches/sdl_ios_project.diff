@@ -1,0 +1,134 @@
+diff -ur SDL2-2.0.6.orig/Xcode-iOS/SDL/SDL.xcodeproj/project.pbxproj SDL2-2.0.6/Xcode-iOS/SDL/SDL.xcodeproj/project.pbxproj
+--- SDL2-2.0.6.orig/Xcode-iOS/SDL/SDL.xcodeproj/project.pbxproj	2017-09-22 12:51:01.000000000 -0600
++++ SDL2-2.0.6/Xcode-iOS/SDL/SDL.xcodeproj/project.pbxproj	2017-10-17 05:18:40.000000000 -0600
+@@ -1641,14 +1641,20 @@
+ 		FD6526640DE8FCCB002AD96B /* Debug */ = {
+ 			isa = XCBuildConfiguration;
+ 			buildSettings = {
++				ARCHS = "$(ARCHS_STANDARD)";
+ 				CLANG_ENABLE_OBJC_ARC = YES;
+ 				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+ 				CLANG_WARN_OBJC_IMPLICIT_ATOMIC_PROPERTIES = YES;
+ 				COPY_PHASE_STRIP = NO;
++				ENABLE_BITCODE = NO;
++				GCC_OPTIMIZATION_LEVEL = s;
++				GCC_PREPROCESSOR_DEFINITIONS = "";
+ 				GCC_WARN_MULTIPLE_DEFINITION_TYPES_FOR_SELECTOR = YES;
+ 				GCC_WARN_STRICT_SELECTOR_MATCH = YES;
+ 				GCC_WARN_UNDECLARED_SELECTOR = YES;
+ 				HEADER_SEARCH_PATHS = "$(VULKAN_SDK)/include";
++				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
++				ONLY_ACTIVE_ARCH = NO;
+ 				PRODUCT_NAME = SDL2;
+ 				SKIP_INSTALL = YES;
+ 			};
+@@ -1657,14 +1663,20 @@
+ 		FD6526650DE8FCCB002AD96B /* Release */ = {
+ 			isa = XCBuildConfiguration;
+ 			buildSettings = {
++				ARCHS = "$(ARCHS_STANDARD)";
+ 				CLANG_ENABLE_OBJC_ARC = YES;
+ 				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+ 				CLANG_WARN_OBJC_IMPLICIT_ATOMIC_PROPERTIES = YES;
+ 				COPY_PHASE_STRIP = YES;
++				ENABLE_BITCODE = NO;
++				GCC_OPTIMIZATION_LEVEL = s;
++				GCC_PREPROCESSOR_DEFINITIONS = "";
+ 				GCC_WARN_MULTIPLE_DEFINITION_TYPES_FOR_SELECTOR = YES;
+ 				GCC_WARN_STRICT_SELECTOR_MATCH = YES;
+ 				GCC_WARN_UNDECLARED_SELECTOR = YES;
+ 				HEADER_SEARCH_PATHS = "$(VULKAN_SDK)/include";
++				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
++				ONLY_ACTIVE_ARCH = NO;
+ 				PRODUCT_NAME = SDL2;
+ 				SKIP_INSTALL = YES;
+ 			};
+Only in SDL2-2.0.6/Xcode-iOS/SDL/SDL.xcodeproj: project.xcworkspace
+Only in SDL2-2.0.6/Xcode-iOS/SDL/SDL.xcodeproj: xcuserdata
+diff -ur SDL2-2.0.6.orig/Xcode-iOS/SDLtest/SDL2test.xcodeproj/project.pbxproj SDL2-2.0.6/Xcode-iOS/SDLtest/SDL2test.xcodeproj/project.pbxproj
+--- SDL2-2.0.6.orig/Xcode-iOS/SDLtest/SDL2test.xcodeproj/project.pbxproj	2017-09-22 12:51:01.000000000 -0600
++++ SDL2-2.0.6/Xcode-iOS/SDLtest/SDL2test.xcodeproj/project.pbxproj	2017-10-06 12:36:55.000000000 -0600
+@@ -310,6 +310,7 @@
+ 			isa = XCBuildConfiguration;
+ 			buildSettings = {
+ 				EXECUTABLE_PREFIX = lib;
++				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+ 				PRODUCT_NAME = "$(TARGET_NAME)";
+ 			};
+ 			name = Debug;
+@@ -318,6 +319,7 @@
+ 			isa = XCBuildConfiguration;
+ 			buildSettings = {
+ 				EXECUTABLE_PREFIX = lib;
++				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+ 				PRODUCT_NAME = "$(TARGET_NAME)";
+ 			};
+ 			name = Release;
+Only in SDL2-2.0.6/Xcode-iOS/SDLtest/SDL2test.xcodeproj: project.xcworkspace
+Only in SDL2-2.0.6/Xcode-iOS/SDLtest/SDL2test.xcodeproj: xcuserdata
+diff -ur SDL2-2.0.6.orig/Xcode-iOS/Test/TestiPhoneOS.xcodeproj/project.pbxproj SDL2-2.0.6/Xcode-iOS/Test/TestiPhoneOS.xcodeproj/project.pbxproj
+--- SDL2-2.0.6.orig/Xcode-iOS/Test/TestiPhoneOS.xcodeproj/project.pbxproj	2017-09-22 12:51:01.000000000 -0600
++++ SDL2-2.0.6/Xcode-iOS/Test/TestiPhoneOS.xcodeproj/project.pbxproj	2017-10-06 12:39:34.000000000 -0600
+@@ -1584,12 +1584,18 @@
+ 			attributes = {
+ 				LastUpgradeCheck = 0630;
+ 				TargetAttributes = {
++					047A63DD13285C3200CD7973 = {
++						DevelopmentTeam = ZCLK6CUZ99;
++					};
+ 					FA3D99331BC4E644002C96C8 = {
+ 						CreatedOnToolsVersion = 7.1;
+ 					};
+ 					FABA34961D8B582100915323 = {
+ 						ProvisioningStyle = Automatic;
+ 					};
++					FDAAC6150E2D5914001DB1D8 = {
++						DevelopmentTeam = ZCLK6CUZ99;
++					};
+ 				};
+ 			};
+ 			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "TestiPhoneOS" */;
+@@ -2140,7 +2146,9 @@
+ 		047A63EB13285C3200CD7973 /* Debug */ = {
+ 			isa = XCBuildConfiguration;
+ 			buildSettings = {
++				DEVELOPMENT_TEAM = ZCLK6CUZ99;
+ 				INFOPLIST_FILE = Info.plist;
++				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+ 				PRODUCT_NAME = checkkeys;
+ 			};
+ 			name = Debug;
+@@ -2148,7 +2156,9 @@
+ 		047A63EC13285C3200CD7973 /* Release */ = {
+ 			isa = XCBuildConfiguration;
+ 			buildSettings = {
++				DEVELOPMENT_TEAM = ZCLK6CUZ99;
+ 				INFOPLIST_FILE = Info.plist;
++				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+ 				PRODUCT_NAME = checkkeys;
+ 			};
+ 			name = Release;
+@@ -2452,7 +2462,10 @@
+ 		FDAAC6240E2D5914001DB1D8 /* Debug */ = {
+ 			isa = XCBuildConfiguration;
+ 			buildSettings = {
++				DEVELOPMENT_TEAM = ZCLK6CUZ99;
++				ENABLE_BITCODE = NO;
+ 				INFOPLIST_FILE = Info.plist;
++				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+ 				PRODUCT_NAME = testgles;
+ 			};
+ 			name = Debug;
+@@ -2460,7 +2473,10 @@
+ 		FDAAC6250E2D5914001DB1D8 /* Release */ = {
+ 			isa = XCBuildConfiguration;
+ 			buildSettings = {
++				DEVELOPMENT_TEAM = ZCLK6CUZ99;
++				ENABLE_BITCODE = NO;
+ 				INFOPLIST_FILE = Info.plist;
++				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+ 				PRODUCT_NAME = testgles;
+ 			};
+ 			name = Release;
+Only in SDL2-2.0.6/Xcode-iOS/Test/TestiPhoneOS.xcodeproj: project.xcworkspace
+Only in SDL2-2.0.6/Xcode-iOS/Test/TestiPhoneOS.xcodeproj: xcuserdata

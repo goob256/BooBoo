@@ -1,0 +1,35 @@
+@S0 = { kick.flac }
+@VAS0 = { 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 0 }
+@VAS1 = { 255 192 128 64 0 }
+
+A t120 @S0
+A o5c8r8c8r8c8r8c8r8
+A c8r8c8r8c8r8c8r8
+A c8r8c8r8c8r8c8r8
+A c8r8c8r8c8r8c8r8
+A c8r8c8r8c8r8c8r8
+A c8r8c8r8c8r8c8r8
+A c8r8c8r8c8r8c8r8
+A c8r8c8r8c8r8c8r8
+
+B t120 y32 v256 @VAS1
+B o5d8r8d8r8d8r8d8r8
+B >d8>c16c16<b16r16a16r16a+16r16g16r16f16r16c+8
+B <d8r8d8r8d8r8d8r8
+B >d8>c16c16<b16r16a16r16a+16r16g16r16g+4
+B <d8r8d8r8d8r8d8r8
+B >d8>c16c16<b16r16a16r16a+16r16g16r16f16r16e8
+B <d8r8d8r8d8r8d8r8
+B >d8>c16c16<b16r16a16r16a+16r16g16r16c+4
+B @VAS1
+
+C t120 @TYPE3 @VAS0 @CV1
+C o4d1
+C >c1
+C <d1
+C >c1
+C <d1
+C >c1
+C <d1
+C >c1
+C @VAS0
