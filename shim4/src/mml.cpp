@@ -1378,13 +1378,40 @@ int MML::mix(float *buf, int samples, bool sfx_paused)
 }
 
 MML::MML(std::string filename, bool load_from_filesystem) :
-	name(filename),
-	_pause_with_sfx(true)
+	name(filename)
 {
 	if (load_from_filesystem == false) {
 		filename = "audio/mml/" + filename;
 	}
 
+	SDL_RWops *f;
+
+	int sz = 0;
+	if (load_from_filesystem) {
+		f = SDL_RWFromFile(filename.c_str(), "r");
+		if (f) {
+			sz = (int)SDL_RWsize(f);
+		}
+	}
+	else {
+		f = util::open_file(filename, &sz);
+	}
+
+	if (f == 0) {
+		throw util::LoadError("Error loading MML");
+	}
+
+	load(f, load_from_filesystem);
+}
+
+MML::MML(SDL_RWops *f, bool load_from_filesystem) :
+	_pause_with_sfx(true)
+{
+	load(f, load_from_filesystem);
+}
+
+void MML::load(SDL_RWops *f, bool load_from_filesystem)
+{
 	std::vector<std::string> tracks_s;
 	std::vector< std::vector< std::pair<int, float> > > volumes;
 	std::vector< std::vector< std::pair<int, float> > > volume_offsets;
@@ -1422,23 +1449,9 @@ MML::MML(std::string filename, bool load_from_filesystem) :
 	char buf[1000];
 	bool need_pe0 = false;
 
-	SDL_RWops *f;
-	int sz = 0;
-	if (load_from_filesystem) {
-		f = SDL_RWFromFile(filename.c_str(), "r");
-		if (f) {
-			sz = (int)SDL_RWsize(f);
-		}
-	}
-	else {
-		f = util::open_file(filename, &sz);
-	}
-
-	if (f == 0) {
-		throw util::LoadError("Error loading MML");
-	}
-
 	int count = 0;
+		
+	int sz = (int)SDL_RWsize(f);
 
 	while (count < sz && util::SDL_fgets(f, buf, 1000)) {
 		count += strlen(buf);

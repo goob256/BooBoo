@@ -68,6 +68,18 @@ static std::string unescape(std::string s)
 					ret += buf;
 					p++;
 				}
+				else if (s[p+1] == 'n') {
+					p++;
+					buf[0] = '\n';
+					ret += buf;
+					p++;
+				}
+				else if (s[p+1] == 't') {
+					p++;
+					buf[0] = '\t';
+					ret += buf;
+					p++;
+				}
 				else {
 					buf[0] = '\\';
 					ret += buf;
@@ -1390,12 +1402,10 @@ bool interpret(PROGRAM &prg)
 		
 		if (value[0] == '-' || isdigit(value[0])) {
 			prg.result.type = VARIABLE::NUMBER;
-			prg.result.name = "result";
 			prg.result.n = atof(value.c_str());
 		}
-		if (value[0] == '"') {
+		else if (value[0] == '"') {
 			prg.result.type = VARIABLE::STRING;
-			prg.result.name = "result";
 			prg.result.s = remove_quotes(unescape(value));
 		}
 		else {
@@ -1407,11 +1417,13 @@ bool interpret(PROGRAM &prg)
 				}
 			}
 			if (index < 0) {
-				throw PARSE_EXCEPTION("Unknown variable \"" + value + "\" on line " + itos(prg.line+prg.start_line));
+				throw PARSE_EXCEPTION("1Unknown variable \"" + value + "\" on line " + itos(prg.line+prg.start_line));
 			}
 			prg.result = prg.variables[index];
 		}
 
+		prg.result.name = "result";
+		
 		return false;
 	}
 	else if (tok == "call") {
@@ -1520,7 +1532,6 @@ bool interpret(PROGRAM &prg)
 						for (size_t j = 0; j < prg.variables.size(); j++) {
 							if (p.variables[i].name == prg.variables[j].name) {
 								prg.variables[j] = p.variables[i];
-								break;
 							}
 						}
 					}
@@ -2362,6 +2373,70 @@ bool interpret(PROGRAM &prg)
 	}
 	else if (tok == "stop_music") {
 		audio::stop_music();
+	}
+	else if (tok == "create_mml") {
+		std::string var = token(prg);
+		std::string str = token(prg);
+
+		if (var == "" || str == "") {
+			throw PARSE_EXCEPTION("Expected create_mml parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int vi = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == var) {
+				vi = i;
+				break;
+			}
+		}
+
+		if (vi < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + var + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		VARIABLE &v1 = prg.variables[vi];
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = prg.mml_id;
+		}
+		else if (v1.type == VARIABLE::STRING) {
+			v1.s = itos(prg.mml_id);
+		}
+		else {
+			throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::string strs;
+
+		if (str[0] == '"') {
+			strs = remove_quotes(unescape(str));
+		}
+		else {
+			int index = -1;
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == str) {
+					index = i;
+					break;
+				}
+			}
+			if (index < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + str + "\" on line " + itos(prg.line+prg.start_line));
+			}
+			if (prg.variables[index].type == VARIABLE::STRING) {
+				strs = prg.variables[index].s;
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+
+		Uint8 *bytes = (Uint8 *)strs.c_str();
+		SDL_RWops *file = SDL_RWFromMem(bytes, strs.length());
+		audio::MML *mml = new audio::MML(file);
+		SDL_RWclose(file);
+
+		prg.mmls[prg.mml_id++] = mml;
 	}
 	else if (tok == "load_mml") {
 		std::string var = token(prg);
@@ -3629,6 +3704,8 @@ bool interpret(PROGRAM &prg)
 				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
 			}
 
+			var.function = prg.name;
+
 			prg.variables.push_back(var);
 
 			index = prg.variables.size() - 1;
@@ -3640,7 +3717,15 @@ bool interpret(PROGRAM &prg)
 		p.mml_id = 0;
 		p.image_id = 0;
 		p.font_id = 0;
+		p.variables = prg.variables;
+		p.functions = prg.functions;
+		p.mml_id = prg.mml_id;
+		p.image_id = prg.image_id;
+		p.font_id = prg.font_id;
 		p.vector_id = prg.vector_id;
+		p.mmls = prg.mmls;
+		p.images = prg.images;
+		p.fonts = prg.fonts;
 		p.vectors = prg.vectors;
 		int sz;
 
@@ -3657,7 +3742,7 @@ bool interpret(PROGRAM &prg)
 
 		p.labels = find_labels(p);
 		p.variables.push_back(prg.variables[index]);
-		p.variables[0].name = "params";
+		p.variables[p.variables.size()-1].name = "params";
 
 		while (interpret(p)) {
 		}
@@ -3673,7 +3758,7 @@ bool interpret(PROGRAM &prg)
 		std::string fmt = token(prg);
 		
 		if (dest == "" || fmt == "") {
-			throw PARSE_EXCEPTION("Expected sub parameters on line " + itos(prg.line+prg.start_line));
+			throw PARSE_EXCEPTION("Expected string_format parameters on line " + itos(prg.line+prg.start_line));
 		}
 
 		int di = -1;

@@ -177,7 +177,6 @@ void draw_all()
 				for (size_t j = 0; j < prg.variables.size(); j++) {
 					if (p.variables[i].name == prg.variables[j].name) {
 						prg.variables[j] = p.variables[i];
-						break;
 					}
 				}
 			}
@@ -322,7 +321,6 @@ static void loop()
 						for (size_t j = 0; j < prg.variables.size(); j++) {
 							if (p.variables[i].name == prg.variables[j].name) {
 								prg.variables[j] = p.variables[i];
-								break;
 							}
 						}
 					}
@@ -604,7 +602,6 @@ int main(int argc, char **argv)
 				for (size_t j = 0; j < prg.variables.size(); j++) {
 					if (p.variables[i].name == prg.variables[j].name) {
 						prg.variables[j] = p.variables[i];
-						break;
 					}
 				}
 			}

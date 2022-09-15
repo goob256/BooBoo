@@ -4,7 +4,7 @@ var number radius
 = radius 5000
 
 var number blip
-load_mml blip "sfx/bigshot.mml"
+create_mml blip "@PO0 = { 0 100 100 100 0 }\n@VAS0 = { 0 }\nA o5 @TYPE3 @PO0 @VAS0 a16 @VAS0 @PO0"
 
 var number was_pressed
 = was_pressed 0
