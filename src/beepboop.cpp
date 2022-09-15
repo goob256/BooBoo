@@ -441,9 +441,11 @@ void process_includes(PROGRAM &prg)
 			int add_lines = nlines_new - nlines_old;
 
 			for (size_t i = 0; i < prg.labels.size(); i++) {
-				prg.labels[i].p -= sub;
-				prg.labels[i].p += add;
-				prg.labels[i].line += add_lines;
+				if (prg.labels[i].p >= prg.p) {
+					prg.labels[i].p -= sub;
+					prg.labels[i].p += add;
+					prg.labels[i].line += add_lines;
+				}
 			}
 
 			start = prg.p;
