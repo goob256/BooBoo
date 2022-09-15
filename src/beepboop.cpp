@@ -3320,6 +3320,89 @@ bool interpret(PROGRAM &prg)
 
 		v[values[1]] = var;
 	}
+	else if (tok == "vector_insert") {
+		std::string id = token(prg);
+		std::string index = token(prg);
+		std::string value = token(prg);
+
+		if (id == "" || index == "" || value == "") {
+			throw PARSE_EXCEPTION("Expected vector_set parameters on line " + itos(prg.line+prg.start_line));
+		}
+		
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(id);
+		strings.push_back(index);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				if (prg.variables[index].type == VARIABLE::NUMBER) {
+					values.push_back(prg.variables[index].n);
+				}
+				else if (prg.variables[index].type == VARIABLE::STRING) {
+					values.push_back(atof(prg.variables[index].s.c_str()));
+				}
+				else if (prg.variables[index].type == VARIABLE::VECTOR) {
+					values.push_back(prg.variables[index].n);
+				}
+				else {
+					throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+		
+		if (values[0] < 0 || values[0] >= prg.vectors.size()) {
+			throw PARSE_EXCEPTION("Invalid Vector on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::vector<VARIABLE> &v = prg.vectors[values[0]];
+
+		if (values[1] < 0 || values[1] > v.size()) {
+			throw PARSE_EXCEPTION("Invalid index on line " + itos(prg.line+prg.start_line));
+		}
+
+		VARIABLE var;
+
+		if (value[0] == '"') {
+			var.type = VARIABLE::STRING;
+			var.function = prg.name;
+			var.name = "-constant-";
+			var.s = remove_quotes(unescape(value));
+		}
+		else if (value[0] == '-' || isdigit(value[0])) {
+			var.type = VARIABLE::NUMBER;
+			var.function = prg.name;
+			var.name = "-constant-";
+			var.n = atof(value.c_str());
+		}
+		else {
+			bool found = false;
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == value) {
+					var = prg.variables[i];
+					found = true;
+					break;
+				}
+			}
+			if (found == false) {
+				throw PARSE_EXCEPTION("Invalid variable name " + value + " on line " + itos(prg.line+prg.start_line));
+			}
+		}
+
+		v.insert(v.begin()+values[1], var);
+	}
 	else if (tok == "vector_get") {
 		std::string id = token(prg);
 		std::string dest = token(prg);
