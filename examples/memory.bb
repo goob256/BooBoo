@@ -1,3 +1,7 @@
+var string reset_game_name
+= reset_game_name "pong.bb"
+include "slideshow_start.inc"
+
 var number x
 var number y
 
@@ -78,6 +82,8 @@ label finish
 
 	cfg_set_number "x" x
 	cfg_set_number "y" y
+
+	include "slideshow_logic.inc"
 end
 
 function shutdown

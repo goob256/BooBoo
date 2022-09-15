@@ -1,5 +1,9 @@
 ; music and images
 
+var string reset_game_name
+= reset_game_name "memory.bb"
+include "slideshow_start.inc"
+
 play_music "music/gameover.mml"
 
 var number guy
@@ -14,6 +18,7 @@ var number y
 function logic
 start
 	+ y 2.5
+	include "slideshow_logic.inc"
 end
 
 function draw
@@ -26,4 +31,9 @@ start
 	- yy 100
 
 	draw_image glasses 180 yy
+end
+
+function shutdown
+start
+	stop_music
 end

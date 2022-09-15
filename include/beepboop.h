@@ -66,8 +66,7 @@ struct PROGRAM {
 
 bool interpret(PROGRAM &prg);
 std::vector<LABEL> process_labels(PROGRAM prg);
-void destroy_program(PROGRAM &prg);
-void start_beepboop();
+void destroy_program(PROGRAM &prg, bool destroy_vectors);
 void process_includes(PROGRAM &prg);
 
 #endif // BEEPBOOP_H

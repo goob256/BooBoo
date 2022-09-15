@@ -1,5 +1,9 @@
 ; subroutines
 
+var string reset_game_name
+= reset_game_name "sine.bb"
+include "slideshow_start.inc"
+
 var vector params
 vector_add params 1
 
@@ -19,6 +23,7 @@ label show
 	vector_set params 0 0
 
 label done_logic
+	include "slideshow_logic.inc"
 end
 
 function draw

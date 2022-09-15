@@ -7,7 +7,6 @@
 
 static std::map< std::string, double > cfg_numbers;
 static std::map< std::string, std::string > cfg_strings;
-static std::string cfg_name;
 
 static int count_lines(std::string s)
 {
@@ -194,6 +193,8 @@ void save_cfg(std::string cfg_name)
 		std::pair<std::string, std::string> p = *it;
 		fprintf(f, "string %s=\"%s\"\n", p.first.c_str(), p.second.c_str());
 	}
+
+	fclose(f);
 }
 
 static std::string token(PROGRAM &prg)
@@ -3927,7 +3928,7 @@ bool interpret(PROGRAM &prg)
 			}
 		}
 
-		destroy_program(p);
+		destroy_program(p, false);
 	}
 	else if (tok == "string_format") {
 		std::string dest = token(prg);
@@ -4059,6 +4060,9 @@ bool interpret(PROGRAM &prg)
 		v1.s = result;
 	}
 	else if (tok == "cfg_load") {
+		cfg_numbers.clear();
+		cfg_strings.clear();
+
 		std::string found = token(prg);
 		std::string cfg_name = token(prg);
 
@@ -4109,7 +4113,7 @@ bool interpret(PROGRAM &prg)
 		VARIABLE &v1 = prg.variables[di];
 
 		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = found_cfg;
+			v1.n = found_cfg == false ? 0 : 1;
 		}
 		else {
 			throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
@@ -4506,6 +4510,42 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
 		}
 	}
+	else if (tok == "reset") {
+		std::string name = token(prg);
+
+		if (name == "") {
+			throw PARSE_EXCEPTION("Expected reset parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::string names;
+
+		if (name[0] == '"') {
+			names = remove_quotes(unescape(name));
+		}
+		else {
+			int index = -1;
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == name) {
+					index = i;
+					break;
+				}
+			}
+			if (index < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + name + "\" on line " + itos(prg.line+prg.start_line));
+			}
+			VARIABLE &v1 = prg.variables[index];
+			if (v1.type == VARIABLE::STRING) {
+				names = v1.s;
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+
+		reset_game_name = names;
+
+		return false;
+	}
 	else {
 		throw PARSE_EXCEPTION("Invalid token \"" + tok + "\" on line " + itos(prg.line+prg.start_line));
 	}
@@ -4513,7 +4553,7 @@ bool interpret(PROGRAM &prg)
 	return true;
 }
 
-void destroy_program(PROGRAM &prg)
+void destroy_program(PROGRAM &prg, bool destroy_vectors)
 {
 	for (std::map<int, audio::MML *>::iterator it =  prg.mmls.begin(); it != prg.mmls.end(); it++) {
 		audio::MML *mml = (*it).second;
@@ -4527,10 +4567,16 @@ void destroy_program(PROGRAM &prg)
 		gfx::TTF *font = (*it).second;
 		delete font;
 	}
-}
 
-void start_beepboop()
-{
-	cfg_numbers.clear();
-	cfg_strings.clear();
+	prg.mmls.clear();
+	prg.images.clear();
+	prg.fonts.clear();
+
+	if (destroy_vectors) {
+		prg.vectors.clear();
+	}
+
+	prg.variables.clear();
+	prg.functions.clear();
+	prg.labels.clear();
 }

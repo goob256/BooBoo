@@ -1,5 +1,9 @@
 ; vectors and fonts
 
+var string reset_game_name
+= reset_game_name "blip.bb"
+include "slideshow_start.inc"
+
 var number size
 = size 8
 
@@ -81,4 +85,5 @@ end
 function logic
 start
 	+ loops 1
+	include "slideshow_logic.inc"
 end

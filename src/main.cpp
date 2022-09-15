@@ -3,6 +3,7 @@
 #include "beepboop.h"
 
 bool load_from_filesystem;
+std::string reset_game_name;
 
 static bool quit;
 
@@ -24,7 +25,6 @@ static void lost_device()
 
 static void joystick_disconnected()
 {
-	gui::popup("Gamepad Disconnected", "Please reconnect the gamepad to play.", gui::OK);
 }
 
 bool start()
@@ -340,6 +340,10 @@ static void loop()
 				}
 			}
 
+			if (reset_game_name != "") {
+				quit = true;
+			}
+
 			logic_frames++;
 		}
 
@@ -517,13 +521,20 @@ int main(int argc, char **argv)
 
 	//shim::create_depth_buffer = true;
 
-	quit = false;
-
-	try {
-
 	start();
 
-	start_beepboop();
+	std::string fn = argc > 1 ? argv[1] : "";
+
+again:
+printf("-a\n");
+	try {
+
+	quit = false;
+
+	if (reset_game_name != "") {
+		fn = reset_game_name;
+		reset_game_name = "";
+	}
 
 	prg.name = "main";
 	prg.mml_id = 0;
@@ -535,9 +546,10 @@ int main(int argc, char **argv)
 		load_from_filesystem = true;
 	}
 	catch (util::Error e) {
-		if (argc > 1) {
+	printf("fn=\"%s\"\n", fn.c_str());
+		if (fn != "") {
 			try {
-				prg.code = util::load_text_from_filesystem(argv[1]);
+				prg.code = util::load_text_from_filesystem(fn);
 				load_from_filesystem = true;
 			}
 			catch (util::Error e) {
@@ -554,6 +566,7 @@ int main(int argc, char **argv)
 			}
 		}
 	}
+printf("code=\n%s\n---\n", prg.code.c_str());
 	prg.line = 1;
 	prg.start_line = 0;
 	prg.p = 0;
@@ -569,7 +582,7 @@ int main(int argc, char **argv)
 	catch (EXCEPTION e) {
 		gui::fatalerror("ERROR", e.error.c_str(), gui::OK, true);
 	}
-
+	
 	PROGRAM p;
 	bool found = false;
 
@@ -620,7 +633,9 @@ int main(int argc, char **argv)
 		}
 	}
 
-	go();
+	if (reset_game_name == "") {
+		go();
+	}
 
 	found = false;
 
@@ -671,11 +686,16 @@ int main(int argc, char **argv)
 		}
 	}
 
-	destroy_program(prg);
+	destroy_program(prg, true);
 
 	}
 	catch (util::Error e) {
 		gui::fatalerror("ERROR", e.error_message.c_str(), gui::OK, true);
+	}
+
+	if (reset_game_name != "") {
+	printf("rgn=\"%s\"\n", reset_game_name.c_str());
+		goto again;
 	}
 
 	end();

@@ -1,5 +1,9 @@
 ; joystick input and sfx
 
+var string reset_game_name
+= reset_game_name "gameover.bb"
+include "slideshow_start.inc"
+
 var number radius
 = radius 5000
 
@@ -34,6 +38,7 @@ label finish
 	jge really_finish
 	+ radius 25
 label really_finish
+	include "slideshow_logic.inc"
 end
 
 function draw

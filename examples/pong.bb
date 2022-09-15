@@ -1,5 +1,9 @@
 ; a small demo (1 or 2 players)
 
+var string reset_game_name
+= reset_game_name "secret.bb"
+include "slideshow_start.inc"
+
 var number paddle1
 var number paddle2
 var number ball_x
@@ -56,7 +60,13 @@ end
 
 function logic
 start
+	var number nj
+	num_joysticks nj
+
 	include "poll_joystick.inc"
+
+	? nj 1
+	jl cpu1
 
 	? joy_y1 0
 	jl below
@@ -81,9 +91,43 @@ label below
 	= paddle1 half
 
 label done_joy
+	goto done_cpu1
 
-	var number nj
-	num_joysticks nj
+label cpu1
+	? ball_vx 0
+	jge done_cpu1
+
+	var number diff
+	= diff paddle1
+	- diff ball_y
+	? diff 0
+	jge not_neg1
+	neg diff
+label not_neg1
+	? diff 10
+	jle done_cpu1
+
+	? paddle1 ball_y
+	jl move_down1
+
+	- paddle1 5.0
+	? paddle1 half
+	jge done_cpu1
+	= paddle1 half
+	goto done_cpu1
+
+label move_down1
+
+	+ paddle1 5.0
+	var number bott
+	= bott 360
+	- bott half
+	? paddle1 bott
+	jle done_cpu1
+	= paddle1 bott
+
+label done_cpu1
+
 	? nj 2
 	jl cpu
 
@@ -131,7 +175,7 @@ label not_neg
 	jle done_cpu
 
 	? paddle2 ball_y
-	jl move_up
+	jl move_down
 
 	- paddle2 5.0
 	? paddle2 half
@@ -139,7 +183,7 @@ label not_neg
 	= paddle2 half
 	goto done_cpu
 
-label move_up
+label move_down
 
 	+ paddle2 5.0
 	var number bott
@@ -260,6 +304,8 @@ label done_hit_paddle2
 
 	= prev_ball_x ball_x
 	= prev_ball_y ball_y
+	
+	include "slideshow_logic.inc"
 end
 
 function draw
