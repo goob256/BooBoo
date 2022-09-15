@@ -5,6 +5,10 @@
 #include "beepboop.h"
 #include "main.h"
 
+static std::map< std::string, double > cfg_numbers;
+static std::map< std::string, std::string > cfg_strings;
+static std::string cfg_name;
+
 static std::string itos(int i)
 {
 	char buf[1000];
@@ -100,6 +104,83 @@ static std::string unescape(std::string s)
 	}
 
 	return ret;
+}
+
+static std::string save_dir()
+{
+	std::string path;
+
+#ifdef ANDROID
+	path = util::get_standard_path(util::SAVED_GAMES, true);
+#elif defined _WIN32
+	path = util::get_standard_path(util::SAVED_GAMES, true);
+	path += "/" + shim::game_name;
+	util::mkdir(path);
+#else
+	path = util::get_appdata_dir();
+#endif
+
+	return path;
+}
+
+static std::string cfg_path(std::string cfg_name)
+{
+	std::string path = save_dir() + "/" + cfg_name + ".txt";
+	return path;
+}
+
+bool load_cfg(std::string cfg_name)
+{
+	std::string text;
+
+	try {
+		text = util::load_text_from_filesystem(cfg_path(cfg_name));
+	}
+	catch (util::Error e) {
+		return false;
+	}
+
+	util::Tokenizer t(text, '\n');
+
+	std::string line;
+
+	while ((line = t.next()) != "") {
+		util::Tokenizer t2(line, '=');
+		std::string part1 = t2.next();
+		std::string value = t2.next();
+		util::trim(value);
+
+		util::Tokenizer t3(part1, ' ');
+		std::string type = t3.next();
+		std::string name = t3.next();
+
+		if (type == "number") {
+			cfg_numbers[name] = atof(value.c_str());
+		}
+		else if (type == "string") {
+			cfg_strings[name] = remove_quotes(value);
+		}
+	}
+
+	return true;
+}
+
+void save_cfg(std::string cfg_name)
+{
+	FILE *f = fopen(cfg_path(cfg_name).c_str(), "w");
+	if (f == nullptr) {
+		return;
+	}
+
+	for (std::map<std::string, double>::iterator it = cfg_numbers.begin(); it != cfg_numbers.end(); it++) {
+		std::pair<std::string, double> p = *it;
+		fprintf(f, "number %s=%g\n", p.first.c_str(), p.second);
+	}
+
+	for (std::map<std::string, std::string>::iterator it = cfg_strings.begin(); it != cfg_strings.end(); it++) {
+		std::pair<std::string, std::string> p = *it;
+		fprintf(f, "string %s=\"%s\"\n", p.first.c_str(), p.second.c_str());
+	}
 }
 
 static std::string token(PROGRAM &prg)
@@ -1173,7 +1254,7 @@ bool interpret(PROGRAM &prg)
 		l.name = name;
 		l.p = prg.p;
 		l.line = prg.line;
-
+		
 		//prg.labels.push_back(l);
 		//already got these
 	}
@@ -3570,7 +3651,7 @@ bool interpret(PROGRAM &prg)
 			snprintf(buf, 1000, "%g", v1.n);
 		}
 		else if (v1.type == VARIABLE::STRING) {
-			snprintf(buf, 1000, "\"%s\"", v1.s);
+			snprintf(buf, 1000, "\"%s\"", v1.s.c_str());
 		}
 		else {
 			strcpy(buf, "Unknown");
@@ -3883,9 +3964,456 @@ bool interpret(PROGRAM &prg)
 		v1.type = VARIABLE::STRING;
 		v1.s = result;
 	}
+	else if (tok == "cfg_load") {
+		std::string found = token(prg);
+		std::string cfg_name = token(prg);
+
+		if (found == "" || cfg_name == "") {
+			throw PARSE_EXCEPTION("Expected cfg_load parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::string cfg_names;
+
+		if (cfg_name[0] == '"') {
+			cfg_names = remove_quotes(unescape(cfg_name));
+		}
+		else  {
+			int index = -1;
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == cfg_name) {
+					index = i;
+					break;
+				}
+			}
+			if (index < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + cfg_name + "\" on line " + itos(prg.line+prg.start_line));
+			}
+			VARIABLE &v1 = prg.variables[index];
+			if (v1.type == VARIABLE::STRING) {
+				cfg_names = v1.s;
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+
+		bool found_cfg = load_cfg(cfg_names);
+		
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == found) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + found + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		VARIABLE &v1 = prg.variables[di];
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = found_cfg;
+		}
+		else {
+			throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+		}
+	}
+	else if (tok == "cfg_save") {
+		std::string cfg_name = token(prg);
+
+		if (cfg_name == "") {
+			throw PARSE_EXCEPTION("Expected cfg_save parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::string cfg_names;
+
+		if (cfg_name[0] == '"') {
+			cfg_names = remove_quotes(unescape(cfg_name));
+		}
+		else  {
+			int index = -1;
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == cfg_name) {
+					index = i;
+					break;
+				}
+			}
+			if (index < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + cfg_name + "\" on line " + itos(prg.line+prg.start_line));
+			}
+			VARIABLE &v1 = prg.variables[index];
+			if (v1.type == VARIABLE::STRING) {
+				cfg_names = v1.s;
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+
+		save_cfg(cfg_names);
+	}
+	else if (tok == "cfg_get_number") {
+		std::string dest = token(prg);
+		std::string name = token(prg);
+
+		if (dest == "" || name == "") {
+			throw PARSE_EXCEPTION("Expected cfg_get_number parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::string names;
+
+		if (name[0] == '"') {
+			names = remove_quotes(unescape(name));
+		}
+		else  {
+			int index = -1;
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == name) {
+					index = i;
+					break;
+				}
+			}
+			if (index < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + name + "\" on line " + itos(prg.line+prg.start_line));
+			}
+			VARIABLE &v1 = prg.variables[index];
+			if (v1.type == VARIABLE::STRING) {
+				names = v1.s;
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == dest) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + dest + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		if (prg.variables[di].type != VARIABLE::NUMBER) {
+			throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+		}
+
+		prg.variables[di].n = cfg_numbers[names];
+	}
+	else if (tok == "cfg_get_string") {
+		std::string dest = token(prg);
+		std::string name = token(prg);
+
+		if (dest == "" || name == "") {
+			throw PARSE_EXCEPTION("Expected cfg_get_string parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::string names;
+
+		if (name[0] == '"') {
+			names = remove_quotes(unescape(name));
+		}
+		else  {
+			int index = -1;
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == name) {
+					index = i;
+					break;
+				}
+			}
+			if (index < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + name + "\" on line " + itos(prg.line+prg.start_line));
+			}
+			VARIABLE &v1 = prg.variables[index];
+			if (v1.type == VARIABLE::STRING) {
+				names = v1.s;
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == dest) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + dest + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		if (prg.variables[di].type != VARIABLE::STRING) {
+			throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+		}
+
+		prg.variables[di].s = cfg_strings[names];
+	}
+	else if (tok == "cfg_set_number") {
+		std::string name = token(prg);
+		std::string value = token(prg);
+
+		if (value == "" || name == "") {
+			throw PARSE_EXCEPTION("Expected cfg_get_string parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::string names;
+
+		if (name[0] == '"') {
+			names = remove_quotes(unescape(name));
+		}
+		else  {
+			int index = -1;
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == name) {
+					index = i;
+					break;
+				}
+			}
+			if (index < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + name + "\" on line " + itos(prg.line+prg.start_line));
+			}
+			VARIABLE &v1 = prg.variables[index];
+			if (v1.type == VARIABLE::STRING) {
+				names = v1.s;
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+
+		std::vector<double> values;
+		std::vector<std::string> strings;
+		strings.push_back(value);
+
+		for (size_t i = 0; i < strings.size(); i++) {
+			int index = -1;
+
+			for (size_t j = 0; j < prg.variables.size(); j++) {
+				if (prg.variables[j].name == strings[i]) {
+					index = j;
+					break;
+				}
+			}
+
+			if (index < 0) {
+				values.push_back(atof(strings[i].c_str()));
+			}
+			else {
+				if (prg.variables[index].type == VARIABLE::NUMBER) {
+					values.push_back(prg.variables[index].n);
+				}
+				else if (prg.variables[index].type == VARIABLE::STRING) {
+					values.push_back(atof(prg.variables[index].s.c_str()));
+				}
+				else {
+					throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+				}
+			}
+		}
+
+		cfg_numbers[names] = values[0];
+	}
+	else if (tok == "cfg_set_string") {
+		std::string name = token(prg);
+		std::string value = token(prg);
+
+		if (value == "" || name == "") {
+			throw PARSE_EXCEPTION("Expected cfg_get_string parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::string names;
+
+		if (name[0] == '"') {
+			names = remove_quotes(unescape(name));
+		}
+		else  {
+			int index = -1;
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == name) {
+					index = i;
+					break;
+				}
+			}
+			if (index < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + name + "\" on line " + itos(prg.line+prg.start_line));
+			}
+			VARIABLE &v1 = prg.variables[index];
+			if (v1.type == VARIABLE::STRING) {
+				names = v1.s;
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+
+		std::string values;
+
+		if (value[0] == '"') {
+			values = remove_quotes(unescape(value));
+		}
+		else  {
+			int index = -1;
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == value) {
+					index = i;
+					break;
+				}
+			}
+			if (index < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + value + "\" on line " + itos(prg.line+prg.start_line));
+			}
+			VARIABLE &v1 = prg.variables[index];
+			if (v1.type == VARIABLE::STRING) {
+				values = v1.s;
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+
+		cfg_strings[names] = values;
+	}
+	else if (tok == "cfg_number_exists") {
+		std::string dest = token(prg);
+		std::string name = token(prg);
+
+		if (dest == "" || name == "") {
+			throw PARSE_EXCEPTION("Expected cfg_get_string parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::string names;
+
+		if (name[0] == '"') {
+			names = remove_quotes(unescape(name));
+		}
+		else  {
+			int index = -1;
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == name) {
+					index = i;
+					break;
+				}
+			}
+			if (index < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + name + "\" on line " + itos(prg.line+prg.start_line));
+			}
+			VARIABLE &v1 = prg.variables[index];
+			if (v1.type == VARIABLE::STRING) {
+				names = v1.s;
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == dest) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + dest + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		int found_n;
+
+		if (cfg_numbers.find(names) == cfg_numbers.end()) {
+			found_n = 0;
+		}
+		else {
+			found_n = 1;
+		}
+
+		VARIABLE &v1 = prg.variables[di];
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = found_n;
+		}
+		else {
+			throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+		}
+	}
+	else if (tok == "cfg_string_exists") {
+		std::string dest = token(prg);
+		std::string name = token(prg);
+
+		if (dest == "" || name == "") {
+			throw PARSE_EXCEPTION("Expected cfg_get_string parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::string names;
+
+		if (name[0] == '"') {
+			names = remove_quotes(unescape(name));
+		}
+		else  {
+			int index = -1;
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == name) {
+					index = i;
+					break;
+				}
+			}
+			if (index < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + name + "\" on line " + itos(prg.line+prg.start_line));
+			}
+			VARIABLE &v1 = prg.variables[index];
+			if (v1.type == VARIABLE::STRING) {
+				names = v1.s;
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == dest) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + dest + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		int found_n;
+
+		if (cfg_strings.find(names) == cfg_strings.end()) {
+			found_n = 0;
+		}
+		else {
+			found_n = 1;
+		}
+
+		VARIABLE &v1 = prg.variables[di];
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = found_n;
+		}
+		else {
+			throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+		}
+	}
 	else {
-		//throw PARSE_EXCEPTION("Invalid token \"" + tok + "\" on line " + itos(prg.line+prg.start_line));
-		throw PARSE_EXCEPTION("Invalid token \"" + tok + "\" on line " + itos(prg.line+prg.start_line) + " code length = " + util::itos(prg.code.length()));
+		throw PARSE_EXCEPTION("Invalid token \"" + tok + "\" on line " + itos(prg.line+prg.start_line));
 	}
 
 	return true;
@@ -3905,4 +4433,10 @@ void destroy_program(PROGRAM &prg)
 		gfx::TTF *font = (*it).second;
 		delete font;
 	}
+}
+
+void start_beepboop()
+{
+	cfg_numbers.clear();
+	cfg_strings.clear();
 }

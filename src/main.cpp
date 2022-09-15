@@ -517,6 +517,8 @@ int main(int argc, char **argv)
 
 	start();
 
+	start_beepboop();
+
 	prg.name = "main";
 	prg.mml_id = 0;
 	prg.image_id = 0;
@@ -608,6 +610,52 @@ int main(int argc, char **argv)
 	}
 
 	go();
+
+	found = false;
+
+	for (size_t i = 0; i < prg.functions.size(); i++) {
+		if (prg.functions[i].name == "shutdown") {
+			p = prg.functions[i];
+			found = true;
+			break;
+		}
+	}
+
+	if (found) {
+		p.variables = prg.variables;
+		p.functions = prg.functions;
+		p.mml_id = prg.mml_id;
+		p.image_id = prg.image_id;
+		p.font_id = prg.font_id;
+		p.vector_id = prg.vector_id;
+		p.mmls = prg.mmls;
+		p.images = prg.images;
+		p.fonts = prg.fonts;
+		p.vectors = prg.vectors;
+
+		try {
+			while (interpret(p)) {
+			}
+		}
+		catch (EXCEPTION e) {
+			gui::fatalerror("ERROR", e.error.c_str(), gui::OK, true);
+		}
+				
+		for (size_t i = 0; i < p.variables.size(); i++) {
+			if (p.variables[i].function == "main") {
+				for (size_t j = 0; j < prg.variables.size(); j++) {
+					if (p.variables[i].name == prg.variables[j].name) {
+						prg.variables[j] = p.variables[i];
+					}
+				}
+			}
+		}
+		
+		for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
+			std::pair< int, std::vector<VARIABLE> > pair = *it;
+			prg.vectors[pair.first] = p.vectors[pair.first];
+		}
+	}
 
 	destroy_program(prg);
 
