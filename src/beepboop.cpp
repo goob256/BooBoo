@@ -3085,7 +3085,7 @@ bool interpret(PROGRAM &prg)
 		std::string dest = token(prg);
 		
 		if (dest == "") {
-			throw PARSE_EXCEPTION("Expected sin parameters on line " + itos(prg.line+prg.start_line));
+			throw PARSE_EXCEPTION("Expected num_joysticks parameters on line " + itos(prg.line+prg.start_line));
 		}
 
 		int di = -1;
@@ -3344,7 +3344,7 @@ bool interpret(PROGRAM &prg)
 		std::string value = token(prg);
 
 		if (id == "" || index == "" || value == "") {
-			throw PARSE_EXCEPTION("Expected vector_set parameters on line " + itos(prg.line+prg.start_line));
+			throw PARSE_EXCEPTION("Expected vector_insert parameters on line " + itos(prg.line+prg.start_line));
 		}
 		
 		std::vector<double> values;
@@ -3832,7 +3832,7 @@ bool interpret(PROGRAM &prg)
 			std::string param = token(prg);
 
 			if (param == "") {
-				throw PARSE_EXCEPTION("Expected sub parameters on line " + itos(prg.line+prg.start_line));
+				throw PARSE_EXCEPTION("Expected string_format parameters on line " + itos(prg.line+prg.start_line));
 			}
 
 			std::string val;
