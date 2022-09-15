@@ -1,3 +1,5 @@
+; a small demo (1 or 2 players)
+
 var number paddle1
 var number paddle2
 var number ball_x
@@ -285,7 +287,7 @@ start
 	= y paddle1
 	- y half
 
-	filled_rectangle 128 128 128 255 128 128 128 255 128 128 128 255 128 128 128 255 paddle_w y paddle_w paddle_h
+	filled_rectangle 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 paddle_w y paddle_w paddle_h
 
 	var number x
 	= x 640
@@ -295,7 +297,7 @@ start
 	= y paddle2
 	- y half
 
-	filled_rectangle 128 128 128 255 128 128 128 255 128 128 128 255 128 128 128 255 x y paddle_w paddle_h
+	filled_rectangle 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 x y paddle_w paddle_h
 
 	var number bx
 	var number by

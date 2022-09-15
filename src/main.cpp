@@ -2,6 +2,8 @@
 
 #include "beepboop.h"
 
+bool load_from_filesystem;
+
 static bool quit;
 
 PROGRAM prg;
@@ -54,7 +56,7 @@ bool start()
 		}
 	}
 
-	gfx::set_minimum_window_size(util::Size<int>(1280, 720));
+	gfx::set_minimum_window_size(util::Size<int>(640, 360));
 	util::Size<int> desktop_resolution = gfx::get_desktop_resolution();
 	gfx::set_maximum_window_size(desktop_resolution);
 
@@ -153,6 +155,14 @@ void draw_all()
 	if (found) {
 		p.variables = prg.variables;
 		p.functions = prg.functions;
+		p.mml_id = prg.mml_id;
+		p.image_id = prg.image_id;
+		p.font_id = prg.font_id;
+		p.vector_id = prg.vector_id;
+		p.mmls = prg.mmls;
+		p.images = prg.images;
+		p.fonts = prg.fonts;
+		p.vectors = prg.vectors;
 
 		try {
 			while (interpret(p)) {
@@ -171,6 +181,11 @@ void draw_all()
 					}
 				}
 			}
+		}
+
+		for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
+			std::pair< int, std::vector<VARIABLE> > pair = *it;
+			prg.vectors[pair.first] = p.vectors[pair.first];
 		}
 	}
 
@@ -285,6 +300,14 @@ static void loop()
 			if (found) {
 				p.variables = prg.variables;
 				p.functions = prg.functions;
+				p.mml_id = prg.mml_id;
+				p.image_id = prg.image_id;
+				p.font_id = prg.font_id;
+				p.vector_id = prg.vector_id;
+				p.mmls = prg.mmls;
+				p.images = prg.images;
+				p.fonts = prg.fonts;
+				p.vectors = prg.vectors;
 
 				try {
 					while (interpret(p)) {
@@ -302,6 +325,11 @@ static void loop()
 								break;
 							}
 						}
+					}
+					
+					for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
+						std::pair< int, std::vector<VARIABLE> > pair = *it;
+						prg.vectors[pair.first] = p.vectors[pair.first];
 					}
 				}
 			}
@@ -490,21 +518,33 @@ int main(int argc, char **argv)
 	start();
 
 	prg.name = "main";
+	prg.mml_id = 0;
+	prg.image_id = 0;
+	prg.font_id = 0;
+	prg.vector_id = 0;
 	int sz;
 	try {
 		prg.code = util::slurp_file_from_filesystem("program.bb", &sz);
+		load_from_filesystem = true;
 	}
 	catch (util::Error e) {
 		if (argc > 1) {
 			try {
 				prg.code = util::slurp_file_from_filesystem(argv[1], &sz);
+				load_from_filesystem = true;
 			}
 			catch (util::Error e) {
 				gui::fatalerror("ERROR", "Program is missing or corrupt!", gui::OK, true);
 			}
 		}
 		else {
+			try {
+				prg.code = util::slurp_file("programs/program.bb", &sz);
+				load_from_filesystem = true;
+			}
+			catch (util::Error e) {
 				gui::fatalerror("ERROR", "Program is missing or corrupt!", gui::OK, true);
+			}
 		}
 	}
 	prg.line = 1;
@@ -542,6 +582,14 @@ int main(int argc, char **argv)
 	if (found) {
 		p.variables = prg.variables;
 		p.functions = prg.functions;
+		p.mml_id = prg.mml_id;
+		p.image_id = prg.image_id;
+		p.font_id = prg.font_id;
+		p.vector_id = prg.vector_id;
+		p.mmls = prg.mmls;
+		p.images = prg.images;
+		p.fonts = prg.fonts;
+		p.vectors = prg.vectors;
 
 		try {
 			while (interpret(p)) {
@@ -561,9 +609,16 @@ int main(int argc, char **argv)
 				}
 			}
 		}
+		
+		for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
+			std::pair< int, std::vector<VARIABLE> > pair = *it;
+			prg.vectors[pair.first] = p.vectors[pair.first];
+		}
 	}
 
 	go();
+
+	destroy_program(prg);
 
 	}
 	catch (util::Error e) {

@@ -36,6 +36,8 @@ TTF::TTF(std::string filename, int size, int sheet_size) :
 	//TTF_SetFontHinting(font, TTF_HINTING_NONE);
 	TTF_SetFontHinting(font, TTF_HINTING_NORMAL);
 
+	smooth = true;
+
 	num_glyphs = 0;
 
 	this->size = TTF_FontHeight(font);
@@ -164,10 +166,15 @@ void TTF::render_glyph(Glyph *glyph, gfx::Image *glyph_image)
 
 gfx::Image *TTF::load_glyph_image(Uint32 ch)
 {
-	//This is an anti-aliases font I believe
-	// FIXME?
-	SDL_Surface *surface = TTF_RenderGlyph_Blended(font, (Uint16)ch, shim::white);
-	//SDL_Surface *surface = TTF_RenderGlyph_Solid(font, (Uint16)ch, shim::white);
+	SDL_Surface *surface;
+
+	if (smooth) {
+		surface = TTF_RenderGlyph_Blended(font, (Uint16)ch, shim::white);
+	}
+	else {
+		surface = TTF_RenderGlyph_Solid(font, (Uint16)ch, shim::white);
+	}
+
 	if (surface == 0) {
 		util::errormsg("Error rendering glyph.\n");
 		return 0;
@@ -222,6 +229,18 @@ bool TTF::cache_glyphs(std::string text)
 	gfx::set_target_backbuffer();
 
 	return true;
+}
+
+void TTF::set_smooth(bool smooth)
+{
+	this->smooth = smooth;
+
+	if (smooth) {
+		TTF_SetFontHinting(font, TTF_HINTING_NORMAL);
+	}
+	else {
+		TTF_SetFontHinting(font, TTF_HINTING_NONE);
+	}
 }
 
 } // End namespace gfx

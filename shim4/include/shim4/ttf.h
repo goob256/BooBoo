@@ -23,6 +23,8 @@ public:
 	void clear_cache();
 
 	int get_height();
+
+	void set_smooth(bool smooth);
 	
 private:
 	int get_sheet_size();
@@ -45,6 +47,8 @@ private:
 	SDL_RWops *file;
 
 	int curr_sheet;
+
+	bool smooth;
 };
 
 } // End namespace gfx

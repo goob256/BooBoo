@@ -1,3 +1,5 @@
+; math and circles
+
 function draw_at r g b x radius
 start
 	var number f

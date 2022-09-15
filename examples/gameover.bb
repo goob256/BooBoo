@@ -1,3 +1,5 @@
+; music and images
+
 play_music "music/gameover.mml"
 
 var number guy

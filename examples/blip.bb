@@ -1,3 +1,5 @@
+; joystick input and sfx
+
 var number radius
 = radius 10000
 

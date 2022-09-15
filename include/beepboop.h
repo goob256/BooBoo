@@ -18,30 +18,17 @@ public:
 };
 
 struct VARIABLE {
-	struct STRUCT {
-		std::vector<VARIABLE> variables;
-		std::vector<STRUCT> children;
-	};
-
 	enum VARIABLE_TYPE {
 		NUMBER,
 		STRING,
-		STRUCT,
 		VECTOR
 	} type;
-
-	VARIABLE_TYPE vec_type;
 
 	std::string name;
 
 	double n;
 	std::string s;
-	struct STRUCT st;
 
-	std::vector<double> vn;
-	std::vector<std::string> vs;
-	std::vector<struct STRUCT> vst;
-	
 	std::string function;
 };
 
@@ -65,9 +52,19 @@ struct PROGRAM {
 
 	std::vector<std::string> parameters;
 	VARIABLE result;
+
+	int mml_id;
+	int image_id;
+	int font_id;
+	int vector_id;
+	std::map<int, audio::MML *> mmls;
+	std::map<int, gfx::Image *> images;
+	std::map<int, gfx::TTF *> fonts;
+	std::map< int, std::vector<VARIABLE> > vectors;
 };
 
 bool interpret(PROGRAM &prg);
 std::vector<LABEL> find_labels(PROGRAM prg);
+void destroy_program(PROGRAM &prg);
 
 #endif // BEEPBOOP_H
