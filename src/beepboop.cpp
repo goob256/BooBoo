@@ -426,7 +426,7 @@ void process_includes(PROGRAM &prg)
 				new_code = util::load_text_from_filesystem(name);
 			}
 			else {
-				new_code = util::load_text(name);
+				new_code = util::load_text(std::string("code/") + name);
 			}
 
 			code += std::string("\n");
@@ -3849,7 +3849,7 @@ bool interpret(PROGRAM &prg)
 			p.code = util::load_text_from_filesystem(names);
 		}
 		else {
-			p.code = util::load_text(names);
+			p.code = util::load_text(std::string("code/") + names);
 		}
 
 		p.line = 1;

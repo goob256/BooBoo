@@ -31,7 +31,7 @@ start
 	clear 255 0 0
 
 	var string secret
-	sub secret "secret.sub" params
+	sub secret "main.sub" params
 
 	var number x
 	var number y

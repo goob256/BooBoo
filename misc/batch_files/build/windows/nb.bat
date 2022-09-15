@@ -64,7 +64,6 @@ cd c:\users\trent\code\beepboop\tgui6\build
 msbuild /p:configuration=release tgui6.sln
 goto done
 :shim4
-if "%2"=="r" goto shim4_release
 cd c:\users\trent\code\beepboop\shim4\build
 msbuild /p:configuration=relwithdebinfo shim4.sln
 goto done

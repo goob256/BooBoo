@@ -3,6 +3,7 @@
 #include "beepboop.h"
 
 bool load_from_filesystem;
+bool load_from_filesystem_set;
 std::string reset_game_name;
 
 static bool quit;
@@ -526,13 +527,17 @@ int main(int argc, char **argv)
 	std::string fn = argc > 1 ? argv[1] : "";
 
 again:
-printf("-a\n");
 	try {
 
 	quit = false;
 
 	if (reset_game_name != "") {
-		fn = reset_game_name;
+		if (load_from_filesystem) {
+			fn = reset_game_name;
+		}
+		else {
+			fn = std::string("code/") + reset_game_name;
+		}
 		reset_game_name = "";
 	}
 
@@ -541,12 +546,25 @@ printf("-a\n");
 	prg.image_id = 0;
 	prg.font_id = 0;
 	prg.vector_id = 0;
-	try {
-		prg.code = util::load_text_from_filesystem("program.bb");
-		load_from_filesystem = true;
+	if (load_from_filesystem_set) {
+		if (load_from_filesystem) {
+			try {
+				prg.code = util::load_text_from_filesystem(fn);
+			}
+			catch (util::Error e) {
+				gui::fatalerror("ERROR", "Program is missing or corrupt!", gui::OK, true);
+			}
+		}
+		else {
+			try {
+				prg.code = util::load_text(fn);
+			}
+			catch (util::Error e) {
+				gui::fatalerror("ERROR", "Program is missing or corrupt!", gui::OK, true);
+			}
+		}
 	}
-	catch (util::Error e) {
-	printf("fn=\"%s\"\n", fn.c_str());
+	else {
 		if (fn != "") {
 			try {
 				prg.code = util::load_text_from_filesystem(fn);
@@ -558,15 +576,21 @@ printf("-a\n");
 		}
 		else {
 			try {
-				prg.code = util::load_text("programs/program.bb");
+				prg.code = util::load_text_from_filesystem("main.bb");
 				load_from_filesystem = true;
 			}
 			catch (util::Error e) {
-				gui::fatalerror("ERROR", "Program is missing or corrupt!", gui::OK, true);
+				try {
+					prg.code = util::load_text("code/main.bb");
+					load_from_filesystem = false;
+				}
+				catch (util::Error e) {
+					gui::fatalerror("ERROR", "Program is missing or corrupt!", gui::OK, true);
+				}
 			}
 		}
 	}
-printf("code=\n%s\n---\n", prg.code.c_str());
+	load_from_filesystem_set = true;
 	prg.line = 1;
 	prg.start_line = 0;
 	prg.p = 0;
@@ -694,7 +718,7 @@ printf("code=\n%s\n---\n", prg.code.c_str());
 	}
 
 	if (reset_game_name != "") {
-	printf("rgn=\"%s\"\n", reset_game_name.c_str());
+		fn = "";
 		goto again;
 	}
 
