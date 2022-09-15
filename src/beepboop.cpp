@@ -3668,6 +3668,135 @@ bool interpret(PROGRAM &prg)
 
 		destroy_program(p);
 	}
+	else if (tok == "string_format") {
+		std::string dest = token(prg);
+		std::string fmt = token(prg);
+		
+		if (dest == "" || fmt == "") {
+			throw PARSE_EXCEPTION("Expected sub parameters on line " + itos(prg.line+prg.start_line));
+		}
+
+		int di = -1;
+
+		for (size_t i = 0; i < prg.variables.size(); i++) {
+			if (prg.variables[i].name == dest) {
+				di = i;
+				break;
+			}
+		}
+
+		if (di < 0) {
+			throw PARSE_EXCEPTION("Unknown variable \"" + dest + "\" on line " + itos(prg.line+prg.start_line));
+		}
+
+		std::string fmts;
+
+		if (fmt[0] == '"') {
+			fmts = remove_quotes(unescape(fmt));
+		}
+		else {
+			int index = -1;
+			for (size_t i = 0; i < prg.variables.size(); i++) {
+				if (prg.variables[i].name == fmt) {
+					index = i;
+					break;
+				}
+			}
+			if (index < 0) {
+				throw PARSE_EXCEPTION("Unknown variable \"" + fmt + "\" on line " + itos(prg.line+prg.start_line));
+			}
+
+			VARIABLE &v1 = prg.variables[index];
+
+			if (v1.type == VARIABLE::STRING) {
+				fmts = v1.s;
+			}
+			else {
+				throw PARSE_EXCEPTION("Invalid type on line " + itos(prg.line+prg.start_line));
+			}
+		}
+
+		int prev = 0;
+		int arg_count = 0;
+
+		for (int i = 0; i < fmts.length(); i++) {
+			if (fmts[i] == '%' && prev != '%') {
+				arg_count++;
+			}
+			prev = fmts[i];
+		}
+
+		std::string result;
+		int c = 0;
+		prev = 0;
+
+		for (int arg = 0; arg < arg_count; arg++) {
+			int start = c;
+			while (c < fmts.length()) {
+				if (fmts[c] == '%' && prev != '%') {
+					break;
+				}
+				prev = fmts[c];
+				c++;
+			}
+
+			result += fmts.substr(start, c-start);
+
+			std::string param = token(prg);
+
+			if (param == "") {
+				throw PARSE_EXCEPTION("Expected sub parameters on line " + itos(prg.line+prg.start_line));
+			}
+
+			std::string val;
+
+			if (param[0] == '-' || isdigit(param[0])) {
+				val = param;
+			}
+			else if (param[0] == '"') {
+				val = remove_quotes(unescape(param));
+			}
+			else {
+				int index = -1;
+				for (size_t i = 0; i < prg.variables.size(); i++) {
+					if (prg.variables[i].name == param) {
+						index = i;
+						break;
+					}
+				}
+				if (index < 0) {
+					throw PARSE_EXCEPTION("Unknown variable \"" + param + "\" on line " + itos(prg.line+prg.start_line));
+				}
+				VARIABLE &v1 = prg.variables[index];
+				if (v1.type == VARIABLE::NUMBER) {
+					char buf[1000];
+					snprintf(buf, 1000, "%g", v1.n);
+					val = buf;
+				}
+				else if (v1.type == VARIABLE::STRING) {
+					val = v1.s;
+				}
+				else if (v1.type == VARIABLE::VECTOR) {
+					val = "-vector-";
+				}
+				else {
+					val = "-unknown-";
+				}
+			}
+
+			result += val;
+
+			c++;
+		}
+
+		if (c < fmts.length()) {
+			result += fmts.substr(c);
+		}
+
+		VARIABLE &v1 = prg.variables[di];
+		v1.type = VARIABLE::STRING;
+		v1.s = result;
+	}
 	else {
 		throw PARSE_EXCEPTION("Invalid token \"" + tok + "\" on line " + itos(prg.line+prg.start_line));
 	}
