@@ -167,6 +167,7 @@ void draw_all()
 		p.vectors = prg.vectors;
 		
 		process_includes(p);
+		p.labels = process_labels(p);
 
 		try {
 			while (interpret(p)) {
@@ -313,6 +314,7 @@ static void loop()
 				p.vectors = prg.vectors;
 
 				process_includes(p);
+				p.labels = process_labels(p);
 
 				try {
 					while (interpret(p)) {
@@ -558,10 +560,8 @@ int main(int argc, char **argv)
 	
 	process_includes(prg);
 
-	printf("code=\n%s\n---\n", prg.code.c_str());
-
 	try {
-		prg.labels = find_labels(prg);
+		prg.labels = process_labels(prg);
 
 		while (interpret(prg)) {
 		}
@@ -593,6 +593,7 @@ int main(int argc, char **argv)
 		p.fonts = prg.fonts;
 		p.vectors = prg.vectors;
 		
+		p.labels = process_labels(p);
 		process_includes(p);
 
 		try {
@@ -643,6 +644,7 @@ int main(int argc, char **argv)
 		p.fonts = prg.fonts;
 		p.vectors = prg.vectors;
 
+		p.labels = process_labels(p);
 		process_includes(p);
 
 		try {

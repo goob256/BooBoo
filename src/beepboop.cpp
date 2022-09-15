@@ -310,7 +310,7 @@ PARSE_EXCEPTION::PARSE_EXCEPTION(std::string error) :
 {
 }
 
-std::vector<LABEL> find_labels(PROGRAM prg)
+std::vector<LABEL> process_labels(PROGRAM prg)
 {
 	std::vector<LABEL> labels;
 	std::string tok;
@@ -431,22 +431,6 @@ void process_includes(PROGRAM &prg)
 			code += std::string("\n");
 			code += new_code;
 			code += std::string("\n");
-	
-			std::string tmp = code + prg.code.substr(start, prg.code.length()-start);
-			int nlines_old = count_lines(prg.code);
-			int nlines_new = count_lines(tmp);
-
-			int sub = prg.p - prev;
-			int add = new_code.length() + 2;
-			int add_lines = nlines_new - nlines_old;
-
-			for (size_t i = 0; i < prg.labels.size(); i++) {
-				if (prg.labels[i].p >= prg.p) {
-					prg.labels[i].p -= sub;
-					prg.labels[i].p += add;
-					prg.labels[i].line += add_lines;
-				}
-			}
 
 			start = prg.p;
 		}
@@ -1653,11 +1637,8 @@ bool interpret(PROGRAM &prg)
 					}
 				}
 
-				p.labels = find_labels(p);
-
 				process_includes(p);
-
-				printf("funccode=\n%s\n---\n", p.code.c_str());
+				p.labels = process_labels(p);
 
 				while (interpret(p)) {
 				}
@@ -1804,7 +1785,7 @@ bool interpret(PROGRAM &prg)
 		p.line = 1;
 		p.start_line = start_line;
 		p.code = prg.code.substr(save_p, end_p-save_p);
-		p.labels = find_labels(p);
+		p.labels = process_labels(p);
 		prg.functions.push_back(p);
 	}
 	else if (tok == "clear") {
@@ -3874,11 +3855,11 @@ bool interpret(PROGRAM &prg)
 		p.start_line = 0;
 		p.p = 0;
 
-		p.labels = find_labels(p);
 		p.variables.push_back(prg.variables[index]);
 		p.variables[p.variables.size()-1].name = "params";
 
 		process_includes(p);
+		p.labels = process_labels(p);
 
 		while (interpret(p)) {
 		}
