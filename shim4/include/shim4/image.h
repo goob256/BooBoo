@@ -24,6 +24,7 @@ public:
 	static void reload_all(bool include_managed = false);
 	static int get_unfreed_count();
 	static void audit();
+	static unsigned char *read_png(std::string filename, util::Size<int> &out_size, SDL_Colour *out_palette = 0, util::Point<int> *opaque_topleft = 0, util::Point<int> *opaque_bottomright = 0, bool *has_alpha = 0, bool load_from_filesystem = false);
 	static unsigned char *read_tga(std::string filename, util::Size<int> &out_size, SDL_Colour *out_palette = 0, util::Point<int> *opaque_topleft = 0, util::Point<int> *opaque_bottomright = 0, bool *has_alpha = 0, bool load_from_filesystem = false);
 	static unsigned char *read_texture(gfx::Image *image);
 

@@ -5,8 +5,8 @@ play_music "music/gameover.mml"
 var number guy
 var number glasses
 
-load_image guy "misc/guy.tga"
-load_image glasses "misc/glasses.tga"
+load_image guy "misc/guy.png"
+load_image glasses "misc/glasses.png"
 
 var number y
 = y 0

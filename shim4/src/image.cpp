@@ -11,6 +11,10 @@
 
 #include "shim4/internal/gfx.h"
 
+#ifdef USE_PNG
+#include <png.h>
+#endif
+
 #if defined ANDROID || defined IOS
 #define GL_DEPTH24_STENCIL8 GL_DEPTH24_STENCIL8_OES
 #endif
@@ -148,6 +152,152 @@ void Image::audit()
 		util::debugmsg("d3d_surface_level_count=%d\n", d3d_surface_level_count);
 	}
 }
+
+static void read_data(png_structp png_ptr, png_bytep data, png_uint_32 length)
+{
+    SDL_RWops *f = (SDL_RWops *)png_get_io_ptr(png_ptr);
+    if ((png_uint_32)SDL_RWread(f, data, length, 1) != 1) {
+    	throw util::LoadError("Error loading PNG");
+    }
+}
+
+#ifdef USE_PNG
+unsigned char *Image::read_png(std::string filename, util::Size<int> &out_size, SDL_Colour *out_palette, util::Point<int> *opaque_topleft, util::Point<int> *opaque_bottomright, bool *has_alpha, bool load_from_filesystem)
+{
+	FILE *fp;
+	SDL_RWops *file;
+	int sz;
+	int number_to_check = 8;
+
+	if (load_from_filesystem) {
+		fp = fopen(filename.c_str(), "rb");
+		if (!fp){
+			return nullptr;
+		}
+		unsigned char header[9];
+		fread(header, 1, number_to_check, fp);
+		int is_png = !png_sig_cmp(header, 0, number_to_check);
+		if (!is_png){
+			return nullptr;
+		}
+	}
+	else {
+		file = util::open_file(filename, &sz);
+		if (!file){
+			return nullptr;
+		}
+		unsigned char header[9];
+		SDL_RWread(file, header, number_to_check, 1);
+		int is_png = !png_sig_cmp(header, 0, number_to_check);
+		if (!is_png){
+			return nullptr;
+		}
+	}
+
+	// Create png struct pointer
+	png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	if (!png_ptr) {
+		return nullptr;
+	}
+	png_infop info_ptr = png_create_info_struct(png_ptr);
+	if (!info_ptr) {
+		png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
+		return nullptr;
+	}
+	png_infop end_info = png_create_info_struct(png_ptr);
+	if (!end_info) {
+		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
+		return false;
+	}
+
+	if (load_from_filesystem) {
+		png_init_io(png_ptr, fp);
+	}
+	else {
+	    png_set_read_fn(png_ptr, file, (png_rw_ptr)read_data);
+	}
+
+	png_set_sig_bytes(png_ptr, number_to_check);
+
+	// 3. Read png info
+	png_read_info(png_ptr, info_ptr);
+
+	png_uint_32 width, height;
+	int bit_depth, color_type, interlace_type, compression_type, filter_method;
+
+	bit_depth = png_get_bit_depth (png_ptr, info_ptr);
+	color_type = png_get_color_type (png_ptr, info_ptr);
+
+	png_set_strip_16(png_ptr);
+	png_set_expand(png_ptr);
+	if (color_type == PNG_COLOR_TYPE_PALETTE) {
+		png_set_palette_to_rgb (png_ptr);
+	}
+	if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) {
+	       //png_set_gray_1_2_4_to_8 (png_ptr);
+	}
+	if (png_get_valid (png_ptr, info_ptr, PNG_INFO_tRNS)) {
+	          png_set_tRNS_to_alpha (png_ptr);
+	}
+	if (bit_depth == 16) {
+		png_set_strip_16 (png_ptr);
+	}
+	else if (bit_depth < 8) {
+	      png_set_packing (png_ptr);
+	}
+
+	png_read_update_info (png_ptr, info_ptr);
+	png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type, &interlace_type, NULL, NULL);
+
+	png_bytepp row_pointers = (png_bytepp)png_malloc(png_ptr, sizeof(png_bytepp) * height);
+	for (int i = 0; i < height; i++) {
+		row_pointers[i] = (png_bytep)png_malloc(png_ptr, width * 4);
+	}
+	png_set_rows(png_ptr, info_ptr, row_pointers);
+	png_read_image(png_ptr, row_pointers);
+	png_read_end(png_ptr, end_info);
+
+	unsigned char *bytes = new unsigned char[width * height * 4];
+
+	if (color_type == PNG_COLOR_TYPE_RGB) {
+		for (int y = 0; y < height; y++) {
+			unsigned char *p = bytes + (height-y-1)*width*4;
+			unsigned char *p2 = row_pointers[y];
+			for (int i = 0; i < width; i++) {
+				int r = *p2++;
+				int g = *p2++;
+				int b = *p2++;
+				int a = 255;
+				*p++ = r;
+				*p++ = g;
+				*p++ = b;
+				*p++ = a;
+			}
+		}
+	}
+	else if (color_type == PNG_COLOR_TYPE_RGBA) {
+		for (int i = 0; i < height; i++) {
+			memcpy(bytes+(height-i-1)*width*4, row_pointers[i], width * 4);
+		}
+	}
+	else {
+		return nullptr;
+	}
+
+	for (int i = 0; i < height; i++) {
+		png_free(png_ptr, row_pointers[i]);
+	}
+	png_free(png_ptr, row_pointers);
+	png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+
+	out_size.w = width;
+	out_size.h = height;
+
+	// FIXME opaque
+
+	return bytes;
+}
+#endif
 
 unsigned char *Image::read_tga(std::string filename, util::Size<int> &out_size, SDL_Colour *out_palette, util::Point<int> *opaque_topleft, util::Point<int> *opaque_bottomright, bool *has_alpha, bool load_from_filesystem)
 {
@@ -1307,7 +1457,28 @@ void Image::Internal::release()
 
 unsigned char *Image::Internal::reload(bool keep_data, bool load_from_filesystem)
 {
-	unsigned char *pixels = Image::read_tga(filename, size, NULL, &opaque_topleft, &opaque_bottomright, &has_alpha, load_from_filesystem);
+	std::string ext;
+
+	if (filename.length() < 3) {
+		ext = "tga";
+	}
+	else {
+		ext = filename.substr(filename.length()-3);
+	}
+
+	ext = util::uppercase(ext);
+
+	unsigned char *pixels;
+
+printf("ext=\"%s\"\n", ext.c_str());
+	if (ext == "TGA") {
+		pixels = Image::read_tga(filename, size, NULL, &opaque_topleft, &opaque_bottomright, &has_alpha, load_from_filesystem);
+	}
+#ifdef USE_PNG
+	else {
+		pixels = Image::read_png(filename, size, NULL, &opaque_topleft, &opaque_bottomright, &has_alpha, load_from_filesystem);
+	}
+#endif
 
 	if (pixels == 0) {
 		return 0;
