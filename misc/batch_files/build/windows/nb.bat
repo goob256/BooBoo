@@ -56,29 +56,29 @@ goto done
 
 :tgui6
 if "%2"=="r" goto tgui6_release
-cd c:\users\trent\code\beepboop\tgui6\build
+cd c:\users\trent\code\boopboop\tgui6\build
 msbuild /p:configuration=relwithdebinfo tgui6.sln
 goto done
 :tgui6_release
-cd c:\users\trent\code\beepboop\tgui6\build
+cd c:\users\trent\code\boopboop\tgui6\build
 msbuild /p:configuration=release tgui6.sln
 goto done
 :shim4
-cd c:\users\trent\code\beepboop\shim4\build
+cd c:\users\trent\code\boopboop\shim4\build
 msbuild /p:configuration=relwithdebinfo shim4.sln
 goto done
 :shim4_release
-cd c:\users\trent\code\beepboop\shim4\build
+cd c:\users\trent\code\boopboop\shim4\build
 msbuild /p:configuration=release shim4.sln
 goto done
 :game
 if "%2"=="r" goto game_release
-cd c:\users\trent\code\beepboop\build
-msbuild /p:configuration=relwithdebinfo "beepboop.sln"
+cd c:\users\trent\code\boopboop\build
+msbuild /p:configuration=relwithdebinfo "boopboop.sln"
 goto done
 :game_release
-cd c:\users\trent\code\beepboop\build
-msbuild /p:configuration=release "beepboop.sln"
+cd c:\users\trent\code\boopboop\build
+msbuild /p:configuration=release "boopboop.sln"
 goto done
 :done
 endlocal

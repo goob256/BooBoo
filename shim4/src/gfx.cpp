@@ -2004,15 +2004,16 @@ void flip()
 #endif
 	{
 		if (show_fps && shim::font != 0) {
-			shim::font->draw(shim::white, util::itos(fps), {1.0f, 0.0f});
-			shim::font->draw(shim::white, util::itos(fps), {0.0f, 1.0f});
-			shim::font->draw(shim::white, util::itos(fps), {3.0f, 0.0f});
-			shim::font->draw(shim::white, util::itos(fps), {0.0f, 3.0f});
-			shim::font->draw(shim::white, util::itos(fps), {1.0f, 1.0f});
-			shim::font->draw(shim::white, util::itos(fps), {3.0f, 3.0f});
-			shim::font->draw(shim::white, util::itos(fps), {1.0f, 3.0f});
-			shim::font->draw(shim::white, util::itos(fps), {3.0f, 1.0f});
-			shim::font->draw(shim::white, util::itos(fps), {2.0f, 2.0f});
+			for (float y = 0; y < 4; y++) {
+				for (float x = 0; x < 4; x++) {
+					shim::font->draw(shim::white, util::itos(fps), {x, y});
+				}
+			}
+			for (float y = 1; y < 3; y++) {
+				for (float x = 0; x < 4; x++) {
+					shim::font->draw(shim::black, util::itos(fps), {x, y});
+				}
+			}
 		}
 	}
 

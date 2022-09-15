@@ -5,7 +5,7 @@
       <dpiAware>true/PM</dpiAware>
     </asmv3:windowsSettings>
   </asmv3:application>
-    <description>BeepBoop</description>
+    <description>BoopBoop</description>
     <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
         <security>
             <requestedPrivileges>

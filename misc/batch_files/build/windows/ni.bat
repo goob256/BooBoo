@@ -47,7 +47,7 @@ echo Invalid target: %TARGET%
 goto done
 
 :tgui6
-cd c:\users\trent\code\beepboop\tgui6\build
+cd c:\users\trent\code\boopboop\tgui6\build
 if %CFG%=="release" goto tgui6_release
 rem copy relwithdebinfo\tgui6.dll ..\..\b
 goto done
@@ -55,7 +55,7 @@ goto done
 rem copy release\tgui6.dll ..\..\b
 goto done
 :shim4
-cd c:\users\trent\code\beepboop\shim4\build
+cd c:\users\trent\code\boopboop\shim4\build
 if %CFG%=="release" goto shim4_release
 rem copy relwithdebinfo\shim4.dll ..\..\b
 goto done
@@ -63,21 +63,21 @@ goto done
 rem copy release\shim4.dll ..\..\b
 goto done
 :game
-cd c:\users\trent\code\beepboop\build
+cd c:\users\trent\code\boopboop\build
 if %CFG%=="release" goto game_release
-copy "relwithdebinfo\BeepBoop.exe" ..\..\b
+copy "relwithdebinfo\BoopBoop.exe" ..\..\b
 goto done
 :game_release
-copy "release\BeepBoop.exe" ..\..\b
+copy "release\BoopBoop.exe" ..\..\b
 goto done
 :data
 if %CFG%=="release" goto data_release
 cd c:\users\trent\code\b
-xcopy /q /e /y ..\beepboop\data data\
-copy ..\beepboop\docs\3rd_party.html .
+xcopy /q /e /y ..\boopboop\data data\
+copy ..\boopboop\docs\3rd_party.html .
 goto done
 :data_release
-cd c:\users\trent\code\beepboop\data
+cd c:\users\trent\code\boopboop\data
 c:\users\trent\code\compress_dir\compress_dir.exe > nul
 move ..\data.cpa c:\users\trent\code\b
 copy ..\docs\3rd_party.html c:\users\trent\code\b

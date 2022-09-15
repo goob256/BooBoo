@@ -1,4 +1,4 @@
-project("beepboop")
+project("boopboop")
 cmake_minimum_required(VERSION 2.8.12)
 
 # Options
@@ -25,17 +25,17 @@ endif()
 # Inputs
 
 set(SOURCES
-	src/beepboop.cpp
+	src/boopboop.cpp
 	src/main.cpp
 )
 
 if(WIN32)
-	list(APPEND SOURCES beepboop.manifest versioninfo.rc windows_icons.rc)
+	list(APPEND SOURCES boopboop.manifest versioninfo.rc windows_icons.rc)
 endif()
 
 # Outputs
 
-add_executable("beepboop" ${SOURCES})
+add_executable("boopboop" ${SOURCES})
 
 # Platform specifics
 
@@ -55,8 +55,8 @@ if(WIN32)
 		set(LIBS ${LIBS} steam_api)
 	endif()
 	#set(FLAGS "${FLAGS} /DUSE_TTF")
-	set_target_properties("beepboop" PROPERTIES COMPILE_FLAGS "${FLAGS}")
-	set_target_properties("beepboop" PROPERTIES OUTPUT_NAME "BeepBoop")
+	set_target_properties("boopboop" PROPERTIES COMPILE_FLAGS "${FLAGS}")
+	set_target_properties("boopboop" PROPERTIES OUTPUT_NAME "BoopBoop")
 	#set(LIBS ${LIBS} ${SHIM4_LIB} ${TGUI6_LIB} SDL2 SDL2main libvorbisfile_static libvorbis_static ogg zlibstatic d3d9 winmm dbghelp shcore)
 	set(LIBS ${LIBS} ${SHIM4_LIB} ${TGUI6_LIB} SDL2 SDL2main libpng16_static ogg libvorbis_static FLAC freetype zlibstatic d3d9 winmm dbghelp shcore msvcrt)
 elseif(APPLE)
@@ -72,11 +72,11 @@ elseif(APPLE)
 	if(DEMO)
 		set(FLAGS "${FLAGS} -DDEMO")
 	endif()
-	set_target_properties("beepboop" PROPERTIES BUILD_WITH_INSTALL_RPATH on)
-	set_target_properties("beepboop" PROPERTIES INSTALL_RPATH "@executable_path/")
-	set_target_properties("beepboop" PROPERTIES COMPILE_FLAGS "${FLAGS}")
-	set_target_properties("beepboop" PROPERTIES LINK_FLAGS "-framework Cocoa -framework IOKit -framework OpenGL -framework CoreAudio -framework AudioUnit -framework ForceFeedback -framework Carbon")
-	set_target_properties("beepboop" PROPERTIES OUTPUT_NAME "BeepBoop")
+	set_target_properties("boopboop" PROPERTIES BUILD_WITH_INSTALL_RPATH on)
+	set_target_properties("boopboop" PROPERTIES INSTALL_RPATH "@executable_path/")
+	set_target_properties("boopboop" PROPERTIES COMPILE_FLAGS "${FLAGS}")
+	set_target_properties("boopboop" PROPERTIES LINK_FLAGS "-framework Cocoa -framework IOKit -framework OpenGL -framework CoreAudio -framework AudioUnit -framework ForceFeedback -framework Carbon")
+	set_target_properties("boopboop" PROPERTIES OUTPUT_NAME "BoopBoop")
 	#set(LIBS ${LIBS} ${SHIM4_LIB} ${TGUI6_LIB} SDL2 vorbisfile vorbis ogg z)
 	set(LIBS ${LIBS} ${SHIM4_LIB} ${TGUI6_LIB} SDL2 z)
 else() # Linux
@@ -95,12 +95,12 @@ else() # Linux
 	if(DEMO)
 		set(FLAGS "${FLAGS} -DDEMO")
 	endif()
-	set_target_properties("beepboop" PROPERTIES COMPILE_FLAGS "${FLAGS}")
-	set_target_properties("beepboop" PROPERTIES LINK_FLAGS "${LFLAGS}")
-	set_target_properties("beepboop" PROPERTIES OUTPUT_NAME "BeepBoop")
+	set_target_properties("boopboop" PROPERTIES COMPILE_FLAGS "${FLAGS}")
+	set_target_properties("boopboop" PROPERTIES LINK_FLAGS "${LFLAGS}")
+	set_target_properties("boopboop" PROPERTIES OUTPUT_NAME "BoopBoop")
 	#set(LIBS ${LIBS} shim4_static tgui6_static SDL2 GL Xcursor X11 z vorbisfile vorbis ogg)
 	#set(LIBS ${LIBS} shim4_static tgui6_static SDL2 GL Xcursor X11 FLAC ogg z)
 	set(LIBS ${LIBS} shim4_static tgui6_static SDL2 GL Xcursor X11 FLAC ogg z)
 endif()
 
-target_link_libraries("beepboop" ${LIBS})
+target_link_libraries("boopboop" ${LIBS})

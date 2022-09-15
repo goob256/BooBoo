@@ -1,6 +1,6 @@
 #include <shim4/shim4.h>
 
-#include "beepboop.h"
+#include "boopboop.h"
 
 bool load_from_filesystem;
 bool load_from_filesystem_set;
@@ -479,7 +479,7 @@ void set_shim_args(bool initial, bool force_windowed, bool force_fullscreen)
 int main(int argc, char **argv)
 {
 #ifdef _WIN32
-	SDL_RegisterApp("BeepBoop", 0, 0);
+	SDL_RegisterApp("BoopBoop", 0, 0);
 #endif
 
 	orig_argc = argc;
@@ -502,9 +502,9 @@ int main(int argc, char **argv)
 	}
 #endif
 
-	shim::window_title = "BeepBoop";
+	shim::window_title = "BoopBoop";
 	shim::organisation_name = "b1stable";
-	shim::game_name = "BeepBoop";
+	shim::game_name = "BoopBoop";
 	//
 	shim::logging = true;
 	gfx::Image::ignore_palette = true;
@@ -524,7 +524,14 @@ int main(int argc, char **argv)
 
 	start();
 
-	std::string fn = argc > 1 ? argv[1] : "";
+	std::string fn;
+
+	for (int i = 1; i < argc; i++) {
+		if (argv[i][0] != '+' && argv[i][0] != '-') {
+			fn = argv[i];
+			break;
+		}
+	}
 
 again:
 	try {

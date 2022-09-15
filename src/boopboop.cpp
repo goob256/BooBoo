@@ -2,7 +2,7 @@
 
 #include <shim4/shim4.h>
 
-#include "beepboop.h"
+#include "boopboop.h"
 #include "main.h"
 
 static std::map< std::string, double > cfg_numbers;
