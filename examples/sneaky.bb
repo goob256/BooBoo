@@ -19,12 +19,12 @@ vector_add fonts f
 jle load_fonts
 
 var number i
-= i 1
+= i 0
 label smooth
 var number f
 vector_get fonts f i
 font_smooth f 0
-+ i 2
++ i 1
 var number sz
 vector_size fonts sz
 ? i sz

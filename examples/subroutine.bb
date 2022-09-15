@@ -1,3 +1,5 @@
+; this is a subroutine, it cannot be run alone. you should be able to have functions in here too
+
 var number hidden
 vector_get params hidden 0
 ? hidden 0

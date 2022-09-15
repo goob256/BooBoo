@@ -1,3 +1,5 @@
+; subroutines
+
 var vector params
 vector_add params 1
 
@@ -25,7 +27,7 @@ start
 
 	poll_joystick 0 x1 y1 x2 y2 l r u d a b x y lb rb back start
 
-	? a 0
+	? x 0
 	jne show
 	vector_set params 0 1
 	goto done_logic

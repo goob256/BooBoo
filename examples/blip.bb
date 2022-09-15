@@ -1,7 +1,7 @@
 ; joystick input and sfx
 
 var number radius
-= radius 10000
+= radius 5000
 
 var number blip
 load_mml blip "sfx/bigshot.mml"
@@ -47,7 +47,10 @@ label go
 	play_mml blip
 
 label finish
+	? radius 5000
+	jge really_finish
 	+ radius 25
+label really_finish
 end
 
 function draw
