@@ -650,6 +650,29 @@ std::string load_text(std::string filename)
 	return s;
 }
 
+std::string load_text_from_filesystem(std::string filename)
+{
+	SDL_RWops *file = SDL_RWFromFile(filename.c_str(), "rb");
+
+	if (file == 0) {
+		throw FileNotFoundError(filename);
+	}
+
+	int _sz = (int)SDL_RWsize(file);
+
+	char *buf = new char[_sz+1];
+
+	if (SDL_RWread(file, buf, _sz, 1) != 1) {
+		throw LoadError(filename);
+	}
+
+	SDL_RWclose(file);
+
+	buf[_sz] = 0;
+
+	return buf;
+}
+
 char *slurp_file(std::string filename, int *sz)
 {
 	int _sz;

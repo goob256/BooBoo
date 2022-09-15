@@ -522,15 +522,14 @@ int main(int argc, char **argv)
 	prg.image_id = 0;
 	prg.font_id = 0;
 	prg.vector_id = 0;
-	int sz;
 	try {
-		prg.code = util::slurp_file_from_filesystem("program.bb", &sz);
+		prg.code = util::load_text_from_filesystem("program.bb");
 		load_from_filesystem = true;
 	}
 	catch (util::Error e) {
 		if (argc > 1) {
 			try {
-				prg.code = util::slurp_file_from_filesystem(argv[1], &sz);
+				prg.code = util::load_text_from_filesystem(argv[1]);
 				load_from_filesystem = true;
 			}
 			catch (util::Error e) {
@@ -539,7 +538,7 @@ int main(int argc, char **argv)
 		}
 		else {
 			try {
-				prg.code = util::slurp_file("programs/program.bb", &sz);
+				prg.code = util::load_text("programs/program.bb");
 				load_from_filesystem = true;
 			}
 			catch (util::Error e) {

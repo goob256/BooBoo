@@ -79,6 +79,7 @@ SHIM4_EXPORT std::string escape_string(std::string s, char c); // add backslashe
 SHIM4_EXPORT std::string unescape_string(std::string);
 
 std::string SHIM4_EXPORT load_text(std::string filename);
+std::string SHIM4_EXPORT load_text_from_filesystem(std::string filename);
 char SHIM4_EXPORT *slurp_file(std::string filename, int *sz);
 char SHIM4_EXPORT *slurp_file_from_filesystem(std::string filename, int *sz);
 

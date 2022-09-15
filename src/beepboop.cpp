@@ -3670,13 +3670,12 @@ bool interpret(PROGRAM &prg)
 		p.images = prg.images;
 		p.fonts = prg.fonts;
 		p.vectors = prg.vectors;
-		int sz;
 
 		if (load_from_filesystem) {
-			p.code = util::slurp_file_from_filesystem(names, &sz);
+			p.code = util::load_text_from_filesystem(names);
 		}
 		else {
-			p.code = util::slurp_file(names, &sz);
+			p.code = util::load_text(names);
 		}
 
 		p.line = 1;
@@ -3885,7 +3884,8 @@ bool interpret(PROGRAM &prg)
 		v1.s = result;
 	}
 	else {
-		throw PARSE_EXCEPTION("Invalid token \"" + tok + "\" on line " + itos(prg.line+prg.start_line));
+		//throw PARSE_EXCEPTION("Invalid token \"" + tok + "\" on line " + itos(prg.line+prg.start_line));
+		throw PARSE_EXCEPTION("Invalid token \"" + tok + "\" on line " + itos(prg.line+prg.start_line) + " code length = " + util::itos(prg.code.length()));
 	}
 
 	return true;
