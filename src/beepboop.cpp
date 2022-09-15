@@ -9,6 +9,19 @@ static std::map< std::string, double > cfg_numbers;
 static std::map< std::string, std::string > cfg_strings;
 static std::string cfg_name;
 
+static int count_lines(std::string s)
+{
+	int count = 0;
+
+	for (int i = 0; i < s.length(); i++) {
+		if (s[i] == '\n') {
+			count++;
+		}
+	}
+
+	return count;
+}
+
 static std::string itos(int i)
 {
 	char buf[1000];
@@ -352,6 +365,98 @@ std::vector<LABEL> find_labels(PROGRAM prg)
 	}
 
 	return labels;
+}
+
+void process_includes(PROGRAM &prg)
+{
+	std::string code;
+
+	std::string tok;
+
+	prg.p = 0;
+	prg.line = 1;
+
+	int prev = prg.p;
+	int start = 0;
+
+	while ((tok = token(prg)) != "") {
+		if (tok == ";") {
+			while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
+				prg.p++;
+			}
+			prg.line++;
+			if (prg.p < prg.code.length()) {
+				prg.p++;
+			}
+		}
+		else if (tok == "function") {
+			while ((tok = token(prg)) != "") {
+				if (tok == ";") {
+					while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
+						prg.p++;
+					}
+					prg.line++;
+					if (prg.p < prg.code.length()) {
+						prg.p++;
+					}
+				}
+				else if (tok == "end") {
+					break;
+				}
+			}
+		}
+		else if (tok == "include") {
+			std::string name = token(prg);
+
+			if (name == "") {
+				throw PARSE_EXCEPTION("Expected include parameters on line " + itos(prg.line+prg.start_line));
+			}
+
+			if (name[0] != '"') {
+				throw PARSE_EXCEPTION("Invalid include name on line " + itos(prg.line+prg.start_line));
+			}
+
+			name = remove_quotes(unescape(name));
+
+			code += prg.code.substr(start, prev-start);
+
+			std::string new_code;
+			if (load_from_filesystem) {
+				new_code = util::load_text_from_filesystem(name);
+			}
+			else {
+				new_code = util::load_text(name);
+			}
+
+			code += std::string("\n");
+			code += new_code;
+			code += std::string("\n");
+	
+			std::string tmp = code + prg.code.substr(start, prg.code.length()-start);
+			int nlines_old = count_lines(prg.code);
+			int nlines_new = count_lines(tmp);
+
+			int sub = prg.p - prev;
+			int add = new_code.length() + 2;
+			int add_lines = nlines_new - nlines_old;
+
+			for (size_t i = 0; i < prg.labels.size(); i++) {
+				prg.labels[i].p -= sub;
+				prg.labels[i].p += add;
+				prg.labels[i].line += add_lines;
+			}
+
+			start = prg.p;
+		}
+
+		prev = prg.p;
+	}
+
+	code += prg.code.substr(start, prg.code.length()-start);
+
+	prg.code = code;
+	prg.p = 0;
+	prg.line = 1;
 }
 
 static void set_string_or_number(PROGRAM &prg, std::string name, std::string value)
@@ -1547,6 +1652,10 @@ bool interpret(PROGRAM &prg)
 				}
 
 				p.labels = find_labels(p);
+
+				process_includes(p);
+
+				printf("funccode=\n%s\n---\n", p.code.c_str());
 
 				while (interpret(p)) {
 				}
@@ -3766,6 +3875,8 @@ bool interpret(PROGRAM &prg)
 		p.labels = find_labels(p);
 		p.variables.push_back(prg.variables[index]);
 		p.variables[p.variables.size()-1].name = "params";
+
+		process_includes(p);
 
 		while (interpret(p)) {
 		}
