@@ -141,6 +141,8 @@ void handle_event(TGUI_Event *event)
 
 void draw_all()
 {
+	gfx::clear(shim::black);
+
 	PROGRAM p;
 	bool found = false;
 
@@ -549,13 +551,6 @@ int main(int argc, char **argv)
 	prg.start_line = 0;
 	prg.p = 0;
 
-/*
-	PROGRAM draw;
-	draw.code = "clear 0 216 255\nvar number i\n= i 20\nlabel repeat_x\nline 255 216 0 255 i 0 i 360\n+ i 20\ncompare i 640\njnz repeat_x";
-	draw.line = 1;
-	draw.p = 0;
-	prg.functions.push_back(draw);
-*/
 	try {
 		prg.labels = find_labels(prg);
 

@@ -1227,7 +1227,7 @@ static void load_fonts()
 	}
 
 	try {
-		shim::font = new TTF("Zector.ttf", shim::font_size, sheet_size);
+		shim::font = new TTF("DejaVuSans.ttf", shim::font_size, sheet_size);
 	}
 	catch (util::Error &e) {
 		util::infomsg(e.error_message + "\n");

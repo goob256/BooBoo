@@ -34,7 +34,8 @@ struct VARIABLE {
 
 struct LABEL {
 	std::string name;
-	int line_number;
+	int p;
+	int line;
 };
 
 struct PROGRAM {

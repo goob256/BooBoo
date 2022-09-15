@@ -37,8 +37,8 @@ static std::string remove_quotes(std::string s)
 		ret = s;
 	}
 
-	if (ret.length() == 0) {
-		return ret;
+	if (ret.length() <= 1) {
+		return "";
 	}
 
 	if (ret[ret.length()-1] == '"') {
@@ -89,7 +89,7 @@ static std::string unescape(std::string s)
 			else {
 				buf[0] = '\\';
 				ret += buf;
-				return ret;
+				p++;
 			}
 		}
 		else {
@@ -180,17 +180,19 @@ static std::string token(PROGRAM &prg)
 		std::string tok = "\"";
 		prg.p++;
 
-		while (prg.p < prg.code.length() && (prg.code[prg.p] != '"' || (prev == '\\' && prev_prev != '\\'))) {
-			s[0] = prg.code[prg.p];
-			tok += s;
-			prev_prev = prev;
-			prev = prg.code[prg.p];
+		if (prg.p < prg.code.length()) {
+			while (prg.p < prg.code.length() && (prg.code[prg.p] != '"' || (prev == '\\' && prev_prev != '\\'))) {
+				s[0] = prg.code[prg.p];
+				tok += s;
+				prev_prev = prev;
+				prev = prg.code[prg.p];
+				prg.p++;
+			}
+
+			tok += "\"";
+
 			prg.p++;
 		}
-
-		tok += "\"";
-
-		prg.p++;
 
 		return tok;
 	}
@@ -200,6 +202,8 @@ static std::string token(PROGRAM &prg)
 	else {
 		throw PARSE_EXCEPTION("Parse error on line " + itos(prg.line+prg.start_line) + " (pc=" + itos(prg.p) + ", tok=\"" + tok + "\")");
 	}
+
+	return tok;
 }
 
 EXCEPTION::EXCEPTION(std::string error) :
@@ -259,7 +263,8 @@ std::vector<LABEL> find_labels(PROGRAM prg)
 
 			LABEL l;
 			l.name = name;
-			l.line_number = prg.line;
+			l.p = prg.p;
+			l.line = prg.line;
 
 			labels.push_back(l);
 		}
@@ -1166,7 +1171,8 @@ bool interpret(PROGRAM &prg)
 
 		LABEL l;
 		l.name = name;
-		l.line_number = prg.line;
+		l.p = prg.p;
+		l.line = prg.line;
 
 		//prg.labels.push_back(l);
 		//already got these
@@ -1180,17 +1186,8 @@ bool interpret(PROGRAM &prg)
 
 		for (size_t i = 0; i < prg.labels.size(); i++) {
 			if (prg.labels[i].name == name) {
-				prg.line = 1;
-				prg.p = 0;
-				while (prg.p < prg.code.length()) {
-					if (prg.line == prg.labels[i].line_number) {
-						break;
-					}
-					if (prg.code[prg.p] == '\n') {
-						prg.line++;
-					}
-					prg.p++;
-				}
+				prg.p = prg.labels[i].p;
+				prg.line = prg.labels[i].line;
 			}
 		}
 	}
@@ -1253,17 +1250,8 @@ bool interpret(PROGRAM &prg)
 		if (prg.compare_flag == 0) {
 			for (size_t i = 0; i < prg.labels.size(); i++) {
 				if (prg.labels[i].name == label) {
-					prg.line = 1;
-					prg.p = 0;
-					while (prg.p < prg.code.length()) {
-						if (prg.line == prg.labels[i].line_number) {
-							break;
-						}
-						if (prg.code[prg.p] == '\n') {
-							prg.line++;
-						}
-						prg.p++;
-					}
+					prg.p = prg.labels[i].p;
+					prg.line = prg.labels[i].line;
 				}
 			}
 		}
@@ -1278,17 +1266,8 @@ bool interpret(PROGRAM &prg)
 		if (prg.compare_flag != 0) {
 			for (size_t i = 0; i < prg.labels.size(); i++) {
 				if (prg.labels[i].name == label) {
-					prg.line = 1;
-					prg.p = 0;
-					while (prg.p < prg.code.length()) {
-						if (prg.line == prg.labels[i].line_number) {
-							break;
-						}
-						if (prg.code[prg.p] == '\n') {
-							prg.line++;
-						}
-						prg.p++;
-					}
+					prg.p = prg.labels[i].p;
+					prg.line = prg.labels[i].line;
 				}
 			}
 		}
@@ -1303,17 +1282,8 @@ bool interpret(PROGRAM &prg)
 		if (prg.compare_flag < 0) {
 			for (size_t i = 0; i < prg.labels.size(); i++) {
 				if (prg.labels[i].name == label) {
-					prg.line = 1;
-					prg.p = 0;
-					while (prg.p < prg.code.length()) {
-						if (prg.line == prg.labels[i].line_number) {
-							break;
-						}
-						if (prg.code[prg.p] == '\n') {
-							prg.line++;
-						}
-						prg.p++;
-					}
+					prg.p = prg.labels[i].p;
+					prg.line = prg.labels[i].line;
 				}
 			}
 		}
@@ -1328,17 +1298,8 @@ bool interpret(PROGRAM &prg)
 		if (prg.compare_flag <= 0) {
 			for (size_t i = 0; i < prg.labels.size(); i++) {
 				if (prg.labels[i].name == label) {
-					prg.line = 1;
-					prg.p = 0;
-					while (prg.p < prg.code.length()) {
-						if (prg.line == prg.labels[i].line_number) {
-							break;
-						}
-						if (prg.code[prg.p] == '\n') {
-							prg.line++;
-						}
-						prg.p++;
-					}
+					prg.p = prg.labels[i].p;
+					prg.line = prg.labels[i].line;
 				}
 			}
 		}
@@ -1353,17 +1314,8 @@ bool interpret(PROGRAM &prg)
 		if (prg.compare_flag > 0) {
 			for (size_t i = 0; i < prg.labels.size(); i++) {
 				if (prg.labels[i].name == label) {
-					prg.line = 1;
-					prg.p = 0;
-					while (prg.p < prg.code.length()) {
-						if (prg.line == prg.labels[i].line_number) {
-							break;
-						}
-						if (prg.code[prg.p] == '\n') {
-							prg.line++;
-						}
-						prg.p++;
-					}
+					prg.p = prg.labels[i].p;
+					prg.line = prg.labels[i].line;
 				}
 			}
 		}
@@ -1378,17 +1330,8 @@ bool interpret(PROGRAM &prg)
 		if (prg.compare_flag >= 0) {
 			for (size_t i = 0; i < prg.labels.size(); i++) {
 				if (prg.labels[i].name == label) {
-					prg.line = 1;
-					prg.p = 0;
-					while (prg.p < prg.code.length()) {
-						if (prg.line == prg.labels[i].line_number) {
-							break;
-						}
-						if (prg.code[prg.p] == '\n') {
-							prg.line++;
-						}
-						prg.p++;
-					}
+					prg.p = prg.labels[i].p;
+					prg.line = prg.labels[i].line;
 				}
 			}
 		}
@@ -1417,7 +1360,7 @@ bool interpret(PROGRAM &prg)
 				}
 			}
 			if (index < 0) {
-				throw PARSE_EXCEPTION("1Unknown variable \"" + value + "\" on line " + itos(prg.line+prg.start_line));
+				throw PARSE_EXCEPTION("Unknown variable \"" + value + "\" on line " + itos(prg.line+prg.start_line));
 			}
 			prg.result = prg.variables[index];
 		}
@@ -3750,6 +3693,65 @@ bool interpret(PROGRAM &prg)
 		std::string bak = prg.variables[di].name;
 		prg.variables[di] = p.result;
 		prg.variables[di].name = bak;
+
+		// Remove mml/image/font assets that are from the main program so they don't get destroyed
+
+		for (std::map<int, audio::MML *>::iterator it = p.mmls.begin(); it != p.mmls.end();) {
+			std::pair<int, audio::MML *> pair = *it;
+			int id = pair.first;
+			bool found = false;
+			for (std::map<int, audio::MML *>::iterator it2 = prg.mmls.begin(); it2 != prg.mmls.end(); it2++) {
+				std::pair<int, audio::MML *> pair2 = *it2;
+				int id2 = pair2.first;
+				if (id == id2) {
+					found = true;
+				}
+			}
+			if (found) {
+				it = p.mmls.erase(it);
+			}
+			else {
+				it++;
+			}
+		}
+
+		for (std::map<int, gfx::Image *>::iterator it = p.images.begin(); it != p.images.end();) {
+			std::pair<int, gfx::Image *> pair = *it;
+			int id = pair.first;
+			bool found = false;
+			for (std::map<int, gfx::Image *>::iterator it2 = prg.images.begin(); it2 != prg.images.end(); it2++) {
+				std::pair<int, gfx::Image *> pair2 = *it2;
+				int id2 = pair2.first;
+				if (id == id2) {
+					found = true;
+				}
+			}
+			if (found) {
+				it = p.images.erase(it);
+			}
+			else {
+				it++;
+			}
+		}
+
+		for (std::map<int, gfx::TTF *>::iterator it = p.fonts.begin(); it != p.fonts.end();) {
+			std::pair<int, gfx::TTF *> pair = *it;
+			int id = pair.first;
+			bool found = false;
+			for (std::map<int, gfx::TTF *>::iterator it2 = prg.fonts.begin(); it2 != prg.fonts.end(); it2++) {
+				std::pair<int, gfx::TTF *> pair2 = *it2;
+				int id2 = pair2.first;
+				if (id == id2) {
+					found = true;
+				}
+			}
+			if (found) {
+				it = p.fonts.erase(it);
+			}
+			else {
+				it++;
+			}
+		}
 
 		destroy_program(p);
 	}
