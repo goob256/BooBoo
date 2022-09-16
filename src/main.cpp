@@ -177,13 +177,14 @@ void draw_all()
 		catch (EXCEPTION e) {
 			gui::fatalerror("ERROR", e.error.c_str(), gui::OK, true);
 		}
-				
-		for (size_t i = 0; i < p.variables.size(); i++) {
-			if (p.variables[i].function == "main") {
-				for (size_t j = 0; j < prg.variables.size(); j++) {
-					if (p.variables[i].name == prg.variables[j].name) {
-						prg.variables[j] = p.variables[i];
-					}
+
+		for (std::map<std::string, VARIABLE>::iterator it = p.variables.begin(); it != p.variables.end(); it++) {
+			if ((*it).second.function != "main") {
+				continue;
+			}
+			for (std::map<std::string, VARIABLE>::iterator it2 = prg.variables.begin(); it2 != prg.variables.end(); it2++) {
+				if ((*it).first == (*it2).first) {
+					prg.variables[(*it).first] = p.variables[(*it).first];
 				}
 			}
 		}
@@ -335,7 +336,15 @@ static void loop()
 				catch (EXCEPTION e) {
 					gui::fatalerror("ERROR", e.error.c_str(), gui::OK, true);
 				}
+
+				prg.vectors = p.vectors;
+	
+				prg.mml_id = p.mml_id;
+				prg.image_id = p.image_id;
+				prg.font_id = p.font_id;
+				prg.vector_id = p.vector_id;
 				
+				#if 0
 				for (size_t i = 0; i < p.variables.size(); i++) {
 					if (p.variables[i].function == "main") {
 						for (size_t j = 0; j < prg.variables.size(); j++) {
@@ -345,19 +354,24 @@ static void loop()
 						}
 					}
 					
-					prg.vectors = p.vectors;
-		
-					prg.mml_id = p.mml_id;
-					prg.image_id = p.image_id;
-					prg.font_id = p.font_id;
-					prg.vector_id = p.vector_id;
-		
 					/*
 					for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
 						std::pair< int, std::vector<VARIABLE> > pair = *it;
 						prg.vectors[pair.first] = p.vectors[pair.first];
 					}
 					*/
+				}
+				#endif
+
+				for (std::map<std::string, VARIABLE>::iterator it = p.variables.begin(); it != p.variables.end(); it++) {
+					if ((*it).second.function != "main") {
+						continue;
+					}
+					for (std::map<std::string, VARIABLE>::iterator it2 = prg.variables.begin(); it2 != prg.variables.end(); it2++) {
+						if ((*it).first == (*it2).first) {
+							(*it2).second = (*it).second;
+						}
+					}
 				}
 			}
 
@@ -669,12 +683,13 @@ again:
 			gui::fatalerror("ERROR", e.error.c_str(), gui::OK, true);
 		}
 				
-		for (size_t i = 0; i < p.variables.size(); i++) {
-			if (p.variables[i].function == "main") {
-				for (size_t j = 0; j < prg.variables.size(); j++) {
-					if (p.variables[i].name == prg.variables[j].name) {
-						prg.variables[j] = p.variables[i];
-					}
+		for (std::map<std::string, VARIABLE>::iterator it = p.variables.begin(); it != p.variables.end(); it++) {
+			if ((*it).second.function != "main") {
+				continue;
+			}
+			for (std::map<std::string, VARIABLE>::iterator it2 = prg.variables.begin(); it2 != prg.variables.end(); it2++) {
+				if ((*it).first == (*it2).first) {
+					(*it2).second = (*it).second;
 				}
 			}
 		}
@@ -731,12 +746,13 @@ again:
 			gui::fatalerror("ERROR", e.error.c_str(), gui::OK, true);
 		}
 				
-		for (size_t i = 0; i < p.variables.size(); i++) {
-			if (p.variables[i].function == "main") {
-				for (size_t j = 0; j < prg.variables.size(); j++) {
-					if (p.variables[i].name == prg.variables[j].name) {
-						prg.variables[j] = p.variables[i];
-					}
+		for (std::map<std::string, VARIABLE>::iterator it = p.variables.begin(); it != p.variables.end(); it++) {
+			if ((*it).second.function != "main") {
+				continue;
+			}
+			for (std::map<std::string, VARIABLE>::iterator it2 = prg.variables.begin(); it2 != prg.variables.end(); it2++) {
+				if ((*it).first == (*it2).first) {
+					(*it2).second = (*it).second;
 				}
 			}
 		}

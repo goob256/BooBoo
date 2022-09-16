@@ -201,29 +201,35 @@ static int get_line_num(PROGRAM &prg)
 	return prg.line_numbers[ln];
 }
 
+static VARIABLE &find_variable(PROGRAM &prg, std::string name)
+{
+	std::map< std::string, VARIABLE >::iterator it;
+
+	it = prg.variables.find(name);
+
+	if (it == prg.variables.end()) {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + name + "\" on line " + itos(get_line_num(prg)));
+	}
+
+	return (*it).second;
+}
+
 static std::vector<double> variable_names_to_numbers(PROGRAM &prg, std::vector<std::string> strings)
 {
 	std::vector<double> values;
 
 	for (size_t i = 0; i < strings.size(); i++) {
-		int index = -1;
-
-		for (size_t j = 0; j < prg.variables.size(); j++) {
-			if (prg.variables[j].name == strings[i]) {
-				index = j;
-				break;
-			}
-		}
-
-		if (index < 0) {
+		if (strings[i].length() > 0 && strings[i][0] == '-' || isdigit(strings[i][0])) {
 			values.push_back(atof(strings[i].c_str()));
 		}
 		else {
-			if (prg.variables[index].type == VARIABLE::NUMBER || prg.variables[index].type == VARIABLE::VECTOR) {
-				values.push_back(prg.variables[index].n);
+			VARIABLE &v1 = find_variable(prg, strings[i]);
+
+			if (v1.type == VARIABLE::NUMBER || v1.type == VARIABLE::VECTOR) {
+				values.push_back(v1.n);
 			}
-			else if (prg.variables[index].type == VARIABLE::STRING) {
-				values.push_back(atof(prg.variables[index].s.c_str()));
+			else if (v1.type == VARIABLE::STRING) {
+				values.push_back(atof(v1.s.c_str()));
 			}
 			else {
 				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
@@ -232,24 +238,6 @@ static std::vector<double> variable_names_to_numbers(PROGRAM &prg, std::vector<s
 	}
 
 	return values;
-}
-
-static int find_variable_index(PROGRAM &prg, std::string name)
-{
-	int di = -1;
-
-	for (size_t i = 0; i < prg.variables.size(); i++) {
-		if (prg.variables[i].name == name) {
-			di = i;
-			break;
-		}
-	}
-
-	if (di < 0) {
-		throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + name + "\" on line " + itos(get_line_num(prg)));
-	}
-
-	return di;
 }
 
 static int count_lines(std::string s)
@@ -535,9 +523,7 @@ static void set_string_or_number(PROGRAM &prg, std::string name, std::string val
 		return;
 	}
 
-	int di = find_variable_index(prg, name);
-
-	VARIABLE &v1 = prg.variables[di];
+	VARIABLE &v1 = find_variable(prg, name);
 
 	double val;
 
@@ -545,17 +531,7 @@ static void set_string_or_number(PROGRAM &prg, std::string name, std::string val
 		val = atof(value.c_str());
 	}
 	else {
-		int index = -1;
-		for (size_t i = 0; i < prg.variables.size(); i++) {
-			if (prg.variables[i].name == value) {
-				index = i;
-				break;
-			}
-		}
-		if (index < 0) {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + value + "\" on line " + itos(get_line_num(prg)));
-		}
-		VARIABLE &v2 = prg.variables[index];
+		VARIABLE &v2 = find_variable(prg, value);
 		if (v2.type == VARIABLE::NUMBER) {
 			val = v2.n;
 		}
@@ -577,12 +553,16 @@ static void set_string_or_number(PROGRAM &prg, std::string name, std::string val
 
 static void set_string_or_number(PROGRAM &prg, std::string name, double value)
 {
-	int di = find_variable_index(prg, name);
-
-	VARIABLE &v1 = prg.variables[di];
+	VARIABLE &v1 = find_variable(prg, name);
 
 	if (v1.type == VARIABLE::NUMBER) {
 		v1.n = value;
+	}
+	else if (v1.type == VARIABLE::STRING)
+	{
+		char buf[1000];
+		snprintf(buf, 1000, "%g", value);
+		v1.s = buf;
 	}
 	else {
 		throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
@@ -626,17 +606,7 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 
-		bool found = false;
-		for (size_t i = 0; i < prg.variables.size(); i++) {
-			if (prg.variables[i].name == v.name) {
-				prg.variables[i] = v;
-				found = true;
-				break;
-			}
-		}
-		if (found == false) {
-			prg.variables.push_back(v);
-		}
+		prg.variables[v.name] = v;
 	}
 	else if (tok == "=") {
 		std::string dest =  token(prg);
@@ -646,11 +616,9 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected = parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int di = find_variable_index(prg, dest);
+		VARIABLE &v1 = find_variable(prg, dest);
 
 		if (src[0] == '-' || isdigit(src[0])) {
-			VARIABLE &v1 = prg.variables[di];
-
 			if (v1.type == VARIABLE::NUMBER) {
 				v1.n = atof(src.c_str());
 			}
@@ -662,8 +630,6 @@ bool interpret(PROGRAM &prg)
 			}
 		}
 		else if (src[0] == '"') {
-			VARIABLE &v1 = prg.variables[di];
-
 			if (v1.type == VARIABLE::NUMBER) {
 				v1.n = atof(remove_quotes(src).c_str());
 			}
@@ -675,21 +641,7 @@ bool interpret(PROGRAM &prg)
 			}
 		}
 		else {
-			int si = -1;
-
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == src) {
-					si = i;
-					break;
-				}
-			}
-
-			if (si < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + src + "\" on line " + itos(get_line_num(prg)));
-			}
-
-			VARIABLE &v1 = prg.variables[di];
-			VARIABLE &v2 = prg.variables[si];
+			VARIABLE &v2 = find_variable(prg, src);
 
 			if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
 				v1.n = v2.n;
@@ -715,12 +667,10 @@ bool interpret(PROGRAM &prg)
 		if (dest == "" || src == "") {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected + parameters on line " + itos(get_line_num(prg)));
 		}
-
-		int di = find_variable_index(prg, dest);
+		
+		VARIABLE &v1 = find_variable(prg, dest);
 
 		if (src[0] == '-' || isdigit(src[0])) {
-			VARIABLE &v1 = prg.variables[di];
-
 			if (v1.type == VARIABLE::NUMBER) {
 				v1.n += atof(src.c_str());
 			}
@@ -732,8 +682,6 @@ bool interpret(PROGRAM &prg)
 			}
 		}
 		else if (src[0] == '"') {
-			VARIABLE &v1 = prg.variables[di];
-
 			if (v1.type == VARIABLE::NUMBER) {
 				v1.n += atof(remove_quotes(src).c_str());
 			}
@@ -745,21 +693,7 @@ bool interpret(PROGRAM &prg)
 			}
 		}
 		else {
-			int si = -1;
-
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == src) {
-					si = i;
-					break;
-				}
-			}
-
-			if (si < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + src + "\" on line " + itos(get_line_num(prg)));
-			}
-
-			VARIABLE &v1 = prg.variables[di];
-			VARIABLE &v2 = prg.variables[si];
+			VARIABLE &v2 = find_variable(prg, src);
 
 			if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
 				v1.n += v2.n;
@@ -783,11 +717,9 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected - parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int di = find_variable_index(prg, dest);
+		VARIABLE &v1 = find_variable(prg, dest);
 
 		if (src[0] == '-' || isdigit(src[0])) {
-			VARIABLE &v1 = prg.variables[di];
-
 			if (v1.type == VARIABLE::NUMBER) {
 				v1.n -= atof(src.c_str());
 			}
@@ -796,8 +728,6 @@ bool interpret(PROGRAM &prg)
 			}
 		}
 		else if (src[0] == '"') {
-			VARIABLE &v1 = prg.variables[di];
-
 			if (v1.type == VARIABLE::NUMBER) {
 				v1.n -= atof(remove_quotes(src).c_str());
 			}
@@ -806,21 +736,7 @@ bool interpret(PROGRAM &prg)
 			}
 		}
 		else {
-			int si = -1;
-
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == src) {
-					si = i;
-					break;
-				}
-			}
-
-			if (si < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + src + "\" on line " + itos(get_line_num(prg)));
-			}
-
-			VARIABLE &v1 = prg.variables[di];
-			VARIABLE &v2 = prg.variables[si];
+			VARIABLE &v2 = find_variable(prg, src);
 
 			if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
 				v1.n -= v2.n;
@@ -838,11 +754,9 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected * parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int di = find_variable_index(prg, dest);
+		VARIABLE &v1 = find_variable(prg, dest);
 
 		if (src[0] == '-' || isdigit(src[0])) {
-			VARIABLE &v1 = prg.variables[di];
-
 			if (v1.type == VARIABLE::NUMBER) {
 				v1.n *= atof(src.c_str());
 			}
@@ -851,8 +765,6 @@ bool interpret(PROGRAM &prg)
 			}
 		}
 		else if (src[0] == '"') {
-			VARIABLE &v1 = prg.variables[di];
-
 			if (v1.type == VARIABLE::NUMBER) {
 				v1.n *= atof(remove_quotes(src).c_str());
 			}
@@ -861,21 +773,7 @@ bool interpret(PROGRAM &prg)
 			}
 		}
 		else {
-			int si = -1;
-
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == src) {
-					si = i;
-					break;
-				}
-			}
-
-			if (si < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + src + "\" on line " + itos(get_line_num(prg)));
-			}
-
-			VARIABLE &v1 = prg.variables[di];
-			VARIABLE &v2 = prg.variables[si];
+			VARIABLE &v2 = find_variable(prg, src);
 
 			if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
 				v1.n *= v2.n;
@@ -893,10 +791,9 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected / parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int di = find_variable_index(prg, dest);
-		if (src[0] == '-' || isdigit(src[0])) {
-			VARIABLE &v1 = prg.variables[di];
+		VARIABLE &v1 = find_variable(prg, dest);
 
+		if (src[0] == '-' || isdigit(src[0])) {
 			if (v1.type == VARIABLE::NUMBER) {
 				v1.n /= atof(src.c_str());
 			}
@@ -905,8 +802,6 @@ bool interpret(PROGRAM &prg)
 			}
 		}
 		else if (src[0] == '"') {
-			VARIABLE &v1 = prg.variables[di];
-
 			if (v1.type == VARIABLE::NUMBER) {
 				v1.n /= atof(remove_quotes(src).c_str());
 			}
@@ -915,21 +810,7 @@ bool interpret(PROGRAM &prg)
 			}
 		}
 		else {
-			int si = -1;
-
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == src) {
-					si = i;
-					break;
-				}
-			}
-
-			if (si < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + src + "\" on line " + itos(get_line_num(prg)));
-			}
-
-			VARIABLE &v1 = prg.variables[di];
-			VARIABLE &v2 = prg.variables[si];
+			VARIABLE &v2 = find_variable(prg, src);
 
 			if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
 				v1.n /= v2.n;
@@ -947,11 +828,9 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected %% parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int di = find_variable_index(prg, dest);
+		VARIABLE &v1 = find_variable(prg, dest);
 
 		if (src[0] == '-' || isdigit(src[0])) {
-			VARIABLE &v1 = prg.variables[di];
-
 			if (v1.type == VARIABLE::NUMBER) {
 				v1.n = (int)v1.n % (int)atof(src.c_str());
 			}
@@ -960,8 +839,6 @@ bool interpret(PROGRAM &prg)
 			}
 		}
 		else if (src[0] == '"') {
-			VARIABLE &v1 = prg.variables[di];
-
 			if (v1.type == VARIABLE::NUMBER) {
 				v1.n = (int)v1.n % (int)atof(remove_quotes(src).c_str());
 			}
@@ -970,21 +847,7 @@ bool interpret(PROGRAM &prg)
 			}
 		}
 		else {
-			int si = -1;
-
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == src) {
-					si = i;
-					break;
-				}
-			}
-
-			if (si < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + src + "\" on line " + itos(get_line_num(prg)));
-			}
-
-			VARIABLE &v1 = prg.variables[di];
-			VARIABLE &v2 = prg.variables[si];
+			VARIABLE &v2 = find_variable(prg, src);
 
 			if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
 				v1.n = (int)v1.n % (int)v2.n;
@@ -1001,9 +864,7 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected neg parameters on line " + itos(get_line_num(prg)));
 		}
 
-	int di = find_variable_index(prg, name);
-
-		VARIABLE &v1 = prg.variables[di];
+		VARIABLE &v1 = find_variable(prg, name);
 
 		if (v1.type == VARIABLE::NUMBER) {
 			v1.n = -v1.n;
@@ -1021,13 +882,11 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected sin parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int di = find_variable_index(prg, dest);
-
 		std::vector<std::string> strings;
 		strings.push_back(vs);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-		VARIABLE &v1 = prg.variables[di];
+		VARIABLE &v1 = find_variable(prg, dest);
 
 		if (v1.type == VARIABLE::NUMBER) {
 			v1.n = sin(values[0]);
@@ -1045,13 +904,11 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected cos paramters on line " + itos(get_line_num(prg)));
 		}
 
-		int di = find_variable_index(prg, dest);
-
 		std::vector<std::string> strings;
 		strings.push_back(vs);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-		VARIABLE &v1 = prg.variables[di];
+		VARIABLE &v1 = find_variable(prg, dest);
 
 		if (v1.type == VARIABLE::NUMBER) {
 			v1.n = cos(values[0]);
@@ -1070,14 +927,12 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected atan2 parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int di = find_variable_index(prg, dest);
-
 		std::vector<std::string> strings;
 		strings.push_back(vs1);
 		strings.push_back(vs2);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-		VARIABLE &v1 = prg.variables[di];
+		VARIABLE &v1 = find_variable(prg, dest);
 
 		if (v1.type == VARIABLE::NUMBER) {
 			v1.n = atan2(values[0], values[1]);
@@ -1096,14 +951,12 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected pow parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int di = find_variable_index(prg, dest);
-
 		std::vector<std::string> strings;
 		strings.push_back(vs1);
 		strings.push_back(vs2);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-		VARIABLE &v1 = prg.variables[di];
+		VARIABLE &v1 = find_variable(prg, dest);
 
 		if (v1.type == VARIABLE::NUMBER) {
 			v1.n = pow(values[0], values[1]);
@@ -1121,13 +974,11 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected sqrt parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int di = find_variable_index(prg, dest);
-
 		std::vector<std::string> strings;
 		strings.push_back(vs1);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-		VARIABLE &v1 = prg.variables[di];
+		VARIABLE &v1 = find_variable(prg, dest);
 
 		if (v1.type == VARIABLE::NUMBER) {
 			v1.n = sqrt(values[0]);
@@ -1304,17 +1155,8 @@ bool interpret(PROGRAM &prg)
 			prg.result.s = remove_quotes(unescape(value));
 		}
 		else {
-			int index = -1;
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == value) {
-					index = i;
-					break;
-				}
-			}
-			if (index < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + value + "\" on line " + itos(get_line_num(prg)));
-			}
-			prg.result = prg.variables[index];
+			VARIABLE &v1 = find_variable(prg, value);
+			prg.result = v1;
 		}
 
 		prg.result.name = "result";
@@ -1337,16 +1179,8 @@ bool interpret(PROGRAM &prg)
 				throw PARSE_EXCEPTION(prg.name + ": " + "Expected call parameters on line " + itos(get_line_num(prg)));
 			}
 
-			bool found = false;
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == result_name) {
-					found = true;
-					break;
-				}
-			}
-			if (found == false) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + result_name + "\" on line " + itos(get_line_num(prg)));
-			}
+			// check for errors
+			find_variable(prg, result_name);
 		}
 		else {
 			function_name = tok2;
@@ -1385,36 +1219,12 @@ bool interpret(PROGRAM &prg)
 						var.n = atof(param.c_str());
 					}
 					else {
-						bool found = false;
-
-						for (size_t k = 0; k < prg.variables.size(); k++) {
-							if (prg.variables[k].name == param) {
-								var =  prg.variables[k];
-								var.name = prg.functions[i].parameters[j];
-								found = true;
-								break;
-							}
-						}
-					
-						if (found == false) {
-							throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + param + "\" on line " + itos(get_line_num(prg)));
-						}
+						VARIABLE &v1 = find_variable(prg, param);
+						var = v1;
+						var.name = prg.functions[i].parameters[j];
 					}
 
-					int index = -1;
-					for (size_t i = 0; i < p.variables.size(); i++) {
-						if (p.variables[i].name == var.name) {
-							index = i;
-							break;
-						}
-					}
-
-					if (index < 0) {
-						p.variables.push_back(var);
-					}
-					else {
-						p.variables[index] = var;
-					}
+					p.variables[var.name] = var;
 				}
 
 				process_includes(p);
@@ -1423,12 +1233,13 @@ bool interpret(PROGRAM &prg)
 				while (interpret(p)) {
 				}
 
-				for (size_t i = 0; i < p.variables.size(); i++) {
-					if (p.variables[i].function == "main") {
-						for (size_t j = 0; j < prg.variables.size(); j++) {
-							if (p.variables[i].name == prg.variables[j].name) {
-								prg.variables[j] = p.variables[i];
-							}
+				for (std::map<std::string, VARIABLE>::iterator it = p.variables.begin(); it != p.variables.end(); it++) {
+					if ((*it).second.function != "main") {
+						continue;
+					}
+					for (std::map<std::string, VARIABLE>::iterator it2 = prg.variables.begin(); it2 != prg.variables.end(); it2++) {
+						if ((*it).first == (*it2).first) {
+							prg.variables[(*it).first] = p.variables[(*it).first];
 						}
 					}
 				}
@@ -1447,13 +1258,14 @@ bool interpret(PROGRAM &prg)
 				*/
 
 				if (result_name != "") {
-					for (size_t i = 0; i < prg.variables.size(); i++) {
-						if (prg.variables[i].name == result_name) {
-							std::string bak = prg.variables[i].name;
-							std::string bak2 = prg.variables[i].function;
-							prg.variables[i] = p.result;
-							prg.variables[i].name = bak;
-							prg.variables[i].function = bak2;
+					for (std::map<std::string, VARIABLE>::iterator it = prg.variables.begin(); it != prg.variables.end(); it++) {
+						VARIABLE &v = (*it).second;
+						if (result_name == (*it).first) {
+							std::string bak = v.name;
+							std::string bak2 = v.function;
+							v = p.result;
+							v.name = bak;
+							v.function = bak2;
 							/*
 							if (prg.variables[i].type == VARIABLE::VECTOR && p.result.type == VARIABLE::VECTOR) {
 								prg.vectors[(int)prg.variables[i].n] = p.vectors[(int)p.result.n];
@@ -1477,14 +1289,12 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected rand parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int di = find_variable_index(prg, dest);
-
 		std::vector<std::string> strings;
 		strings.push_back(min_incl);
 		strings.push_back(max_incl);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-		VARIABLE &v1 = prg.variables[di];
+		VARIABLE &v1 = find_variable(prg, dest);
 
 		if (v1.type == VARIABLE::NUMBER) {
 			v1.n = util::rand(values[0], values[1]);
@@ -2002,20 +1812,7 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected create_mml parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int vi = -1;
-
-		for (size_t i = 0; i < prg.variables.size(); i++) {
-			if (prg.variables[i].name == var) {
-				vi = i;
-				break;
-			}
-		}
-
-		if (vi < 0) {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + var + "\" on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE &v1 = prg.variables[vi];
+		VARIABLE &v1 = find_variable(prg, var);
 
 		if (v1.type == VARIABLE::NUMBER) {
 			v1.n = prg.mml_id;
@@ -2033,18 +1830,9 @@ bool interpret(PROGRAM &prg)
 			strs = remove_quotes(unescape(str));
 		}
 		else {
-			int index = -1;
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == str) {
-					index = i;
-					break;
-				}
-			}
-			if (index < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + str + "\" on line " + itos(get_line_num(prg)));
-			}
-			if (prg.variables[index].type == VARIABLE::STRING) {
-				strs = prg.variables[index].s;
+			VARIABLE &v1 = find_variable(prg, str);
+			if (v1.type == VARIABLE::STRING) {
+				strs = v1.s;
 			}
 			else {
 				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
@@ -2066,20 +1854,7 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected load_mml parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int vi = -1;
-
-		for (size_t i = 0; i < prg.variables.size(); i++) {
-			if (prg.variables[i].name == var) {
-				vi = i;
-				break;
-			}
-		}
-
-		if (vi < 0) {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + var + "\" on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE &v1 = prg.variables[vi];
+		VARIABLE &v1 = find_variable(prg, var);
 
 		if (v1.type == VARIABLE::NUMBER) {
 			v1.n = prg.mml_id;
@@ -2103,20 +1878,7 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected load_image parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int vi = -1;
-
-		for (size_t i = 0; i < prg.variables.size(); i++) {
-			if (prg.variables[i].name == var) {
-				vi = i;
-				break;
-			}
-		}
-
-		if (vi < 0) {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + var + "\" on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE &v1 = prg.variables[vi];
+		VARIABLE &v1 = find_variable(prg, var);
 
 		if (v1.type == VARIABLE::NUMBER) {
 			v1.n = prg.image_id;
@@ -2141,20 +1903,7 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected load_font parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int vi = -1;
-
-		for (size_t i = 0; i < prg.variables.size(); i++) {
-			if (prg.variables[i].name == var) {
-				vi = i;
-				break;
-			}
-		}
-
-		if (vi < 0) {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + var + "\" on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE &v1 = prg.variables[vi];
+		VARIABLE &v1 = find_variable(prg, var);
 
 		if (v1.type == VARIABLE::NUMBER) {
 			v1.n = prg.font_id;
@@ -2258,21 +2007,17 @@ bool interpret(PROGRAM &prg)
 			txt = remove_quotes(unescape(text));
 		}
 		else {
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == text) {
-					VARIABLE &v1 = prg.variables[i];
-					if (v1.type == VARIABLE::NUMBER) {
-						char buf[1000];
-						snprintf(buf, 1000, "%g", v1.n);
-						txt = buf;
-					}
-					else if (v1.type == VARIABLE::STRING) {
-						txt = v1.s;
-					}
-					else {
-						throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + text + "\" on line " + itos(get_line_num(prg)));
-					}
-				}
+			VARIABLE &v1 = find_variable(prg, text);
+			if (v1.type == VARIABLE::NUMBER) {
+				char buf[1000];
+				snprintf(buf, 1000, "%g", v1.n);
+				txt = buf;
+			}
+			else if (v1.type == VARIABLE::STRING) {
+				txt = v1.s;
+			}
+			else {
+				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + text + "\" on line " + itos(get_line_num(prg)));
 			}
 		}
 
@@ -2287,8 +2032,6 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected text_width parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int di = find_variable_index(prg, dest);
-
 		std::vector<std::string> strings;
 		strings.push_back(id);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -2299,21 +2042,17 @@ bool interpret(PROGRAM &prg)
 			txt = remove_quotes(unescape(text));
 		}
 		else {
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == text) {
-					VARIABLE &v1 = prg.variables[i];
-					if (v1.type == VARIABLE::NUMBER) {
-						char buf[1000];
-						snprintf(buf, 1000, "%g", v1.n);
-						txt = buf;
-					}
-					else if (v1.type == VARIABLE::STRING) {
-						txt = v1.s;
-					}
-					else {
-						throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + dest + "\" on line " + itos(get_line_num(prg)));
-					}
-				}
+			VARIABLE &v1 = find_variable(prg, text);
+			if (v1.type == VARIABLE::NUMBER) {
+				char buf[1000];
+				snprintf(buf, 1000, "%g", v1.n);
+				txt = buf;
+			}
+			else if (v1.type == VARIABLE::STRING) {
+				txt = v1.s;
+			}
+			else {
+				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + dest + "\" on line " + itos(get_line_num(prg)));
 			}
 		}
 
@@ -2321,7 +2060,7 @@ bool interpret(PROGRAM &prg)
 
 		int w = font->get_text_width(txt);
 
-		VARIABLE &v1 = prg.variables[di];
+		VARIABLE &v1 = find_variable(prg, dest);
 
 		if (v1.type == VARIABLE::NUMBER) {
 			v1.n = w;
@@ -2338,8 +2077,6 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected font_height parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int di = find_variable_index(prg, dest);
-
 		std::vector<std::string> strings;
 		strings.push_back(id);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -2348,7 +2085,7 @@ bool interpret(PROGRAM &prg)
 
 		int h = font->get_height();
 
-		VARIABLE &v1 = prg.variables[di];
+		VARIABLE &v1 = find_variable(prg, dest);
 
 		if (v1.type == VARIABLE::NUMBER) {
 			v1.n = h;
@@ -2420,16 +2157,7 @@ bool interpret(PROGRAM &prg)
 		names.push_back(start);
 
 		for (size_t i = 0; i < names.size(); i++) {
-			bool found = false;
-			for (size_t j = 0; j < prg.variables.size(); j++) {
-				if (prg.variables[j].name == names[i]) {
-					found = true;
-					break;
-				}
-			}
-			if (found == false) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid variable name " + names[i] + " on line " + itos(get_line_num(prg)));
-			}
+			find_variable(prg, names[i]);
 		}
 
 		SDL_JoystickID id = input::get_controller_id(values[0]);
@@ -2571,9 +2299,7 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected num_joysticks parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int di = find_variable_index(prg, dest);
-
-		VARIABLE &v1 = prg.variables[di];
+		VARIABLE &v1 = find_variable(prg, dest);
 
 		if (v1.type == VARIABLE::NUMBER) {
 			v1.n = input::get_num_joysticks();
@@ -2620,17 +2346,7 @@ bool interpret(PROGRAM &prg)
 			var.n = atof(value.c_str());
 		}
 		else {
-			bool found = false;
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == value) {
-					var = prg.variables[i];
-					found = true;
-					break;
-				}
-			}
-			if (found == false) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid variable name " + value + " on line " + itos(get_line_num(prg)));
-			}
+			var = find_variable(prg, value);
 		}
 
 		v.push_back(var);
@@ -2653,9 +2369,8 @@ bool interpret(PROGRAM &prg)
 
 		std::vector<VARIABLE> &v = prg.vectors[values[0]];
 
-		int di = find_variable_index(prg, dest);
+		VARIABLE &v1 = find_variable(prg, dest);
 
-		VARIABLE &v1 = prg.variables[di];
 		if (v1.type == VARIABLE::NUMBER) {
 			v1.n = v.size();
 		}
@@ -2702,17 +2417,7 @@ bool interpret(PROGRAM &prg)
 			var.n = atof(value.c_str());
 		}
 		else {
-			bool found = false;
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == value) {
-					var = prg.variables[i];
-					found = true;
-					break;
-				}
-			}
-			if (found == false) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid variable name " + value + " on line " + itos(get_line_num(prg)));
-			}
+			var = find_variable(prg, value);
 		}
 
 		v[values[1]] = var;
@@ -2756,17 +2461,7 @@ bool interpret(PROGRAM &prg)
 			var.n = atof(value.c_str());
 		}
 		else {
-			bool found = false;
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == value) {
-					var = prg.variables[i];
-					found = true;
-					break;
-				}
-			}
-			if (found == false) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid variable name " + value + " on line " + itos(get_line_num(prg)));
-			}
+			var = find_variable(prg, value);
 		}
 
 		v.insert(v.begin()+values[1], var);
@@ -2797,21 +2492,13 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid index on line " + itos(get_line_num(prg)));
 		}
 
-		bool found = false;
-		for (size_t i = 0; i < prg.variables.size(); i++) {
-			if (prg.variables[i].name == dest) {
-				std::string bak = prg.variables[i].name;
-				std::string bak2 = prg.variables[i].function;
-				prg.variables[i] = v[values[1]];
-				prg.variables[i].name = bak;
-				prg.variables[i].function = bak2;
-				found = true;
-				break;
-			}
-		}
-		if (found == false) {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid variable name " + dest + " on line " + itos(get_line_num(prg)));
-		}
+		VARIABLE &v1 = find_variable(prg, dest);
+
+		std::string bak = v1.name;
+		std::string bak2 = v1.function;
+		v1 = v[values[1]];
+		v1.name = bak;
+		v1.function = bak2;
 	}
 	else if (tok == "vector_erase") {
 		std::string id = token(prg);
@@ -2845,22 +2532,7 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected inspect parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int di = -1;
-
-		for (size_t i = 0; i < prg.variables.size(); i++) {
-			if (prg.variables[i].name == name) {
-				di = i;
-				break;
-			}
-		}
-
-		if (di < 0) {
-			if (name[0] != '-' && !isdigit(name[0]) && name[0] != '"') {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + name + "\" on line " + itos(get_line_num(prg)));
-			}
-		}
-
-		VARIABLE &v1 = prg.variables[di];
+		VARIABLE &v1 = find_variable(prg, name);
 
 		char buf[1000];
 
@@ -2892,62 +2564,40 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected sub parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int di = find_variable_index(prg, result);
-
 		std::string names;
 
 		if (name[0] == '"') {
 			names = remove_quotes(unescape(name));
 		}
 		else {
-			bool found = false;
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == name) {
-					VARIABLE &v2 = prg.variables[i];
-					if (v2.type == VARIABLE::STRING) {
-						names = v2.s;
-					}
-					else {
-						throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-					}
-					found = true;
-					break;
-				}
-			}
-			if (found == false) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid variable name " + result + " on line " + itos(get_line_num(prg)));
-			}
-		}
-
-		int index = -1;
-		for (size_t i = 0; i < prg.variables.size(); i++) {
-			if (prg.variables[i].name == params) {
-				index = i;
-				break;
-			}
-		}
-		if (index < 0) {
-			VARIABLE var;
-			var.name = params;
-			if (params[0] == '"') {
-				var.type = VARIABLE::STRING;
-				var.s = remove_quotes(unescape(params));
-			}
-			else if (params[0] == '-' || isdigit(params[0])) {
-				var.type = VARIABLE::NUMBER;
-				var.n = atof(params.c_str());
+			VARIABLE &v2 = find_variable(prg, name);
+			if (v2.type == VARIABLE::STRING) {
+				names = v2.s;
 			}
 			else {
 				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 			}
-
-			var.function = prg.name;
-
-			prg.variables.push_back(var);
-
-			index = prg.variables.size() - 1;
-
 		}
+
+		VARIABLE var;
+
+		if (params[0] == '-' || isdigit(params[0])) {
+			var.type = VARIABLE::NUMBER;
+			var.n = atof(params.c_str());
+		}
+		else if (params[0] == '"') {
+			var.type = VARIABLE::STRING;
+			var.s = remove_quotes(unescape(params));
+		}
+		else {
+			VARIABLE &v1 = find_variable(prg, params);
+			var = v1;
+		}
+
+		var.function = prg.name;
+		var.name = "params";
+
+		prg.variables[var.name] = var;
 
 		PROGRAM p;
 		p.name = "main";
@@ -2976,8 +2626,7 @@ bool interpret(PROGRAM &prg)
 		p.start_line = 0;
 		p.p = 0;
 
-		p.variables.push_back(prg.variables[index]);
-		p.variables[p.variables.size()-1].name = "params";
+		p.variables[var.name] = var;
 
 		process_includes(p);
 		p.labels = process_labels(p);
@@ -2985,11 +2634,13 @@ bool interpret(PROGRAM &prg)
 		while (interpret(p)) {
 		}
 
-		std::string bak = prg.variables[di].name;
-		std::string bak2 = prg.variables[di].function;
-		prg.variables[di] = p.result;
-		prg.variables[di].name = bak;
-		prg.variables[di].function = bak2;
+
+		VARIABLE &v1 = find_variable(prg, result);
+		std::string bak = v1.name;
+		std::string bak2 = v1.function;
+		v1 = p.result;
+		v1.name = bak;
+		v1.function = bak2;
 		
 		prg.mml_id = p.mml_id;
 		prg.image_id = p.image_id;
@@ -3065,26 +2716,13 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected string_format parameters on line " + itos(get_line_num(prg)));
 		}
 
-		int di = find_variable_index(prg, dest);
-
 		std::string fmts;
 
 		if (fmt[0] == '"') {
 			fmts = remove_quotes(unescape(fmt));
 		}
 		else {
-			int index = -1;
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == fmt) {
-					index = i;
-					break;
-				}
-			}
-			if (index < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + fmt + "\" on line " + itos(get_line_num(prg)));
-			}
-
-			VARIABLE &v1 = prg.variables[index];
+			VARIABLE &v1 = find_variable(prg, fmt);
 
 			if (v1.type == VARIABLE::STRING) {
 				fmts = v1.s;
@@ -3135,17 +2773,7 @@ bool interpret(PROGRAM &prg)
 				val = remove_quotes(unescape(param));
 			}
 			else {
-				int index = -1;
-				for (size_t i = 0; i < prg.variables.size(); i++) {
-					if (prg.variables[i].name == param) {
-						index = i;
-						break;
-					}
-				}
-				if (index < 0) {
-					throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + param + "\" on line " + itos(get_line_num(prg)));
-				}
-				VARIABLE &v1 = prg.variables[index];
+				VARIABLE &v1 = find_variable(prg, param);
 				if (v1.type == VARIABLE::NUMBER) {
 					char buf[1000];
 					snprintf(buf, 1000, "%g", v1.n);
@@ -3171,7 +2799,7 @@ bool interpret(PROGRAM &prg)
 			result += fmts.substr(c);
 		}
 
-		VARIABLE &v1 = prg.variables[di];
+		VARIABLE &v1 = find_variable(prg, dest);
 		v1.type = VARIABLE::STRING;
 		v1.s = result;
 	}
@@ -3192,17 +2820,7 @@ bool interpret(PROGRAM &prg)
 			cfg_names = remove_quotes(unescape(cfg_name));
 		}
 		else  {
-			int index = -1;
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == cfg_name) {
-					index = i;
-					break;
-				}
-			}
-			if (index < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + cfg_name + "\" on line " + itos(get_line_num(prg)));
-			}
-			VARIABLE &v1 = prg.variables[index];
+			VARIABLE &v1 = find_variable(prg, cfg_name);
 			if (v1.type == VARIABLE::STRING) {
 				cfg_names = v1.s;
 			}
@@ -3213,9 +2831,7 @@ bool interpret(PROGRAM &prg)
 
 		bool found_cfg = load_cfg(cfg_names);
 		
-		int di = find_variable_index(prg, found);
-
-		VARIABLE &v1 = prg.variables[di];
+		VARIABLE &v1 = find_variable(prg, found);
 
 		if (v1.type == VARIABLE::NUMBER) {
 			v1.n = found_cfg;
@@ -3237,17 +2853,7 @@ bool interpret(PROGRAM &prg)
 			cfg_names = remove_quotes(unescape(cfg_name));
 		}
 		else  {
-			int index = -1;
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == cfg_name) {
-					index = i;
-					break;
-				}
-			}
-			if (index < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + cfg_name + "\" on line " + itos(get_line_num(prg)));
-			}
-			VARIABLE &v1 = prg.variables[index];
+			VARIABLE &v1 = find_variable(prg, cfg_name);
 			if (v1.type == VARIABLE::STRING) {
 				cfg_names = v1.s;
 			}
@@ -3272,17 +2878,7 @@ bool interpret(PROGRAM &prg)
 			names = remove_quotes(unescape(name));
 		}
 		else  {
-			int index = -1;
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == name) {
-					index = i;
-					break;
-				}
-			}
-			if (index < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + name + "\" on line " + itos(get_line_num(prg)));
-			}
-			VARIABLE &v1 = prg.variables[index];
+			VARIABLE &v1 = find_variable(prg, name);
 			if (v1.type == VARIABLE::STRING) {
 				names = v1.s;
 			}
@@ -3291,13 +2887,13 @@ bool interpret(PROGRAM &prg)
 			}
 		}
 
-		int di = find_variable_index(prg, dest);
+		VARIABLE &v1 = find_variable(prg, dest);
 
-		if (prg.variables[di].type != VARIABLE::NUMBER) {
+		if (v1.type != VARIABLE::NUMBER) {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 
-		prg.variables[di].n = cfg_numbers[names];
+		v1.n = cfg_numbers[names];
 	}
 	else if (tok == "cfg_get_string") {
 		std::string dest = token(prg);
@@ -3313,17 +2909,7 @@ bool interpret(PROGRAM &prg)
 			names = remove_quotes(unescape(name));
 		}
 		else  {
-			int index = -1;
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == name) {
-					index = i;
-					break;
-				}
-			}
-			if (index < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + name + "\" on line " + itos(get_line_num(prg)));
-			}
-			VARIABLE &v1 = prg.variables[index];
+			VARIABLE &v1 = find_variable(prg, name);
 			if (v1.type == VARIABLE::STRING) {
 				names = v1.s;
 			}
@@ -3332,13 +2918,13 @@ bool interpret(PROGRAM &prg)
 			}
 		}
 
-		int di = find_variable_index(prg, dest);
+		VARIABLE &v1 = find_variable(prg, dest);
 
-		if (prg.variables[di].type != VARIABLE::STRING) {
+		if (v1.type != VARIABLE::STRING) {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 
-		prg.variables[di].s = cfg_strings[names];
+		v1.s = cfg_strings[names];
 	}
 	else if (tok == "cfg_set_number") {
 		std::string name = token(prg);
@@ -3354,17 +2940,7 @@ bool interpret(PROGRAM &prg)
 			names = remove_quotes(unescape(name));
 		}
 		else  {
-			int index = -1;
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == name) {
-					index = i;
-					break;
-				}
-			}
-			if (index < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + name + "\" on line " + itos(get_line_num(prg)));
-			}
-			VARIABLE &v1 = prg.variables[index];
+			VARIABLE &v1 = find_variable(prg, name);
 			if (v1.type == VARIABLE::STRING) {
 				names = v1.s;
 			}
@@ -3393,17 +2969,7 @@ bool interpret(PROGRAM &prg)
 			names = remove_quotes(unescape(name));
 		}
 		else  {
-			int index = -1;
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == name) {
-					index = i;
-					break;
-				}
-			}
-			if (index < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + name + "\" on line " + itos(get_line_num(prg)));
-			}
-			VARIABLE &v1 = prg.variables[index];
+			VARIABLE &v1 = find_variable(prg, name);
 			if (v1.type == VARIABLE::STRING) {
 				names = v1.s;
 			}
@@ -3418,17 +2984,7 @@ bool interpret(PROGRAM &prg)
 			values = remove_quotes(unescape(value));
 		}
 		else  {
-			int index = -1;
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == value) {
-					index = i;
-					break;
-				}
-			}
-			if (index < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + value + "\" on line " + itos(get_line_num(prg)));
-			}
-			VARIABLE &v1 = prg.variables[index];
+			VARIABLE &v1 = find_variable(prg, value);
 			if (v1.type == VARIABLE::STRING) {
 				values = v1.s;
 			}
@@ -3453,17 +3009,7 @@ bool interpret(PROGRAM &prg)
 			names = remove_quotes(unescape(name));
 		}
 		else  {
-			int index = -1;
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == name) {
-					index = i;
-					break;
-				}
-			}
-			if (index < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + name + "\" on line " + itos(get_line_num(prg)));
-			}
-			VARIABLE &v1 = prg.variables[index];
+			VARIABLE &v1 = find_variable(prg, name);
 			if (v1.type == VARIABLE::STRING) {
 				names = v1.s;
 			}
@@ -3471,8 +3017,6 @@ bool interpret(PROGRAM &prg)
 				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 			}
 		}
-
-		int di = find_variable_index(prg, dest);
 
 		int found_n;
 
@@ -3483,7 +3027,7 @@ bool interpret(PROGRAM &prg)
 			found_n = 1;
 		}
 
-		VARIABLE &v1 = prg.variables[di];
+		VARIABLE &v1 = find_variable(prg, dest);
 
 		if (v1.type == VARIABLE::NUMBER) {
 			v1.n = found_n;
@@ -3506,17 +3050,7 @@ bool interpret(PROGRAM &prg)
 			names = remove_quotes(unescape(name));
 		}
 		else  {
-			int index = -1;
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == name) {
-					index = i;
-					break;
-				}
-			}
-			if (index < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + name + "\" on line " + itos(get_line_num(prg)));
-			}
-			VARIABLE &v1 = prg.variables[index];
+			VARIABLE &v1 = find_variable(prg, name);
 			if (v1.type == VARIABLE::STRING) {
 				names = v1.s;
 			}
@@ -3524,8 +3058,6 @@ bool interpret(PROGRAM &prg)
 				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 			}
 		}
-
-		int di = find_variable_index(prg, dest);
 
 		int found_n;
 
@@ -3536,7 +3068,7 @@ bool interpret(PROGRAM &prg)
 			found_n = 1;
 		}
 
-		VARIABLE &v1 = prg.variables[di];
+		VARIABLE &v1 = find_variable(prg, dest);
 
 		if (v1.type == VARIABLE::NUMBER) {
 			v1.n = found_n;
@@ -3558,17 +3090,7 @@ bool interpret(PROGRAM &prg)
 			names = remove_quotes(unescape(name));
 		}
 		else {
-			int index = -1;
-			for (size_t i = 0; i < prg.variables.size(); i++) {
-				if (prg.variables[i].name == name) {
-					index = i;
-					break;
-				}
-			}
-			if (index < 0) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Unknown variable \"" + name + "\" on line " + itos(get_line_num(prg)));
-			}
-			VARIABLE &v1 = prg.variables[index];
+			VARIABLE &v1 = find_variable(prg, name);
 			if (v1.type == VARIABLE::STRING) {
 				names = v1.s;
 			}

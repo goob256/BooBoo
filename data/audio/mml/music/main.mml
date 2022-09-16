@@ -1,0 +1,108 @@
+@S0 = { kick.flac }
+@S1 = { bee_drone1.flac }
+@S2 = { bee_drone2.flac }
+@VAS0 = { 255 255 0 }
+
+A t250 @S0 v192
+A o6c16r8.c16r8.c16r4r16c16r16
+A c16r8.c16r8.c16r1
+A r1
+A r4..
+A c16r8.c16r8.c16r4r16c16r16
+A c16r8.c16r8.c16r1
+A r1
+A r4..
+A c16r8.c16r8.c16r4r16c16r16
+A c16r8.c16r8.c16r1
+A r1
+A r4..
+A c16r8.c16r8.c16r4r16c16r16
+A c16r8.c16r8.c16r1
+A r1
+A r4..
+A c16r8.c16r8.c16r4r16c16r16
+A c16r8.c16r8.c16r1
+A r1
+A r4..
+A c16r8.c16r8.c16r4r16c16r16
+A c16r8.c16r8.c16r1
+A r1
+A r4..
+A c8r8c8r2r8
+A c8r8c8r4.c8r4.
+A c8r8c8r8c8r8
+A c8r8c8r8c8r8c8r8
+A c8r8c8r2r8
+A c8r8c8r4.c8r4.
+A c8r8c8r8c8r8
+A c8r8c8r8c8r8c8r8
+
+B t250 y16 @VAS0
+B o4c16r8.c16r8.c16r8.d16r8.
+B d+16r8.d16r8.c16r4..
+B g2f4g16r8.
+B g16r8.d16r8.f16r8.d16r8.
+B c16r8.c16r8.c16r8.d16r8.
+B d+16r8.d16r8.>a+4r4
+B <g2d2
+B f2c2
+B c16r8.c16r8.c16r8.d16r8.
+B d+16r8.c16r8.g+16r4..
+B g16r8.g16r8.f16r8.d16r8.
+B g16r8.g16r8.f16r8.c+16r8.
+B c16r8.c16r8.c16r8.d16r8.
+B d+16r8.d16r8.c16r4..
+B g2f4g16r8.
+B g16r8.d16r8.f16r8.d16r8.
+B c16r8.c16r8.c16r8.d16r8.
+B d+16r8.d16r8.>a+4r4
+B <g2d2
+B f2c2
+B c16r8.c16r8.c16r8.d16r8.
+B d+16r8.c16r8.g+16r4..
+B g16r8.g16r8.f16r8.d16r8.
+B g16r8.g16r8.f16r8.c+16r8.
+B <a+32a32g+32a32a+32a32g+32a32a+32r2r8..
+B g+32g32f+32g32g+32g32f+32g32g+32r2r8..
+B f+32f32e32f32f+32f32e32f32f+32r2r8..
+B d+32d32c+32d32d+32d32c+32d32d+32d32c+32d32d+32d32c+32d32d+32d32c+32d32d+32d32c+32d32d+32r8..
+B a+32a32g+32a32a+32a32g+32a32a+32r2r8..
+B g+32g32f+32g32g+32g32f+32g32g+32r2r8..
+B f+32f32e32f32f+32f32e32f32f+32r2r8..
+B d+32d32c+32d32d+32d32c+32d32d+32d32c+32d32d+32d32c+32d32d+32d32c+32d32d+32d32c+32d32d+32r8.. @VAS0
+
+C t250 @S1 v128
+C o5c4r1..
+C >r2r1.
+C <c4r1..
+C >r2r1.
+C <c4r1..
+C >r2r1.
+C <c4r1..
+C >r2r1.
+C <c4r1..
+C >r2r1.
+C <c4r1..
+C >r2r1.
+C r2r1.
+C r2r1.
+C r2r1.
+C r2r1.
+
+D t250 @S2 v128
+D o5r4r1..
+D >c2r1.
+D <r4r1..
+D >c2r1.
+D <r4r1..
+D >c2r1.
+D <r4r1..
+D >c2r1.
+D <r4r1..
+D >c2r1.
+D <r4r1..
+D >c2r1.
+D c2r1.
+D c2r1.
+D c2r1.
+D c2r1.

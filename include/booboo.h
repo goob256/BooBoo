@@ -47,7 +47,7 @@ struct PROGRAM {
 	int line;
 	int start_line;
 	
-	std::vector<VARIABLE> variables;
+	std::map<std::string, VARIABLE> variables;
 	std::vector<PROGRAM> functions;
 	std::vector<LABEL> labels;
 

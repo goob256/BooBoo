@@ -1,7 +1,7 @@
 ; math and circles
 
 var string reset_game_name
-= reset_game_name "sneaky.boo"
+= reset_game_name "robots.boo"
 include "slideshow_start.inc"
 
 function draw_at r g b x radius

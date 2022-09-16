@@ -1,3 +1,9 @@
+; a demo game
+
+var string reset_game_name
+= reset_game_name "sneaky.boo"
+include "slideshow_start.inc"
+
 var number width
 = width 32
 var number height
@@ -581,4 +587,7 @@ label finish
 	= old_r bak_r
 	= old_u bak_u
 	= old_d bak_d
+
+	include "slideshow_logic.inc"
+
 end
