@@ -2,7 +2,7 @@
 
 #include <shim4/shim4.h>
 
-#include "boopboop.h"
+#include "booboo.h"
 #include "main.h"
 
 static std::map< std::string, double > cfg_numbers;
@@ -645,6 +645,9 @@ bool interpret(PROGRAM &prg)
 			}
 			else if (v1.type == VARIABLE::STRING && v2.type == VARIABLE::STRING) {
 				v1.s = v2.s;
+			}
+			else if (v1.type == VARIABLE::VECTOR && v2.type == VARIABLE::VECTOR) {
+				prg.vectors[(int)v1.n] = prg.vectors[(int)v2.n];
 			}
 			else {
 				throw PARSE_EXCEPTION("Operation undefined for operands on line " + itos(prg.line+prg.start_line));
@@ -1653,18 +1656,27 @@ bool interpret(PROGRAM &prg)
 						}
 					}
 				}
-		
+
+				prg.vectors = p.vectors;
+	
+				/*
 				for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
 					std::pair< int, std::vector<VARIABLE> > pair = *it;
 					prg.vectors[pair.first] = p.vectors[pair.first];
 				}
+				*/
 
 				if (result_name != "") {
 					for (size_t i = 0; i < prg.variables.size(); i++) {
 						if (prg.variables[i].name == result_name) {
 							std::string bak = prg.variables[i].name;
+							std::string bak2 = prg.variables[i].function;
 							prg.variables[i] = p.result;
 							prg.variables[i].name = bak;
+							prg.variables[i].function = bak2;
+							if (prg.variables[i].type == VARIABLE::VECTOR && p.result.type == VARIABLE::VECTOR) {
+								prg.vectors[(int)prg.variables[i].n] = p.vectors[(int)p.result.n];
+							}
 							break;
 						}
 					}
@@ -3326,7 +3338,7 @@ bool interpret(PROGRAM &prg)
 		}
 		
 		if (values[0] < 0 || values[0] >= prg.vectors.size()) {
-			throw PARSE_EXCEPTION("Invalid Vector on line " + itos(prg.line+prg.start_line));
+			throw PARSE_EXCEPTION("Invalid vector on line " + itos(prg.line+prg.start_line));
 		}
 
 		std::vector<VARIABLE> &v = prg.vectors[values[0]];
@@ -3403,7 +3415,7 @@ bool interpret(PROGRAM &prg)
 		}
 		
 		if (values[0] < 0 || values[0] >= prg.vectors.size()) {
-			throw PARSE_EXCEPTION("Invalid Vector on line " + itos(prg.line+prg.start_line));
+			throw PARSE_EXCEPTION("Invalid vector on line " + itos(prg.line+prg.start_line));
 		}
 
 		std::vector<VARIABLE> &v = prg.vectors[values[0]];
@@ -3473,7 +3485,7 @@ bool interpret(PROGRAM &prg)
 		}
 		
 		if (values[0] < 0 || values[0] >= prg.vectors.size()) {
-			throw PARSE_EXCEPTION("Invalid Vector on line " + itos(prg.line+prg.start_line));
+			throw PARSE_EXCEPTION("Invalid vector on line " + itos(prg.line+prg.start_line));
 		}
 
 		std::vector<VARIABLE> &v = prg.vectors[values[0]];
@@ -3556,7 +3568,7 @@ bool interpret(PROGRAM &prg)
 		}
 		
 		if (values[0] < 0 || values[0] >= prg.vectors.size()) {
-			throw PARSE_EXCEPTION("Invalid Vector on line " + itos(prg.line+prg.start_line));
+			throw PARSE_EXCEPTION("Invalid vector on line " + itos(prg.line+prg.start_line));
 		}
 
 		std::vector<VARIABLE> &v = prg.vectors[values[0]];
@@ -3639,7 +3651,7 @@ bool interpret(PROGRAM &prg)
 		}
 
 		if (values[0] < 0 || values[0] >= prg.vectors.size()) {
-			throw PARSE_EXCEPTION("Invalid Vector on line " + itos(prg.line+prg.start_line));
+			throw PARSE_EXCEPTION("Invalid vector on line " + itos(prg.line+prg.start_line));
 		}
 
 		std::vector<VARIABLE> &v = prg.vectors[values[0]];
@@ -3652,8 +3664,10 @@ bool interpret(PROGRAM &prg)
 		for (size_t i = 0; i < prg.variables.size(); i++) {
 			if (prg.variables[i].name == dest) {
 				std::string bak = prg.variables[i].name;
+				std::string bak2 = prg.variables[i].function;
 				prg.variables[i] = v[values[1]];
 				prg.variables[i].name = bak;
+				prg.variables[i].function = bak2;
 				found = true;
 				break;
 			}
@@ -3705,7 +3719,7 @@ bool interpret(PROGRAM &prg)
 		}
 
 		if (values[0] < 0 || values[0] >= prg.vectors.size()) {
-			throw PARSE_EXCEPTION("Invalid Vector on line " + itos(prg.line+prg.start_line));
+			throw PARSE_EXCEPTION("Invalid vector on line " + itos(prg.line+prg.start_line));
 		}
 
 		std::vector<VARIABLE> &v = prg.vectors[values[0]];
@@ -3733,14 +3747,23 @@ bool interpret(PROGRAM &prg)
 		}
 
 		if (di < 0) {
-			throw PARSE_EXCEPTION("Unknown variable \"" + name + "\" on line " + itos(prg.line+prg.start_line));
+			if (name[0] != '-' && !isdigit(name[0]) && name[0] != '"') {
+				throw PARSE_EXCEPTION("Unknown variable \"" + name + "\" on line " + itos(prg.line+prg.start_line));
+			}
 		}
 
 		VARIABLE &v1 = prg.variables[di];
 
 		char buf[1000];
 
-		if (v1.type == VARIABLE::NUMBER) {
+		if (name[0] == '-' || isdigit(name[0])) {
+			snprintf(buf, 1000, "%s", name.c_str());
+		}
+		else if (name[0] == '"') {
+			std::string s = remove_quotes(unescape(name));
+			snprintf(buf, 1000, "%s", s.c_str());
+		}
+		else if (v1.type == VARIABLE::NUMBER) {
 			snprintf(buf, 1000, "%g", v1.n);
 		}
 		else if (v1.type == VARIABLE::STRING) {
@@ -3866,8 +3889,10 @@ bool interpret(PROGRAM &prg)
 		}
 
 		std::string bak = prg.variables[di].name;
+		std::string bak2 = prg.variables[di].function;
 		prg.variables[di] = p.result;
 		prg.variables[di].name = bak;
+		prg.variables[di].function = bak2;
 
 		// Remove mml/image/font assets that are from the main program so they don't get destroyed
 

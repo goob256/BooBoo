@@ -1,5 +1,5 @@
-#ifndef BEEPBOOP_H
-#define BEEPBOOP_H
+#ifndef BOOBOO_H
+#define BOOBOO_H
 
 #include <string>
 #include <vector>
@@ -69,4 +69,4 @@ std::vector<LABEL> process_labels(PROGRAM prg);
 void destroy_program(PROGRAM &prg, bool destroy_vectors);
 void process_includes(PROGRAM &prg);
 
-#endif // BEEPBOOP_H
+#endif // BOOBOO_H

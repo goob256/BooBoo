@@ -52,26 +52,26 @@ echo Invalid target: %TARGET%
 goto done
 
 :tgui6
-cd c:\users\trent\code\boopboop\tgui6
+cd c:\users\trent\code\booboo\tgui6
 rmdir /s /q build
 mkdir build
 cd build
-c:\users\trent\code\boopboop\misc\batch_files\cmake\windows\tgui6.bat %CFG_FLAGS% %STEAMWORKS_FLAGS%
+c:\users\trent\code\booboo\misc\batch_files\cmake\windows\tgui6.bat %CFG_FLAGS% %STEAMWORKS_FLAGS%
 goto done
 :shim4
-cd c:\users\trent\code\boopboop\shim4
+cd c:\users\trent\code\booboo\shim4
 rmdir /s /q build
 mkdir build
 cd build
-c:\users\trent\code\boopboop\misc\batch_files\cmake\windows\shim4.bat %CFG_FLAGS% %STEAMWORKS_FLAGS%
+c:\users\trent\code\booboo\misc\batch_files\cmake\windows\shim4.bat %CFG_FLAGS% %STEAMWORKS_FLAGS%
 goto done
 :game
-del "c:\users\trent\code\b\BoopBoop.exe"
-cd c:\users\trent\code\boopboop
+del "c:\users\trent\code\b\BooBoo.exe"
+cd c:\users\trent\code\booboo
 rmdir /s /q build
 mkdir build
 cd build
-c:\users\trent\code\boopboop\misc\batch_files\cmake\windows\boopboop.bat %CFG_FLAGS% %STEAMWORKS_FLAGS% %DEMO_FLAGS%
+c:\users\trent\code\booboo\misc\batch_files\cmake\windows\booboo.bat %CFG_FLAGS% %STEAMWORKS_FLAGS% %DEMO_FLAGS%
 goto done
 :data
 rmdir /s /q c:\users\trent\code\b\data

@@ -1,6 +1,6 @@
 #include <shim4/shim4.h>
 
-#include "boopboop.h"
+#include "booboo.h"
 
 bool load_from_filesystem;
 bool load_from_filesystem_set;
@@ -188,10 +188,14 @@ void draw_all()
 			}
 		}
 
+		prg.vectors = p.vectors;
+
+		/*
 		for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
 			std::pair< int, std::vector<VARIABLE> > pair = *it;
 			prg.vectors[pair.first] = p.vectors[pair.first];
 		}
+		*/
 	}
 
 	gfx::flip();
@@ -334,10 +338,14 @@ static void loop()
 						}
 					}
 					
+					prg.vectors = p.vectors;
+		
+					/*
 					for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
 						std::pair< int, std::vector<VARIABLE> > pair = *it;
 						prg.vectors[pair.first] = p.vectors[pair.first];
 					}
+					*/
 				}
 			}
 
@@ -658,10 +666,14 @@ again:
 			}
 		}
 		
+		prg.vectors = p.vectors;
+
+		/*
 		for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
 			std::pair< int, std::vector<VARIABLE> > pair = *it;
 			prg.vectors[pair.first] = p.vectors[pair.first];
 		}
+		*/
 	}
 
 	if (reset_game_name == "") {
@@ -711,10 +723,14 @@ again:
 			}
 		}
 		
+		prg.vectors = p.vectors;
+
+		/*
 		for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
 			std::pair< int, std::vector<VARIABLE> > pair = *it;
 			prg.vectors[pair.first] = p.vectors[pair.first];
 		}
+		*/
 	}
 
 	destroy_program(prg, true);
