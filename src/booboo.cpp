@@ -603,6 +603,10 @@ bool interpret(PROGRAM &prg)
 		std::string type = token(prg);
 		std::string name =  token(prg);
 
+		if (type == "" || name == "") {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected var parameters on line " + itos(get_line_num(prg)));
+		}
+
 		v.name = name;
 		v.function = prg.name;
 
@@ -1430,6 +1434,10 @@ bool interpret(PROGRAM &prg)
 				}
 
 				prg.vectors = p.vectors;
+				prg.mml_id = p.mml_id;
+				prg.image_id = p.image_id;
+				prg.font_id = p.font_id;
+				prg.vector_id = p.vector_id;
 	
 				/*
 				for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
@@ -1446,9 +1454,11 @@ bool interpret(PROGRAM &prg)
 							prg.variables[i] = p.result;
 							prg.variables[i].name = bak;
 							prg.variables[i].function = bak2;
+							/*
 							if (prg.variables[i].type == VARIABLE::VECTOR && p.result.type == VARIABLE::VECTOR) {
 								prg.vectors[(int)prg.variables[i].n] = p.vectors[(int)p.result.n];
 							}
+							*/
 							break;
 						}
 					}
@@ -2583,10 +2593,15 @@ bool interpret(PROGRAM &prg)
 		std::vector<std::string> strings;
 		strings.push_back(id);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
-		
+	
+		if (prg.vectors.find(values[0]) == prg.vectors.end()) {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
+		}
+		/*
 		if (values[0] < 0 || values[0] >= prg.vectors.size()) {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
 		}
+		*/
 
 		std::vector<VARIABLE> &v = prg.vectors[values[0]];
 
@@ -2632,7 +2647,7 @@ bool interpret(PROGRAM &prg)
 		strings.push_back(id);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
 		
-		if (values[0] < 0 || values[0] >= prg.vectors.size()) {
+		if (prg.vectors.find(values[0]) == prg.vectors.end()) {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
 		}
 
@@ -2662,7 +2677,7 @@ bool interpret(PROGRAM &prg)
 		strings.push_back(index);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
 		
-		if (values[0] < 0 || values[0] >= prg.vectors.size()) {
+		if (prg.vectors.find(values[0]) == prg.vectors.end()) {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
 		}
 
@@ -2716,7 +2731,7 @@ bool interpret(PROGRAM &prg)
 		strings.push_back(index);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
 		
-		if (values[0] < 0 || values[0] >= prg.vectors.size()) {
+		if (prg.vectors.find(values[0]) == prg.vectors.end()) {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
 		}
 
@@ -2770,13 +2785,15 @@ bool interpret(PROGRAM &prg)
 		strings.push_back(index);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-		if (values[0] < 0 || values[0] >= prg.vectors.size()) {
+		if (prg.vectors.find(values[0]) == prg.vectors.end()) {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
 		}
 
 		std::vector<VARIABLE> &v = prg.vectors[values[0]];
 
 		if (values[1] < 0 || values[1] >= v.size()) {
+		char buf[1000];
+		snprintf(buf, 1000, "%g", values[0]);
 			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid index on line " + itos(get_line_num(prg)));
 		}
 
@@ -2809,7 +2826,7 @@ bool interpret(PROGRAM &prg)
 		strings.push_back(index);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-		if (values[0] < 0 || values[0] >= prg.vectors.size()) {
+		if (prg.vectors.find(values[0]) == prg.vectors.end()) {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
 		}
 
@@ -2973,6 +2990,11 @@ bool interpret(PROGRAM &prg)
 		prg.variables[di] = p.result;
 		prg.variables[di].name = bak;
 		prg.variables[di].function = bak2;
+		
+		prg.mml_id = p.mml_id;
+		prg.image_id = p.image_id;
+		prg.font_id = p.font_id;
+		prg.vector_id = p.vector_id;
 
 		// Remove mml/image/font assets that are from the main program so they don't get destroyed
 
@@ -3558,6 +3580,44 @@ bool interpret(PROGRAM &prg)
 		reset_game_name = names;
 
 		return false;
+	}
+	else if (tok == "start_image") {
+		std::string img = token(prg);
+
+		if (img == "") {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected start_image parameters on line " + itos(get_line_num(prg)));
+		}
+
+		std::vector<std::string> strings;
+		strings.push_back(img);
+		std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+		if (prg.images.find(values[0]) == prg.images.end()) {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Unknown image \"" + img + "\" on line " + itos(get_line_num(prg)));
+		}
+
+		gfx::Image *image = prg.images[values[0]];
+
+		image->start_batch();
+	}
+	else if (tok == "end_image") {
+		std::string img = token(prg);
+
+		if (img == "") {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected end_image parameters on line " + itos(get_line_num(prg)));
+		}
+
+		std::vector<std::string> strings;
+		strings.push_back(img);
+		std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+		if (prg.images.find(values[0]) == prg.images.end()) {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Unknown image \"" + img + "\" on line " + itos(get_line_num(prg)));
+		}
+
+		gfx::Image *image = prg.images[values[0]];
+
+		image->end_batch();
 	}
 	else {
 		throw PARSE_EXCEPTION(prg.name + ": " + "Invalid token \"" + tok + "\" on line " + itos(get_line_num(prg)));

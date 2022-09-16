@@ -189,6 +189,10 @@ void draw_all()
 		}
 
 		prg.vectors = p.vectors;
+		prg.mml_id = p.mml_id;
+		prg.image_id = p.image_id;
+		prg.font_id = p.font_id;
+		prg.vector_id = p.vector_id;
 
 		/*
 		for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
@@ -342,6 +346,11 @@ static void loop()
 					}
 					
 					prg.vectors = p.vectors;
+		
+					prg.mml_id = p.mml_id;
+					prg.image_id = p.image_id;
+					prg.font_id = p.font_id;
+					prg.vector_id = p.vector_id;
 		
 					/*
 					for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
@@ -671,6 +680,11 @@ again:
 		}
 		
 		prg.vectors = p.vectors;
+		
+		prg.mml_id = p.mml_id;
+		prg.image_id = p.image_id;
+		prg.font_id = p.font_id;
+		prg.vector_id = p.vector_id;
 
 		/*
 		for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
@@ -729,6 +743,10 @@ again:
 		
 		prg.vectors = p.vectors;
 
+		prg.mml_id = p.mml_id;
+		prg.image_id = p.image_id;
+		prg.font_id = p.font_id;
+		prg.vector_id = p.vector_id;
 		/*
 		for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
 			std::pair< int, std::vector<VARIABLE> > pair = *it;

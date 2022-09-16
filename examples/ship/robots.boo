@@ -141,18 +141,40 @@ call = board start_board
 
 function draw
 start
-	clear 255 255 255
-
 	var number x
 	var number y
 
 	var number xx
 	var number yy
 
+	start_image grass_img
+
 	= y 0
 label loop_y
 	= x 0
 label loop_x
+
+	= xx x
+	* xx rect_w
+	= yy y
+	* yy rect_h
+
+	draw_image grass_img xx yy
+
+	+ x 1
+	? x width
+	jl loop_x
+	
+	+ y 1
+	? y height
+	jl loop_y
+
+	end_image grass_img
+
+	= y 0
+label loop_y1
+	= x 0
+label loop_x1
 	var number value
 	call = value get_board board x y
 
@@ -161,21 +183,7 @@ label loop_x
 	= yy y
 	* yy rect_h
 
-;	var number xxx
-;	var number yyy
-;	= xxx xx
-;	- xxx 0.5
-;	= yyy yy
-;	- yyy 0.5
-;	var number w
-;	= w rect_w
-;	+ w 1
-;	var number h
-;	= h rect_h
-;	+ h 1
-;	rectangle 0 0 255 255 xxx yyy w h 2
-
-	draw_image grass_img xx yy
+	;draw_image grass_img xx yy
 
 	? value 1
 	jl past_draw
@@ -203,40 +211,17 @@ label crash
 
 label done_image
 
-;	var number w
-;	= w rect_w
-;	* w 0.75
-;	var number h
-;	= h rect_h
-;	* h 0.75
-;	var number dx
-;	var number dy
-;	= dx rect_w
-;	- dx w
-;	= dy rect_h
-;	- dy h
-;	/ dx 2
-;	/ dy 2
-;	var number xxx
-;	var number yyy
-;	= xxx xx
-;	+ xxx dx
-;	= yyy yy
-;	+ yyy dy
-;
-;	filled_rectangle red green blue 255 red green blue 255 red green blue 255 red green blue 255 xxx yyy w h
-;
 	draw_image image xx yy
 
 label past_draw
 
 	+ x 1
 	? x width
-	jl loop_x
+	jl loop_x1
 	
 	+ y 1
 	? y height
-	jl loop_y
+	jl loop_y1
 end
 
 function move_robots
@@ -249,8 +234,54 @@ start
 	var number y
 	= y 0
 
+	var vector robot_indices
+	var number nbots
+	= nbots 0
+
+	= i 0
+label find_robots
+	var number value
+	vector_get board value i
+	? value 2
+	jne next_robot
+	vector_add robot_indices i
+	+ nbots 1
+label next_robot
+	+ i 1
+	? i size
+	jl find_robots
+
+	? nbots 0
+	jne verify
+
+	= gameover 1
+	= gameover_start tick
+
+	goto finish
+
+label verify
 	= i 0
 label top
+	var number found
+	= found 0
+
+	var number j
+	= j 0
+label next_match
+	var number value
+	vector_get robot_indices value j
+	? value i
+	jne not_a_match
+	= found 1
+	goto done_checking
+label not_a_match
+	+ j 1
+	? j nbots
+	jl next_match
+label done_checking
+
+	? found 0
+	je continue2
 
 	var number value
 	call = value get_board board x y
@@ -264,6 +295,9 @@ label top
 	var number dir_y
 	var number dx_abs
 	var number dy_abs
+
+	= dir_x 0
+	= dir_y 0
 
 	= dx x
 	- dx player_x
@@ -310,7 +344,7 @@ label move_y
 
 	+ new_y dir_y
 
-label done_move ; not really
+label done_move
 
 	call set_board board x y 0
 
@@ -348,6 +382,8 @@ label continue
 	+ i 1
 	? i size
 	jl top
+
+label finish
 end
 
 function move_player l r u d
@@ -473,7 +509,23 @@ label do_input
 	= bak_r joy_r
 	= bak_u joy_u
 	= bak_d joy_d
+	
+	? gameover 1
+	jne continue_input
 
+	var number t
+	= t tick
+	- t gameover_start
+
+	? t 180
+	jl finish
+
+	= gameover 0
+	call = board start_board
+
+	goto finish
+
+label continue_input
 
 	? joy_l 0
 	je next_dir1
