@@ -1,7 +1,7 @@
 ; vectors and fonts
 
 var string reset_game_name
-= reset_game_name "melons.boo"
+= reset_game_name "clock.boo"
 include "slideshow_start.inc"
 
 var number size
