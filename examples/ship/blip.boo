@@ -1,7 +1,7 @@
 ; joystick input and sfx
 
 var string reset_game_name
-= reset_game_name "gameover.bb"
+= reset_game_name "gameover.boo"
 include "slideshow_start.inc"
 
 var number radius

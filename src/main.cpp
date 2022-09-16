@@ -198,6 +198,9 @@ void draw_all()
 		*/
 	}
 
+	gfx::draw_guis();
+	gfx::draw_notifications();
+
 	gfx::flip();
 }
 
@@ -591,12 +594,12 @@ again:
 		}
 		else {
 			try {
-				prg.code = util::load_text_from_filesystem("main.bb");
+				prg.code = util::load_text_from_filesystem("main.boo");
 				load_from_filesystem = true;
 			}
 			catch (util::Error e) {
 				try {
-					prg.code = util::load_text("code/main.bb");
+					prg.code = util::load_text("code/main.boo");
 					load_from_filesystem = false;
 				}
 				catch (util::Error e) {

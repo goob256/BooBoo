@@ -1,7 +1,7 @@
 ; subroutines
 
 var string reset_game_name
-= reset_game_name "sine.bb"
+= reset_game_name "sine.boo"
 include "slideshow_start.inc"
 
 var vector params

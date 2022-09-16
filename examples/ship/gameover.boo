@@ -1,7 +1,7 @@
 ; music and images
 
 var string reset_game_name
-= reset_game_name "memory.bb"
+= reset_game_name "rgb.boo"
 include "slideshow_start.inc"
 
 play_music "music/gameover.mml"

@@ -1,8 +1,46 @@
 ; a small demo (1 or 2 players)
 
 var string reset_game_name
-= reset_game_name "main.bb"
+= reset_game_name "main.boo"
 include "slideshow_start.inc"
+
+var number score1
+= score1 0
+var number score2
+= score2 0
+
+function rand_speed
+start
+	var number f
+	rand f 0 1000
+	/ f 1000.0
+	* f 5.0
+	return f
+end
+
+var number next_cpu1_speed_update
+rand next_cpu1_speed_update 0 100
+var number cpu1_speed
+call = cpu1_speed rand_speed
+var number next_cpu2_speed_update
+rand next_cpu2_speed_update 0 100
+var number cpu2_speed
+call = cpu2_speed rand_speed
+
+var number success
+cfg_load success "com.b1stable.pong"
+? success 0
+je create
+cfg_get_number score1 "score1"
+cfg_get_number score2 "score2"
+goto done_cfg
+label create
+cfg_set_number "score1" score1
+cfg_set_number "score2" score2
+label done_cfg
+
+var number font
+load_font font "DejaVuSans.ttf" 48
 
 var number paddle1
 var number paddle2
@@ -110,7 +148,7 @@ label not_neg1
 	? paddle1 ball_y
 	jl move_down1
 
-	- paddle1 5.0
+	- paddle1 cpu1_speed
 	? paddle1 half
 	jge done_cpu1
 	= paddle1 half
@@ -118,7 +156,7 @@ label not_neg1
 
 label move_down1
 
-	+ paddle1 5.0
+	+ paddle1 cpu1_speed
 	var number bott
 	= bott 360
 	- bott half
@@ -177,7 +215,7 @@ label not_neg
 	? paddle2 ball_y
 	jl move_down
 
-	- paddle2 5.0
+	- paddle2 cpu2_speed
 	? paddle2 half
 	jge done_cpu
 	= paddle2 half
@@ -185,7 +223,7 @@ label not_neg
 
 label move_down
 
-	+ paddle2 5.0
+	+ paddle2 cpu2_speed
 	var number bott
 	= bott 360
 	- bott half
@@ -201,6 +239,7 @@ label done_cpu
 
 	call reset_ball
 	play_mml point_sfx
+	+ score2 1
 
 label no_point2
 
@@ -212,6 +251,7 @@ label no_point2
 
 	call reset_ball
 	play_mml point_sfx
+	+ score1 1
 
 label no_point1
 	
@@ -304,7 +344,21 @@ label done_hit_paddle2
 
 	= prev_ball_x ball_x
 	= prev_ball_y ball_y
-	
+
+	- next_cpu1_speed_update 1
+	? next_cpu1_speed_update 0
+	jge test2
+	rand next_cpu1_speed_update 0 100
+	call = cpu1_speed rand_speed
+
+label test2
+	- next_cpu2_speed_update 1
+	? next_cpu2_speed_update 0
+	jge slideshow
+	rand next_cpu2_speed_update 0 100
+	call = cpu2_speed rand_speed
+
+label slideshow
 	include "slideshow_logic.inc"
 end
 
@@ -340,6 +394,44 @@ start
 	* bw 2
 
 	filled_rectangle 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 bx by bw bw
+
+	var number x1
+	var number x2
+	= x1 320
+	- x1 32
+	= x2 320
+	+ x2 32
+	
+	var string text1
+	var string text2
+	string_format text1 "%" score1
+	string_format text2 "%" score2
+
+	var number w1
+	var number w2
+
+	text_width font w1 text1
+	text_width font w2 text2
+
+	- x1 w1
+
+	var number y
+	= y 360
+	var number fh
+	font_height font fh
+	- y fh
+	- y 8
+
+	draw_text font 255 255 255 255 text1 x1 y
+	draw_text font 255 255 255 255 text2 x2 y
+end
+
+function shutdown
+start
+	cfg_set_number "score1" score1
+	cfg_set_number "score2" score2
+
+	cfg_save "com.b1stable.pong"
 end
 
 call reset_ball
