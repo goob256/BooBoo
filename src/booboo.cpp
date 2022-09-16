@@ -191,6 +191,9 @@ static int get_line_num(PROGRAM &prg)
 {
 	int ln = prg.line + prg.start_line;
 
+	// FIXME
+	return ln;
+
 	if (ln < 0 || ln >= prg.line_numbers.size()) {
 		return -1;
 	}
@@ -2486,10 +2489,48 @@ bool interpret(PROGRAM &prg)
 			set_string_or_number(prg, x2, x2f);
 			set_string_or_number(prg, y2, y2f);
 
-			double _lb = SDL_JoystickGetButton(joy, TGUI_B_L);
-			double _rb = SDL_JoystickGetButton(joy, TGUI_B_R);
-			double ub = SDL_JoystickGetButton(joy, TGUI_B_U);
-			double db = SDL_JoystickGetButton(joy, TGUI_B_D);
+			Uint8 hat = SDL_JoystickGetHat(joy, 0);
+			
+			double _lb = 0;
+			double _rb = 0;
+			double ub = 0;
+			double db = 0;
+
+			switch (hat) {
+				case SDL_HAT_UP:
+					ub = true;
+					break;
+				case SDL_HAT_RIGHT:
+					_rb = true;
+					break;
+				case SDL_HAT_DOWN:
+					db = true;
+					break;
+				case SDL_HAT_LEFT:
+					_lb = true;
+					break;
+				case SDL_HAT_RIGHTUP:
+					_rb = true;
+					ub = true;
+					break;
+				case SDL_HAT_RIGHTDOWN:
+					_rb = true;
+					db = true;
+					break;
+				case SDL_HAT_LEFTUP:
+					_lb = true;
+					ub = true;
+					break;
+
+				case SDL_HAT_LEFTDOWN:
+					_lb = true;
+					db = true;
+			}
+
+			//double _lb = SDL_JoystickGetButton(joy, TGUI_B_L);
+			//double _rb = SDL_JoystickGetButton(joy, TGUI_B_R);
+			//double ub = SDL_JoystickGetButton(joy, TGUI_B_U);
+			//double db = SDL_JoystickGetButton(joy, TGUI_B_D);
 			double ab = SDL_JoystickGetButton(joy, TGUI_B_A);
 			double bb = SDL_JoystickGetButton(joy, TGUI_B_B);
 			double xb = SDL_JoystickGetButton(joy, TGUI_B_X);
