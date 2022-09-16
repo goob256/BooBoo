@@ -62,6 +62,7 @@ struct PROGRAM {
 	std::map<int, gfx::Image *> images;
 	std::map<int, gfx::TTF *> fonts;
 	std::map< int, std::vector<VARIABLE> > vectors;
+	std::vector<int> line_numbers;
 };
 
 bool interpret(PROGRAM &prg);

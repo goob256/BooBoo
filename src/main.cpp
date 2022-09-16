@@ -487,7 +487,7 @@ void set_shim_args(bool initial, bool force_windowed, bool force_fullscreen)
 int main(int argc, char **argv)
 {
 #ifdef _WIN32
-	SDL_RegisterApp("BoopBoop", 0, 0);
+	SDL_RegisterApp("BooBoo", 0, 0);
 #endif
 
 	orig_argc = argc;
@@ -510,9 +510,9 @@ int main(int argc, char **argv)
 	}
 #endif
 
-	shim::window_title = "BoopBoop";
+	shim::window_title = "BooBoo";
 	shim::organisation_name = "b1stable";
-	shim::game_name = "BoopBoop";
+	shim::game_name = "BooBoo";
 	//
 	shim::logging = true;
 	gfx::Image::ignore_palette = true;
@@ -607,6 +607,7 @@ again:
 	}
 	load_from_filesystem_set = true;
 	prg.line = 1;
+	prg.line_numbers.clear();
 	prg.start_line = 0;
 	prg.p = 0;
 	
