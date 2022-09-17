@@ -190,8 +190,7 @@ start
 	= x 0
 :loop_x1
 	var number value
-	call = value get_board board x y
-	;vector_get board value index
+	vector_get board value index
 
 	= xx x
 	* xx rect_w
