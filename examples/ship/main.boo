@@ -6,8 +6,8 @@ var string reset_game_name
 = reset_game_name "sine.boo"
 include "slideshow_start.inc"
 
-var vector params
-vector_add params 1
+var number hidden
+= hidden 1
 
 var number font
 load_font font "DejaVuSans.ttf" 128
@@ -18,11 +18,11 @@ start
 
 	? joy_x 0
 	jne show
-	vector_set params 0 1
+	= hidden 1
 	goto done_logic
 
 :show
-	vector_set params 0 0
+	= hidden 0
 
 :done_logic
 	include "slideshow_logic.inc"
@@ -33,7 +33,13 @@ start
 	clear 255 0 0
 
 	var string secret
-	sub secret "main.sub" params
+	? hidden 0
+	jne shhh
+	= secret "SECRET";
+	goto done_secret
+:shhh
+	= secret "******";
+:done_secret
 
 	var number x
 	var number y
