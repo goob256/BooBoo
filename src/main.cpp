@@ -144,7 +144,7 @@ void draw_all()
 {
 	gfx::clear(shim::black);
 
-	call_function(prg, "draw", "", false);
+	call_function(prg, "draw", "");
 
 	gfx::draw_guis();
 	gfx::draw_notifications();
@@ -246,7 +246,7 @@ static void loop()
 			TGUI_Event *event = shim::handle_event(&sdl_event);
 			handle_event(event);
 
-			call_function(prg, "logic", "", false);
+			call_function(prg, "logic", "");
 
 			if (reset_game_name != "") {
 				quit = true;
@@ -514,27 +514,20 @@ again:
 		process_includes(prg);
 		prg.labels = process_labels(prg);
 
-		std::map<std::string, VARIABLE> tmp;
-		prg.variables_backup_stack.push_back(tmp);
 		while (interpret(prg)) {
 		}
 	}
 	catch (EXCEPTION e) {
 		gui::fatalerror("ERROR", e.error.c_str(), gui::OK, true);
 	}
-	std::map<std::string, VARIABLE> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
-	for (std::map<std::string, VARIABLE>::iterator it = variables_backup.begin(); it != variables_backup.end(); it++) {
-		prg.variables[(*it).first] = (*it).second;
-	}
-	prg.variables_backup_stack.erase(prg.variables_backup_stack.begin()+(prg.variables_backup_stack.size()-1));
 	
-	call_function(prg, "init", "", false);
+	call_function(prg, "init", "");
 
 	if (reset_game_name == "") {
 		go();
 	}
 
-	call_function(prg, "shutdown", "", false);
+	call_function(prg, "shutdown", "");
 
 	destroy_program(prg, true);
 

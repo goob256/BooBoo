@@ -570,46 +570,42 @@ static void set_string_or_number(PROGRAM &prg, std::string name, double value)
 	}
 }
 
-void call_function(PROGRAM &prg, std::string function_name, std::string result_name, bool process_args)
+void call_function(PROGRAM &prg, std::string function_name, std::string result_name)
 {
 	for (size_t i = 0; i < prg.functions.size(); i++) {
 		if (prg.functions[i].name == function_name) {
 			std::map<std::string, VARIABLE> tmp;
 			prg.variables_backup_stack.push_back(tmp);
 
-			if (process_args) {
-				for (size_t j = 0; j < prg.functions[i].parameters.size(); j++) {
-					std::string param = token(prg);
-					
-					if (param == "") {
-						throw PARSE_EXCEPTION(prg.name + ": " + "Expected call parameters on line " + itos(get_line_num(prg)));
-					}
-					
-					VARIABLE var;
-
-					var.function = function_name;
-
-					if (param[0] == '-' || isdigit(param[0])) {
-						var.name = prg.functions[i].parameters[j];
-						var.type = VARIABLE::NUMBER;
-						var.n = atof(param.c_str());
-					}
-					else {
-						VARIABLE &v1 = find_variable(prg, param);
-						var = v1;
-						var.name = prg.functions[i].parameters[j];
-					}
-
-					std::map<std::string, VARIABLE> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
-					std::map<std::string, VARIABLE>::iterator it3;
-					if ((it3 = prg.variables.find(var.name)) != prg.variables.end()) {
-						if ((*it3).second.function != prg.name) {
-							variables_backup[var.name] = prg.variables[var.name];
-						}
-					}
-
-					prg.variables[var.name] = var;
+			for (size_t j = 0; j < prg.functions[i].parameters.size(); j++) {
+				std::string param = token(prg);
+				
+				if (param == "") {
+					throw PARSE_EXCEPTION(prg.name + ": " + "Expected call parameters on line " + itos(get_line_num(prg)));
 				}
+				
+				VARIABLE var;
+
+				var.function = function_name;
+
+				if (param[0] == '-' || isdigit(param[0])) {
+					var.name = prg.functions[i].parameters[j];
+					var.type = VARIABLE::NUMBER;
+					var.n = atof(param.c_str());
+				}
+				else {
+					VARIABLE &v1 = find_variable(prg, param);
+					var = v1;
+					var.name = prg.functions[i].parameters[j];
+				}
+
+				std::map<std::string, VARIABLE> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
+				std::map<std::string, VARIABLE>::iterator it3;
+				if ((it3 = prg.variables.find(var.name)) != prg.variables.end()) {
+					variables_backup[var.name] = prg.variables[var.name];
+				}
+
+				prg.variables[var.name] = var;
 			}
 
 			std::string code_bak = prg.code;
@@ -1305,7 +1301,7 @@ bool interpret(PROGRAM &prg)
 			function_name = tok2;
 		}
 
-		call_function(prg, function_name, result_name, true);
+		call_function(prg, function_name, result_name);
 	}
 	else if (tok == "rand") {
 		std::string dest = token(prg);
