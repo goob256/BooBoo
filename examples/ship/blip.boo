@@ -44,5 +44,5 @@ end
 function draw
 start
 	clear 0 0 0
-	circle 0 255 0 255 320 180 radius 1
+	circle 0 255 0 255 320 180 radius 1 -1
 end

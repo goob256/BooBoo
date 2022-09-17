@@ -27,7 +27,7 @@ function draw
 start
 	clear 255 0 255
 
-	filled_circle 255 255 0 255 x y radius
+	filled_circle 255 255 0 255 x y radius -1
 end
 
 function logic

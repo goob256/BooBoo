@@ -62,7 +62,7 @@ start
 	* y 85
 	+ y 180
 
-	line 0 0 0 255 x y 320 180 5
+	line 0 0 0 255 x y 320 180 5 ; minute hand
 	
 	var number a1
 	var number a2
@@ -96,7 +96,7 @@ start
 	+ x3 x
 	+ y3 y
 
-	filled_triangle 0 0 0 255 0 0 0 255 0 0 0 255 x1 y1 x2 y2 x3 y3
+	filled_triangle 0 0 0 255 0 0 0 255 0 0 0 255 x1 y1 x2 y2 x3 y3 ; minute hand point
 
 	var number a2
 	= a2 angle2
@@ -108,7 +108,7 @@ start
 	* y 10
 	+ y 180
 
-	line 0 0 0 255 x y 320 180 5
+	line 0 0 0 255 x y 320 180 5 ; extend minute hand back
 
 	cos x angle3
 	* x 60
@@ -117,7 +117,7 @@ start
 	* y 60
 	+ y 180
 
-	line 0 0 0 255 x y 320 180 10
+	line 0 0 0 255 x y 320 180 10 ; hour hand
 	
 	cos x1 angle3
 	* x1 10
@@ -142,7 +142,7 @@ start
 	+ x3 x
 	+ y3 y
 
-	filled_triangle 0 0 0 255 0 0 0 255 0 0 0 255 x1 y1 x2 y2 x3 y3
+	filled_triangle 0 0 0 255 0 0 0 255 0 0 0 255 x1 y1 x2 y2 x3 y3 ; hour hand point
 	
 	= a2 angle3
 	+ a2 3.14159
@@ -153,7 +153,7 @@ start
 	* y 10
 	+ y 180
 
-	line 0 0 0 255 x y 320 180 10
+	line 0 0 0 255 x y 320 180 10 ; extend hour hand back
 
 	cos x angle
 	* x 100
@@ -162,7 +162,7 @@ start
 	* y 100
 	+ y 180
 
-	line 255 0 0 255 x y 320 180 2
+	line 255 0 0 255 x y 320 180 2 ; second hand
 
 	var number a2
 	= a2 angle
@@ -174,7 +174,7 @@ start
 	* y 15
 	+ y 180
 
-	line 255 0 0 255 x y 320 180 2
+	line 255 0 0 255 x y 320 180 2 ; extend second hand back
 end
 
 function shutdown

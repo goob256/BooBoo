@@ -3,7 +3,7 @@
 play_music "music/main.mml"
 
 var string reset_game_name
-= reset_game_name "main.boo"
+= reset_game_name "sine.boo"
 include "slideshow_start.inc"
 
 var number hidden

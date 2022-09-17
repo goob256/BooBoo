@@ -1757,8 +1757,9 @@ bool interpret(PROGRAM &prg)
 		std::string y =  token(prg);
 		std::string radius =  token(prg);
 		std::string thickness =  token(prg);
+		std::string sections =  token(prg);
 		
-		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || radius == "" || thickness == "") {
+		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || radius == "" || thickness == "" || sections == "") {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected circle parameters on line " + itos(get_line_num(prg)));
 		}
 		
@@ -1771,6 +1772,7 @@ bool interpret(PROGRAM &prg)
 		strings.push_back(y);
 		strings.push_back(radius);
 		strings.push_back(thickness);
+		strings.push_back(sections);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
 
 		SDL_Colour c;
@@ -1785,8 +1787,9 @@ bool interpret(PROGRAM &prg)
 		p.y = values[5];
 		float _r = values[6];
 		float thick = values[7];
+		int _sections = values[8];
 
-		gfx::draw_circle(c, p, _r, thick);
+		gfx::draw_circle(c, p, _r, thick, _sections);
 	}
 	else if (tok == "filled_circle") {
 		std::string r =  token(prg);
@@ -1796,8 +1799,9 @@ bool interpret(PROGRAM &prg)
 		std::string x =  token(prg);
 		std::string y =  token(prg);
 		std::string radius =  token(prg);
+		std::string sections =  token(prg);
 		
-		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || radius == "") {
+		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || radius == "" || sections == "") {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected filled_circle parameters on line " + itos(get_line_num(prg)));
 		}
 		
@@ -1809,6 +1813,7 @@ bool interpret(PROGRAM &prg)
 		strings.push_back(x);
 		strings.push_back(y);
 		strings.push_back(radius);
+		strings.push_back(sections);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
 
 		SDL_Colour c;
@@ -1822,8 +1827,9 @@ bool interpret(PROGRAM &prg)
 		p.x = values[4];
 		p.y = values[5];
 		float _r = values[6];
+		int _sections = values[7];
 
-		gfx::draw_filled_circle(c, p, _r);
+		gfx::draw_filled_circle(c, p, _r, _sections);
 	}
 	else if (tok == ";") {
 		while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
