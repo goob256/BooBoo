@@ -190,8 +190,8 @@ start
 	= x 0
 :loop_x1
 	var number value
-	;call = value get_board board x y
-	vector_get board value index
+	call = value get_board board x y
+	;vector_get board value index
 
 	= xx x
 	* xx rect_w
@@ -300,7 +300,6 @@ start
 	je continue2
 
 	var number value
-	;call = value get_board board x y
 	vector_get board value i
 
 	? value 2
