@@ -2138,6 +2138,8 @@ bool interpret(PROGRAM &prg)
 		std::string y1 = token(prg);
 		std::string x2 = token(prg);
 		std::string y2 = token(prg);
+		std::string x3 = token(prg);
+		std::string y3 = token(prg);
 		std::string l = token(prg);
 		std::string r = token(prg);
 		std::string u = token(prg);
@@ -2148,10 +2150,12 @@ bool interpret(PROGRAM &prg)
 		std::string y = token(prg);
 		std::string lb = token(prg);
 		std::string rb = token(prg);
+		std::string ls = token(prg);
+		std::string rs = token(prg);
 		std::string back = token(prg);
 		std::string start = token(prg);
 	
-		if (num == "" || x1 == "" || y1 == "" || x2 == "" || y2 == "" || l == "" || r == "" || u == "" || d == "" || a == "" || b == "" || x == "" || y == "" || lb == "" || rb == "" || back == "" || start == "") {
+		if (num == "" || x1 == "" || y1 == "" || x2 == "" || y2 == "" || x3 == "" || y3 == "" || l == "" || r == "" || u == "" || d == "" || a == "" || b == "" || x == "" || y == "" || lb == "" || rb == "" || ls == "" || rs == "" || back == "" || start == "") {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected poll_joystick parameters on line " + itos(get_line_num(prg)));
 		}
 
@@ -2176,6 +2180,10 @@ bool interpret(PROGRAM &prg)
 		names.push_back(rb);
 		names.push_back(back);
 		names.push_back(start);
+		names.push_back(x3);
+		names.push_back(y3);
+		names.push_back(ls);
+		names.push_back(rs);
 
 		for (size_t i = 0; i < names.size(); i++) {
 			find_variable(prg, names[i]);
@@ -2202,6 +2210,10 @@ bool interpret(PROGRAM &prg)
 			set_string_or_number(prg, rb, 0);
 			set_string_or_number(prg, back, 0);
 			set_string_or_number(prg, start, 0);
+			set_string_or_number(prg, ls, 0);
+			set_string_or_number(prg, rs, 0);
+			set_string_or_number(prg, x3, 0);
+			set_string_or_number(prg, y3, 0);
 		}
 		else {
 
@@ -2209,11 +2221,15 @@ bool interpret(PROGRAM &prg)
 			Sint16 si_y1 = SDL_JoystickGetAxis(joy, 1);
 			Sint16 si_x2 = SDL_JoystickGetAxis(joy, 2);
 			Sint16 si_y2 = SDL_JoystickGetAxis(joy, 3);
+			Sint16 si_x3 = SDL_JoystickGetAxis(joy, 4);
+			Sint16 si_y3 = SDL_JoystickGetAxis(joy, 5);
 
 			double x1f;
 			double y1f;
 			double x2f;
 			double y2f;
+			double x3f;
+			double y3f;
 
 			if (si_x1 < 0) {
 				x1f = si_x1 / 32768.0;
@@ -2243,10 +2259,26 @@ bool interpret(PROGRAM &prg)
 				y2f = si_y2 / 32767.0;
 			}
 
+			if (si_x3 < 0) {
+				x3f = si_x3 / 32768.0;
+			}
+			else {
+				x3f = si_x3 / 32767.0;
+			}
+
+			if (si_y3 < 0) {
+				y3f = si_y3 / 32768.0;
+			}
+			else {
+				y3f = si_y3 / 32767.0;
+			}
+
 			set_string_or_number(prg, x1, x1f);
 			set_string_or_number(prg, y1, y1f);
 			set_string_or_number(prg, x2, x2f);
 			set_string_or_number(prg, y2, y2f);
+			set_string_or_number(prg, x3, x3f);
+			set_string_or_number(prg, y3, y3f);
 
 			Uint8 hat = SDL_JoystickGetHat(joy, 0);
 			
@@ -2298,6 +2330,8 @@ bool interpret(PROGRAM &prg)
 			double rbb = SDL_JoystickGetButton(joy, TGUI_B_RB);
 			double backb = SDL_JoystickGetButton(joy, TGUI_B_BACK);
 			double startb = SDL_JoystickGetButton(joy, TGUI_B_START);
+			double lsb = SDL_JoystickGetButton(joy, TGUI_B_LS);
+			double rsb = SDL_JoystickGetButton(joy, TGUI_B_RS);
 
 			set_string_or_number(prg, l, _lb);
 			set_string_or_number(prg, r, _rb);
@@ -2311,6 +2345,8 @@ bool interpret(PROGRAM &prg)
 			set_string_or_number(prg, rb, rbb);
 			set_string_or_number(prg, rb, backb);
 			set_string_or_number(prg, rb, startb);
+			set_string_or_number(prg, ls, lsb);
+			set_string_or_number(prg, rs, rsb);
 		}
 	}
 	else if (tok == "num_joysticks") {
