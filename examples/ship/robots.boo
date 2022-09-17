@@ -31,6 +31,8 @@ var number old_d
 = old_d 0
 var number tick
 = tick 0
+var number next_cpu_move
+= next_cpu_move 60
 var number gameover
 = gameover 0
 var number gameover_start
@@ -488,35 +490,9 @@ start
 :really_done
 end
 
-function logic
+function joystick_input
 start
-	var number sz
-	vector_size board sz
-	var number i
-	var number count
-	= count 0
-	= i 0
-:loop_top
-	var number value
-	vector_get board value i
-	? value 2
-	jne another
-	+ count 1
-:another
-	+ i 1
-	? i sz
-	jl loop_top
-
-	? count 0
-	jne do_input
-	? gameover 1
-	je do_input
-	= gameover 1
-	= gameover_start tick
-
 :do_input
-	+ tick 1
-
 	include "poll_joystick.inc"
 
 	var number bak_l
@@ -528,21 +504,6 @@ start
 	= bak_u joy_u
 	= bak_d joy_d
 	
-	? gameover 1
-	jne continue_input
-
-	var number t
-	= t tick
-	- t gameover_start
-
-	? t 180
-	jl finish
-
-	= gameover 0
-	call = board start_board
-
-	goto finish
-
 :continue_input
 
 	? joy_l 0
@@ -593,13 +554,263 @@ start
 
 :move
 	call move_player joy_l joy_r joy_u joy_d
-
+	
 :finish
 	= old_l bak_l
 	= old_r bak_r
 	= old_u bak_u
 	= old_d bak_d
+end
 
+function cpu_input
+start
+	; make vectors of the positions to the four cardinal directions of the player
+
+	var number bak_x
+	var number bak_y
+	= bak_x player_x
+	= bak_y player_y
+
+	var number dx
+	var number dy
+
+	var number x
+	var number y
+	var vector vx
+	var vector vy
+	
+	= x player_x
+	+ x -1
+
+	= y player_y
+
+	vector_add vx x
+	vector_add vy y
+	
+	= x player_x
+	+ x 1
+
+	= y player_y
+
+	vector_add vx x
+	vector_add vy y
+	
+	= x player_x
+
+	= y player_y
+	- y 1
+
+	vector_add vx x
+	vector_add vy y
+	
+	= x player_x
+
+	= y player_y
+	+ y 1
+
+	vector_add vx x
+	vector_add vy y
+
+	var number i
+
+	var number removed
+
+	= i 0
+:top
+	= removed 0
+
+	var number xx
+	var number yy
+
+	vector_get vx xx i
+	vector_get vy yy i
+
+	? xx 0
+	jl remove
+	? yy 0
+	jl remove
+	? xx width
+	jge remove
+	? yy height
+	jge remove
+
+	var number value
+
+	call = value get_board board xx yy
+
+	? value 0
+	jne remove
+
+	goto end_loop
+
+:remove
+	= removed 1
+	vector_erase vx i
+	vector_erase vy i
+
+:end_loop
+	? removed 1
+	je no_inc
+	+ i 1
+:no_inc
+	var number size
+	vector_size vx size
+	? i size
+	jl top
+
+	var number size
+	vector_size vx size
+
+	? size 0
+	jne pick_random
+
+	; move toward centre, nothing else to do
+
+	var number w
+	= w width
+	var number h
+	= h height
+	/ w 2
+	/ h 2
+
+	? player_x w
+	jl right
+	= dx -1
+	goto do_y
+:right
+	= dx 1
+
+:do_y
+
+	? player_y h
+	jl bottom
+	= dy -1
+	goto do_move
+:bottom
+	= dy 1
+
+	goto do_move
+
+:pick_random
+	var number r
+	var number size
+	vector_size vx size
+	- size 1
+	rand r 0 size
+
+	var number xx
+	var number yy
+
+	vector_get vx xx r
+	vector_get vy yy r
+
+	var number l
+	var number r
+	var number u
+	var number d
+	= l 0
+	= r 0
+	= u 0
+	= d 0
+
+	? xx player_x
+	jl neg_x
+	jg pos_x
+	goto set_y
+
+:neg_x
+	= l 1
+	goto set_y
+:pos_x
+	= r 1
+	goto set_y
+
+:set_y
+
+	? yy player_y
+	jl neg_y
+	jg pos_y
+	goto do_move
+
+:neg_y
+	= u 1
+	goto do_move
+:pos_y
+	= d 1
+
+:do_move
+
+	call move_player l r u d
+	
+:finish
+end
+
+function logic
+start
+	+ tick 1
+
+	var number sz
+	vector_size board sz
+	var number i
+	var number count
+	= count 0
+	= i 0
+
+	? gameover 1
+	je next
+
+:loop_top
+	var number value
+	vector_get board value i
+	? value 2
+	jne another
+	+ count 1
+:another
+	+ i 1
+	? i sz
+	jl loop_top
+
+	? count 0
+	jne next
+	= gameover 1
+	= gameover_start tick
+
+:next
+	? gameover 1
+	jne lets_go
+
+	var number t
+	= t tick
+	- t gameover_start
+
+	? t 180
+	jl finish
+
+	= gameover 0
+	call = board start_board
+
+:lets_go
+
+	var number nj
+	num_joysticks nj
+
+	? nj 0
+	je cpu
+
+	call joystick_input
+
+	goto finish
+
+:cpu
+	? gameover 0
+	jne finish
+
+	? next_cpu_move tick
+	jge finish
+	= next_cpu_move tick
+	+ next_cpu_move 60
+	call cpu_input
+
+:finish
 	include "slideshow_logic.inc"
-
 end

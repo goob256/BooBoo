@@ -1310,6 +1310,7 @@ bool interpret(PROGRAM &prg)
 	else if (tok == "function") {
 		int start_line = prg.line;
 		std::string name = token(prg);
+		int save = get_line_num(prg);
 
 		if (name == "") {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected function parameters on line " + itos(get_line_num(prg)));
@@ -1323,6 +1324,15 @@ bool interpret(PROGRAM &prg)
 			if (tok2 == "start") {
 				break;
 			}
+			else if (tok2 == ";") {
+				while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
+					prg.p++;
+				}
+				prg.line++;
+				if (prg.p < prg.code.length()) {
+					prg.p++;
+				}
+			}
 			if (tok2[0] != '_' && !isalpha(tok2[0])) {
 				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid variable name " + tok2 + " on line " + itos(get_line_num(prg)));
 			}
@@ -1330,7 +1340,7 @@ bool interpret(PROGRAM &prg)
 		}
 		
 		if (tok2 != "start") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Function not terminated on line " + itos(get_line_num(prg)));
+			throw PARSE_EXCEPTION(prg.name + ": " + "Function not terminated on line " + itos(save));
 		}
 
 		int save_p = prg.p;
@@ -1340,11 +1350,20 @@ bool interpret(PROGRAM &prg)
 			if (tok2 == "end") {
 				break;
 			}
+			else if (tok2 == ";") {
+				while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
+					prg.p++;
+				}
+				prg.line++;
+				if (prg.p < prg.code.length()) {
+					prg.p++;
+				}
+			}
 			end_p = prg.p;
 		}
 
 		if (tok2 != "end") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Function not terminated on line " + itos(get_line_num(prg)));
+			throw PARSE_EXCEPTION(prg.name + ": " + "Function not terminated on line " + itos(save));
 		}
 
 		p.name = name;
@@ -1352,6 +1371,7 @@ bool interpret(PROGRAM &prg)
 		p.line = 1;
 		p.start_line = start_line;
 		p.code = prg.code.substr(save_p, end_p-save_p);
+		printf("code=\n%s\n---\n", p.code.c_str());
 		p.labels = process_labels(p);
 		prg.functions.push_back(p);
 	}
