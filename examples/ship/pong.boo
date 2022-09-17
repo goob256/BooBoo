@@ -34,10 +34,10 @@ je create
 cfg_get_number score1 "score1"
 cfg_get_number score2 "score2"
 goto done_cfg
-label create
+:create
 cfg_set_number "score1" score1
 cfg_set_number "score2" score2
-label done_cfg
+:done_cfg
 
 var number font
 load_font font "DejaVuSans.ttf" 48
@@ -82,18 +82,18 @@ start
 	je left
 	= ball_vx 2.5
 	goto done_horiz
-label left
+:left
 	= ball_vx -2.5
-label done_horiz
+:done_horiz
 
 	rand r 0 1
 	? r 0
 	je up 
 	= ball_vy 2.5
 	goto done_vert
-label up
+:up
 	= ball_vy -2.5
-label done_vert
+:done_vert
 end
 
 function logic
@@ -119,7 +119,7 @@ start
 	jl done_joy
 	= paddle1 bot
 
-label below
+:below
 	? joy_y1 -0.1
 	jg done_joy
 	* joy_y1 5.0
@@ -128,10 +128,10 @@ label below
 	jg done_joy
 	= paddle1 half
 
-label done_joy
+:done_joy
 	goto done_cpu1
 
-label cpu1
+:cpu1
 	? ball_vx 0
 	jge done_cpu1
 
@@ -141,7 +141,7 @@ label cpu1
 	? diff 0
 	jge not_neg1
 	neg diff
-label not_neg1
+:not_neg1
 	? diff 10
 	jle done_cpu1
 
@@ -154,7 +154,7 @@ label not_neg1
 	= paddle1 half
 	goto done_cpu1
 
-label move_down1
+:move_down1
 
 	+ paddle1 cpu1_speed
 	var number bott
@@ -164,12 +164,12 @@ label move_down1
 	jle done_cpu1
 	= paddle1 bott
 
-label done_cpu1
+:done_cpu1
 
 	? nj 2
 	jl cpu
 
-label player2
+:player2
 	poll_joystick 1 joy_x1 joy_y1 joy_x2 joy_y2 joy_l joy_r joy_u joy_d joy_a joy_b joy_x joy_y joy_lb joy_rb joy_back joy_start
 
 	? joy_y1 0
@@ -185,7 +185,7 @@ label player2
 	jl done_joy2
 	= paddle2 bot
 
-label below2
+:below2
 	? joy_y1 -0.1
 	jg done_joy2
 	* joy_y1 5.0
@@ -194,11 +194,11 @@ label below2
 	jg done_joy2
 	= paddle2 half
 
-label done_joy2
+:done_joy2
 
 	goto done_cpu
 
-label cpu
+:cpu
 	? ball_vx 0
 	jle done_cpu
 
@@ -208,7 +208,7 @@ label cpu
 	? diff 0
 	jge not_neg
 	neg diff
-label not_neg
+:not_neg
 	? diff 10
 	jle done_cpu
 
@@ -221,7 +221,7 @@ label not_neg
 	= paddle2 half
 	goto done_cpu
 
-label move_down
+:move_down
 
 	+ paddle2 cpu2_speed
 	var number bott
@@ -231,7 +231,7 @@ label move_down
 	jle done_cpu
 	= paddle2 bott
 
-label done_cpu
+:done_cpu
 
 	+ ball_x ball_vx
 	? ball_x ball_radius
@@ -241,7 +241,7 @@ label done_cpu
 	play_mml point_sfx
 	+ score2 1
 
-label no_point2
+:no_point2
 
 	var number right
 	= right 640
@@ -253,7 +253,7 @@ label no_point2
 	play_mml point_sfx
 	+ score1 1
 
-label no_point1
+:no_point1
 	
 	+ ball_y ball_vy
 	? ball_y ball_radius
@@ -263,7 +263,7 @@ label no_point1
 	neg ball_vy
 	play_mml wall_sfx
 
-label no_bounce_top
+:no_bounce_top
 
 	var number bottom
 	= bottom 360
@@ -275,7 +275,7 @@ label no_bounce_top
 	neg ball_vy
 	play_mml wall_sfx
 
-label no_bounce_bottom
+:no_bounce_bottom
 
 	var number paddle_top
 	var number paddle_bottom
@@ -309,7 +309,7 @@ label no_bounce_bottom
 	+ ball_x ball_vx
 	play_mml wall_sfx
 
-label done_hit_paddle1
+:done_hit_paddle1
 
 	= paddle_top paddle2
 	- paddle_top half
@@ -340,7 +340,7 @@ label done_hit_paddle1
 	+ ball_x ball_vx
 	play_mml wall_sfx
 
-label done_hit_paddle2
+:done_hit_paddle2
 
 	= prev_ball_x ball_x
 	= prev_ball_y ball_y
@@ -351,14 +351,14 @@ label done_hit_paddle2
 	rand next_cpu1_speed_update 0 100
 	call = cpu1_speed rand_speed
 
-label test2
+:test2
 	- next_cpu2_speed_update 1
 	? next_cpu2_speed_update 0
 	jge slideshow
 	rand next_cpu2_speed_update 0 100
 	call = cpu2_speed rand_speed
 
-label slideshow
+:slideshow
 	include "slideshow_logic.inc"
 end
 

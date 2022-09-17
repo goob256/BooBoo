@@ -1,5 +1,7 @@
 ; subroutines
 
+play_music "music/main.mml"
+
 var string reset_game_name
 = reset_game_name "sine.boo"
 include "slideshow_start.inc"
@@ -19,10 +21,10 @@ start
 	vector_set params 0 1
 	goto done_logic
 
-label show
+:show
 	vector_set params 0 0
 
-label done_logic
+:done_logic
 	include "slideshow_logic.inc"
 end
 
@@ -51,4 +53,9 @@ start
 	- y fh
 
 	draw_text font 0 0 0 255 secret x y
+end
+
+function shutdown
+start
+	stop_music
 end

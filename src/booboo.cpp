@@ -191,11 +191,8 @@ static int get_line_num(PROGRAM &prg)
 {
 	int ln = prg.line + prg.start_line;
 
-	// FIXME
-	return ln;
-
 	if (ln < 0 || ln >= prg.line_numbers.size()) {
-		return -1;
+		return ln;
 	}
 
 	return prg.line_numbers[ln];
@@ -283,6 +280,10 @@ static std::string token(PROGRAM &prg, bool add_lines = false)
 		else {
 			return "-";
 		}
+	}
+	else if (prg.code[prg.p] == ':') {
+		prg.p++;
+		return ":";
 	}
 	else if (prg.code[prg.p] == '=') {
 		prg.p++;
@@ -401,7 +402,7 @@ std::vector<LABEL> process_labels(PROGRAM prg)
 				}
 			}
 		}
-		else if (tok == "label") {
+		else if (tok == ":") {
 			std::string name = token(prg);
 
 			if (name == "") {
@@ -987,7 +988,7 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 		}
 	}
-	else if (tok == "label") {
+	else if (tok == ":") {
 		std::string name = token(prg);
 
 		if (name == "") {
@@ -2487,8 +2488,6 @@ bool interpret(PROGRAM &prg)
 		std::vector<VARIABLE> &v = prg.vectors[values[0]];
 
 		if (values[1] < 0 || values[1] >= v.size()) {
-		char buf[1000];
-		snprintf(buf, 1000, "%g", values[0]);
 			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid index on line " + itos(get_line_num(prg)));
 		}
 

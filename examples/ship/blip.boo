@@ -23,21 +23,21 @@ start
 	= was_pressed 0
 	goto finish
 
-label currently_pressed
+:currently_pressed
 	? was_pressed 0
 	je go
 	goto finish
 
-label go
+:go
 	= was_pressed 1
 	= radius 0
 	play_mml blip
 
-label finish
+:finish
 	? radius 5000
 	jge really_finish
 	+ radius 25
-label really_finish
+:really_finish
 	include "slideshow_logic.inc"
 end
 

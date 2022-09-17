@@ -26,7 +26,7 @@ start
 
 	start_primitives
 
-label loop
+:loop
 	call draw_at 0 255 0 xx 8
 	+ xx 1
 	? xx 640

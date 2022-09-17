@@ -1,5 +1,5 @@
 var string reset_game_name
-= reset_game_name "melons.boo"
+= reset_game_name "blip.boo"
 include "slideshow_start.inc"
 
 var number ticks
@@ -11,9 +11,9 @@ cfg_load success "com.b1stable.clock"
 je create
 cfg_get_number ticks "ticks"
 goto done_cfg
-label create
+:create
 cfg_set_number "ticks" ticks
-label done_cfg
+:done_cfg
 
 function logic
 start

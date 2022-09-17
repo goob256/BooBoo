@@ -9,7 +9,7 @@ var number size
 
 var vector fonts
 
-label load_fonts
+:load_fonts
 
 var number f
 
@@ -24,7 +24,7 @@ jle load_fonts
 
 var number i
 = i 0
-label smooth
+:smooth
 var number f
 vector_get fonts f i
 font_smooth f 0
@@ -63,7 +63,7 @@ start
 
 	var number i
 	= i 0
-label draw_line
+:draw_line
 	= x half_x
 	var number f
 	vector_get fonts f i
@@ -79,7 +79,7 @@ label draw_line
 	? i l
 	jl draw_line
 
-label no_draw
+:no_draw
 end
 
 function logic

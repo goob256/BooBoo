@@ -1470,7 +1470,6 @@ unsigned char *Image::Internal::reload(bool keep_data, bool load_from_filesystem
 
 	unsigned char *pixels;
 
-printf("ext=\"%s\"\n", ext.c_str());
 	if (ext == "TGA") {
 		pixels = Image::read_tga(filename, size, NULL, &opaque_topleft, &opaque_bottomright, &has_alpha, load_from_filesystem);
 	}

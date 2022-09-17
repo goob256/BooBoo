@@ -15,10 +15,10 @@ jne cfg_found
 = x 320
 = y 180
 goto done_cfg
-label cfg_found
+:cfg_found
 cfg_get_number x "x"
 cfg_get_number y "y"
-label done_cfg
+:done_cfg
 
 var number radius
 = radius 64
@@ -39,14 +39,14 @@ start
 	? joy_x1 -0.1
 	jl x_ok
 	= joy_x1 0
-label x_ok
+:x_ok
 
 	? joy_y1 0.1
 	jg y_ok
 	? joy_y1 -0.1
 	jl y_ok
 	= joy_y1 0
-label y_ok
+:y_ok
 
 	* joy_x1 5
 	* joy_y1 5
@@ -57,7 +57,7 @@ label y_ok
 	jge check_right
 	= x radius
 
-label check_right
+:check_right
 	var number right
 	= right 640
 	- right radius
@@ -65,12 +65,12 @@ label check_right
 	jle check_top
 	= x right
 
-label check_top
+:check_top
 	? y radius
 	jge check_bottom
 	= y radius
 
-label check_bottom
+:check_bottom
 	var number bottom
 	= bottom 360
 	- bottom radius
@@ -78,7 +78,7 @@ label check_bottom
 	jle finish
 	= y bottom
 
-label finish
+:finish
 
 	cfg_set_number "x" x
 	cfg_set_number "y" y

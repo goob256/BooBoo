@@ -55,7 +55,7 @@ start
 
 	vector_set board index value
 
-label skip
+:skip
 end
 
 function get_board board x y
@@ -75,7 +75,7 @@ start
 	vector_get board ret index
 	return ret
 
-label skip
+:skip
 	return 0
 end
 
@@ -89,7 +89,7 @@ start
 
 	var number i
 	= i 0
-label fill_board
+:fill_board
 	vector_add board 0
 	+ i 1
 	? i count
@@ -113,7 +113,7 @@ label fill_board
 	= player_y y
 
 	= i 0
-label place_robot
+:place_robot
 	rand x 0 w
 	rand y 0 h
 	var number value
@@ -155,10 +155,13 @@ start
 
 	start_image grass_img
 
+	var number index
+	= index 0
+
 	= y 0
-label loop_y
+:loop_y
 	= x 0
-label loop_x
+:loop_x
 
 	= xx x
 	* xx rect_w
@@ -178,11 +181,12 @@ label loop_x
 	end_image grass_img
 
 	= y 0
-label loop_y1
+:loop_y1
 	= x 0
-label loop_x1
+:loop_x1
 	var number value
-	call = value get_board board x y
+	;call = value get_board board x y
+	vector_get board value index
 
 	= xx x
 	* xx rect_w
@@ -205,21 +209,22 @@ label loop_x1
 
 	goto past_draw
 
-label player
+:player
 	= image dog_img
 	goto done_image
 
-label robot
+:robot
 	= image robot_img
 	goto done_image
-label crash
+:crash
 	= image fire_img
 
-label done_image
+:done_image
 
 	draw_image image xx yy
 
-label past_draw
+:past_draw
+	+ index 1
 
 	+ x 1
 	? x width
@@ -245,14 +250,14 @@ start
 	= nbots 0
 
 	= i 0
-label find_robots
+:find_robots
 	var number value
 	vector_get board value i
 	? value 2
 	jne next_robot
 	vector_add robot_indices i
 	+ nbots 1
-label next_robot
+:next_robot
 	+ i 1
 	? i size
 	jl find_robots
@@ -265,32 +270,33 @@ label next_robot
 
 	goto finish
 
-label verify
+:verify
 	= i 0
-label top
+:top
 	var number found
 	= found 0
 
 	var number j
 	= j 0
-label next_match
+:next_match
 	var number value
 	vector_get robot_indices value j
 	? value i
 	jne not_a_match
 	= found 1
 	goto done_checking
-label not_a_match
+:not_a_match
 	+ j 1
 	? j nbots
 	jl next_match
-label done_checking
+:done_checking
 
 	? found 0
 	je continue2
 
 	var number value
-	call = value get_board board x y
+	;call = value get_board board x y
+	vector_get board value i
 
 	? value 2
 	jne continue2
@@ -318,11 +324,11 @@ label done_checking
 	= dir_x -1
 	goto done_x
 
-label x_less
+:x_less
 	neg dx_abs
 	= dir_x 1
 
-label done_x
+:done_x
 
 	? dy 0
 	je done_y
@@ -330,11 +336,11 @@ label done_x
 	= dir_y -1
 	goto done_y
 
-label y_less
+:y_less
 	neg dy_abs
 	= dir_y 1
 
-label done_y
+:done_y
 
 	var number new_x
 	= new_x x
@@ -346,13 +352,14 @@ label done_y
 	+ new_x dir_x
 	goto done_move
 
-label move_y
+:move_y
 
 	+ new_y dir_y
 
-label done_move
+:done_move
 
-	call set_board board x y 0
+	;call set_board board x y 0
+	vector_set board i 0
 
 	var number value
 	call = value get_board board new_x new_y
@@ -364,32 +371,32 @@ label done_move
 
 	goto continue2
 
-label crash
+:crash
 	call set_board board new_x new_y 3
 	? value 1
 	je game_over
 	goto continue2
 
-label game_over
+:game_over
 	? gameover 1
 	je dont_set
 	= gameover 1
 	= gameover_start tick
-label dont_set
+:dont_set
 
-label continue2
+:continue2
 
 	+ x 1
 	? x width
 	jne continue
 	= x 0
 	+ y 1
-label continue
+:continue
 	+ i 1
 	? i size
 	jl top
 
-label finish
+:finish
 end
 
 function move_player l r u d
@@ -408,7 +415,7 @@ start
 	= player_x 0
 	goto finish
 
-label next1
+:next1
 
 	? r 0
 	je next2
@@ -421,7 +428,7 @@ label next1
 	goto finish
 
 
-label next2
+:next2
 
 	? u 0
 	je next3
@@ -434,7 +441,7 @@ label next2
 
 
 
-label next3
+:next3
 
 	? d 0
 	je finish
@@ -446,7 +453,7 @@ label next3
 	- player_y 1
 	goto finish
 
-label finish
+:finish
 
 	vector_set board index 0
 
@@ -467,13 +474,13 @@ label finish
 	= gameover_start tick
 	vector_set board index 3
 
-label done
+:done
 	? gameover 0
 	jne really_done
 
 	vector_set board index 1
 
-label really_done
+:really_done
 end
 
 function logic
@@ -484,13 +491,13 @@ start
 	var number count
 	= count 0
 	= i 0
-label loop_top
+:loop_top
 	var number value
 	vector_get board value i
 	? value 2
 	jne another
 	+ count 1
-label another
+:another
 	+ i 1
 	? i sz
 	jl loop_top
@@ -502,7 +509,7 @@ label another
 	= gameover 1
 	= gameover_start tick
 
-label do_input
+:do_input
 	+ tick 1
 
 	include "poll_joystick.inc"
@@ -531,43 +538,43 @@ label do_input
 
 	goto finish
 
-label continue_input
+:continue_input
 
 	? joy_l 0
 	je next_dir1
 	? old_l 0
 	jne zero_l
 	goto next_dir1
-label zero_l
+:zero_l
 	= joy_l 0
-label next_dir1
+:next_dir1
 
 	? joy_r 0
 	je next_dir2
 	? old_r 0
 	jne zero_r
 	goto next_dir2
-label zero_r
+:zero_r
 	= joy_r 0
-label next_dir2
+:next_dir2
 
 	? joy_u 0
 	je next_dir3
 	? old_u 0
 	jne zero_u
 	goto next_dir3
-label zero_u
+:zero_u
 	= joy_u 0
-label next_dir3
+:next_dir3
 
 	? joy_d 0
 	je next_dir4
 	? old_d 0
 	jne zero_d
 	goto next_dir4
-label zero_d
+:zero_d
 	= joy_d 0
-label next_dir4
+:next_dir4
 
 	? joy_l 0
 	jne move
@@ -579,10 +586,10 @@ label next_dir4
 	jne move
 	goto finish
 
-label move
+:move
 	call move_player joy_l joy_r joy_u joy_d
 
-label finish
+:finish
 	= old_l bak_l
 	= old_r bak_r
 	= old_u bak_u
