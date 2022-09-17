@@ -55,20 +55,23 @@ start
 	var number x
 	var number y
 
-	cos x angle
-	* x 100
-	+ x 320
-	sin y angle
-	* y 100
-	+ y 180
-
-	line 0 0 0 255 x y 320 180 2
-	
 	cos x angle2
 	* x 85
 	+ x 320
 	sin y angle2
 	* y 85
+	+ y 180
+
+	line 0 0 0 255 x y 320 180 5
+	
+	var number a2
+	= a2 angle2
+	+ a2 3.14159
+	cos x a2
+	* x 10
+	+ x 320
+	sin y a2
+	* y 10
 	+ y 180
 
 	line 0 0 0 255 x y 320 180 5
@@ -116,6 +119,17 @@ start
 
 	line 0 0 0 255 x y 320 180 10
 	
+	= a2 angle3
+	+ a2 3.14159
+	cos x a2
+	* x 10
+	+ x 320
+	sin y a2
+	* y 10
+	+ y 180
+
+	line 0 0 0 255 x y 320 180 10
+
 	cos x1 angle3
 	* x1 10
 	+ x1 x
@@ -140,6 +154,27 @@ start
 	+ y3 y
 
 	filled_triangle 0 0 0 255 0 0 0 255 0 0 0 255 x1 y1 x2 y2 x3 y3
+	
+	cos x angle
+	* x 100
+	+ x 320
+	sin y angle
+	* y 100
+	+ y 180
+
+	line 255 0 0 255 x y 320 180 2
+
+	var number a2
+	= a2 angle
+	+ a2 3.14159
+	cos x a2
+	* x 15
+	+ x 320
+	sin y a2
+	* y 15
+	+ y 180
+
+	line 255 0 0 255 x y 320 180 2
 end
 
 function shutdown
