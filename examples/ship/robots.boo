@@ -1,5 +1,8 @@
 ; a demo game
 
+var number crash_mml
+create_mml crash_mml "A @TYPE1 a16"
+
 var string reset_game_name
 = reset_game_name "sneaky.boo"
 include "slideshow_start.inc"
@@ -373,6 +376,7 @@ start
 
 :crash
 	call set_board board new_x new_y 3
+	play_mml crash_mml
 	? value 1
 	je game_over
 	goto continue2
@@ -473,6 +477,7 @@ start
 	= gameover 1
 	= gameover_start tick
 	vector_set board index 3
+	play_mml crash_mml
 
 :done
 	? gameover 0
