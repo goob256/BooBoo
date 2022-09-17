@@ -170,7 +170,7 @@ start
 	jl cpu
 
 :player2
-	poll_joystick 1 joy_x1 joy_y1 joy_x2 joy_y2 joy_l joy_r joy_u joy_d joy_a joy_b joy_x joy_y joy_lb joy_rb joy_back joy_start
+	poll_joystick 1 joy_x1 joy_y1 joy_x2 joy_y2 joy_x3 joy_y3 joy_l joy_r joy_u joy_d joy_a joy_b joy_x joy_y joy_lb joy_rb joy_ls joy_rs joy_back joy_start
 
 	? joy_y1 0
 	jl below2
