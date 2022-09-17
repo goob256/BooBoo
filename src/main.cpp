@@ -144,64 +144,7 @@ void draw_all()
 {
 	gfx::clear(shim::black);
 
-	PROGRAM p;
-	bool found = false;
-
-	for (size_t i = 0; i < prg.functions.size(); i++) {
-		if (prg.functions[i].name == "draw") {
-			p = prg.functions[i];
-			found = true;
-			break;
-		}
-	}
-
-	if (found) {
-		p.variables = prg.variables;
-		p.functions = prg.functions;
-		p.mml_id = prg.mml_id;
-		p.image_id = prg.image_id;
-		p.font_id = prg.font_id;
-		p.vector_id = prg.vector_id;
-		p.mmls = prg.mmls;
-		p.images = prg.images;
-		p.fonts = prg.fonts;
-		p.vectors = prg.vectors;
-		
-		process_includes(p);
-		p.labels = process_labels(p);
-
-		try {
-			while (interpret(p)) {
-			}
-		}
-		catch (EXCEPTION e) {
-			gui::fatalerror("ERROR", e.error.c_str(), gui::OK, true);
-		}
-
-		for (std::map<std::string, VARIABLE>::iterator it = p.variables.begin(); it != p.variables.end(); it++) {
-			if ((*it).second.function != "main") {
-				continue;
-			}
-			for (std::map<std::string, VARIABLE>::iterator it2 = prg.variables.begin(); it2 != prg.variables.end(); it2++) {
-				if ((*it).first == (*it2).first) {
-					prg.variables[(*it).first] = p.variables[(*it).first];
-				}
-			}
-		}
-
-		prg.vectors = p.vectors;
-		prg.mml_id = p.mml_id;
-		prg.image_id = p.image_id;
-		prg.font_id = p.font_id;
-		prg.vector_id = p.vector_id;
-
-		/*
-		for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
-			std::pair< int, std::vector<VARIABLE> > pair = *it;
-			prg.vectors[pair.first] = p.vectors[pair.first];
-		}
-		*/
-	}
+	call_function(prg, "draw", "", false);
 
 	gfx::draw_guis();
 	gfx::draw_notifications();
@@ -303,77 +246,7 @@ static void loop()
 			TGUI_Event *event = shim::handle_event(&sdl_event);
 			handle_event(event);
 
-			PROGRAM p;
-			bool found = false;
-
-			for (size_t i = 0; i < prg.functions.size(); i++) {
-				if (prg.functions[i].name == "logic") {
-					p = prg.functions[i];
-					found = true;
-					break;
-				}
-			}
-
-			if (found) {
-				p.variables = prg.variables;
-				p.functions = prg.functions;
-				p.mml_id = prg.mml_id;
-				p.image_id = prg.image_id;
-				p.font_id = prg.font_id;
-				p.vector_id = prg.vector_id;
-				p.mmls = prg.mmls;
-				p.images = prg.images;
-				p.fonts = prg.fonts;
-				p.vectors = prg.vectors;
-
-				process_includes(p);
-				p.labels = process_labels(p);
-
-				try {
-					while (interpret(p)) {
-					}
-				}
-				catch (EXCEPTION e) {
-					gui::fatalerror("ERROR", e.error.c_str(), gui::OK, true);
-				}
-
-				prg.vectors = p.vectors;
-	
-				prg.mml_id = p.mml_id;
-				prg.image_id = p.image_id;
-				prg.font_id = p.font_id;
-				prg.vector_id = p.vector_id;
-				
-				#if 0
-				for (size_t i = 0; i < p.variables.size(); i++) {
-					if (p.variables[i].function == "main") {
-						for (size_t j = 0; j < prg.variables.size(); j++) {
-							if (p.variables[i].name == prg.variables[j].name) {
-								prg.variables[j] = p.variables[i];
-							}
-						}
-					}
-					
-					/*
-					for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
-						std::pair< int, std::vector<VARIABLE> > pair = *it;
-						prg.vectors[pair.first] = p.vectors[pair.first];
-					}
-					*/
-				}
-				#endif
-
-				for (std::map<std::string, VARIABLE>::iterator it = p.variables.begin(); it != p.variables.end(); it++) {
-					if ((*it).second.function != "main") {
-						continue;
-					}
-					for (std::map<std::string, VARIABLE>::iterator it2 = prg.variables.begin(); it2 != prg.variables.end(); it2++) {
-						if ((*it).first == (*it2).first) {
-							(*it2).second = (*it).second;
-						}
-					}
-				}
-			}
+			call_function(prg, "logic", "", false);
 
 			if (reset_game_name != "") {
 				quit = true;
@@ -637,139 +510,31 @@ again:
 	prg.start_line = 0;
 	prg.p = 0;
 	
-	process_includes(prg);
-
 	try {
+		process_includes(prg);
 		prg.labels = process_labels(prg);
 
+		std::map<std::string, VARIABLE> tmp;
+		prg.variables_backup_stack.push_back(tmp);
 		while (interpret(prg)) {
 		}
 	}
 	catch (EXCEPTION e) {
 		gui::fatalerror("ERROR", e.error.c_str(), gui::OK, true);
 	}
+	std::map<std::string, VARIABLE> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
+	for (std::map<std::string, VARIABLE>::iterator it = variables_backup.begin(); it != variables_backup.end(); it++) {
+		prg.variables[(*it).first] = (*it).second;
+	}
+	prg.variables_backup_stack.erase(prg.variables_backup_stack.begin()+(prg.variables_backup_stack.size()-1));
 	
-	PROGRAM p;
-	bool found = false;
-
-	for (size_t i = 0; i < prg.functions.size(); i++) {
-		if (prg.functions[i].name == "init") {
-			p = prg.functions[i];
-			found = true;
-			break;
-		}
-	}
-
-	if (found) {
-		p.variables = prg.variables;
-		p.functions = prg.functions;
-		p.mml_id = prg.mml_id;
-		p.image_id = prg.image_id;
-		p.font_id = prg.font_id;
-		p.vector_id = prg.vector_id;
-		p.mmls = prg.mmls;
-		p.images = prg.images;
-		p.fonts = prg.fonts;
-		p.vectors = prg.vectors;
-		
-		p.labels = process_labels(p);
-		process_includes(p);
-
-		try {
-			while (interpret(p)) {
-			}
-		}
-		catch (EXCEPTION e) {
-			gui::fatalerror("ERROR", e.error.c_str(), gui::OK, true);
-		}
-				
-		for (std::map<std::string, VARIABLE>::iterator it = p.variables.begin(); it != p.variables.end(); it++) {
-			if ((*it).second.function != "main") {
-				continue;
-			}
-			for (std::map<std::string, VARIABLE>::iterator it2 = prg.variables.begin(); it2 != prg.variables.end(); it2++) {
-				if ((*it).first == (*it2).first) {
-					(*it2).second = (*it).second;
-				}
-			}
-		}
-		
-		prg.vectors = p.vectors;
-		
-		prg.mml_id = p.mml_id;
-		prg.image_id = p.image_id;
-		prg.font_id = p.font_id;
-		prg.vector_id = p.vector_id;
-
-		/*
-		for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
-			std::pair< int, std::vector<VARIABLE> > pair = *it;
-			prg.vectors[pair.first] = p.vectors[pair.first];
-		}
-		*/
-	}
+	call_function(prg, "init", "", false);
 
 	if (reset_game_name == "") {
 		go();
 	}
 
-	found = false;
-
-	for (size_t i = 0; i < prg.functions.size(); i++) {
-		if (prg.functions[i].name == "shutdown") {
-			p = prg.functions[i];
-			found = true;
-			break;
-		}
-	}
-
-	if (found) {
-		p.variables = prg.variables;
-		p.functions = prg.functions;
-		p.mml_id = prg.mml_id;
-		p.image_id = prg.image_id;
-		p.font_id = prg.font_id;
-		p.vector_id = prg.vector_id;
-		p.mmls = prg.mmls;
-		p.images = prg.images;
-		p.fonts = prg.fonts;
-		p.vectors = prg.vectors;
-
-		p.labels = process_labels(p);
-		process_includes(p);
-
-		try {
-			while (interpret(p)) {
-			}
-		}
-		catch (EXCEPTION e) {
-			gui::fatalerror("ERROR", e.error.c_str(), gui::OK, true);
-		}
-				
-		for (std::map<std::string, VARIABLE>::iterator it = p.variables.begin(); it != p.variables.end(); it++) {
-			if ((*it).second.function != "main") {
-				continue;
-			}
-			for (std::map<std::string, VARIABLE>::iterator it2 = prg.variables.begin(); it2 != prg.variables.end(); it2++) {
-				if ((*it).first == (*it2).first) {
-					(*it2).second = (*it).second;
-				}
-			}
-		}
-		
-		prg.vectors = p.vectors;
-
-		prg.mml_id = p.mml_id;
-		prg.image_id = p.image_id;
-		prg.font_id = p.font_id;
-		prg.vector_id = p.vector_id;
-		/*
-		for (std::map< int, std::vector<VARIABLE> >::iterator it = prg.vectors.begin(); it != prg.vectors.end(); it++) {
-			std::pair< int, std::vector<VARIABLE> > pair = *it;
-			prg.vectors[pair.first] = p.vectors[pair.first];
-		}
-		*/
-	}
+	call_function(prg, "shutdown", "", false);
 
 	destroy_program(prg, true);
 

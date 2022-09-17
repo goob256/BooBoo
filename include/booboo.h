@@ -48,6 +48,7 @@ struct PROGRAM {
 	int start_line;
 	
 	std::map<std::string, VARIABLE> variables;
+	std::vector< std::map<std::string, VARIABLE> > variables_backup_stack;
 	std::vector<PROGRAM> functions;
 	std::vector<LABEL> labels;
 
@@ -69,5 +70,6 @@ bool interpret(PROGRAM &prg);
 std::vector<LABEL> process_labels(PROGRAM prg);
 void destroy_program(PROGRAM &prg, bool destroy_vectors);
 void process_includes(PROGRAM &prg);
+void call_function(PROGRAM &prg, std::string function_name, std::string result_name, bool process_args);
 
 #endif // BOOBOO_H
