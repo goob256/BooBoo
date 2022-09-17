@@ -1,7 +1,7 @@
 ; a small demo (1 or 2 players)
 
 var string reset_game_name
-= reset_game_name "main.boo"
+= reset_game_name "secret.boo"
 include "slideshow_start.inc"
 
 var number score1

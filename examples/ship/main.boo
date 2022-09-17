@@ -1,67 +1,51 @@
-; subroutines
-
-play_music "music/main.mml"
+; math and circles
 
 var string reset_game_name
-= reset_game_name "sine.boo"
+= reset_game_name "robots.boo"
 include "slideshow_start.inc"
 
-var number hidden
-= hidden 1
-
-var number font
-load_font font "DejaVuSans.ttf" 128
-
-function logic
+function draw_at r g b x radius
 start
-	include "poll_joystick.inc"
-
-	? joy_x 0
-	jne show
-	= hidden 1
-	goto done_logic
-
-:show
-	= hidden 0
-
-:done_logic
-	include "slideshow_logic.inc"
+	var number f
+	= f x
+	/ f 640
+	* f 3.14159
+	* f 2
+	sin f f
+	* f 90
+	+ f 180
+	filled_circle r g b 255 x f radius
 end
 
 function draw
 start
-	clear 255 0 0
+	clear 0 0 0
 
-	var string secret
-	? hidden 0
-	jne shhh
-	= secret "SECRET";
-	goto done_secret
-:shhh
-	= secret "******";
-:done_secret
+	var number xx
+	= xx 0
 
-	var number x
-	var number y
-	var number tw
-	var number fh
+	start_primitives
 
-	text_width font tw secret
-	font_height font fh
+:loop
+	call draw_at 0 255 0 xx 8
+	+ xx 1
+	? xx 640
+	jl loop
 
-	/ tw 2
-	/ fh 2
+	var number tmp
+	= tmp x
+	% tmp 640
 
-	= x 320
-	- x tw
+	call draw_at 128 255 128 tmp 32
 
-	= y 180
-	- y fh
-
-	draw_text font 0 0 0 255 secret x y
+	end_primitives
 end
 
-function shutdown
+function logic
 start
-	stop_music
+	+ x 5
+	include "slideshow_logic.inc"
 end
+
+var number x
+= x 0
