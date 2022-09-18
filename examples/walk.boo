@@ -76,7 +76,7 @@ start
 	+ sx s
 	+ sy s
 
-	image_draw_rotated_scaled img 255 255 255 255 32 32 x y angle sx sy
+	image_draw_rotated_scaled img 255 255 255 255 32 32 x y angle sx sy 0 0
 end
 
 function logic

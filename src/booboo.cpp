@@ -2101,8 +2101,9 @@ bool interpret_primitives(PROGRAM &prg, std::string tok)
 		std::string rx =  token(prg);
 		std::string ry =  token(prg);
 		std::string thickness =  token(prg);
+		std::string sections =  token(prg);
 		
-		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || rx == "" || ry == "" || thickness == "") {
+		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || rx == "" || ry == "" || thickness == "" || sections == "") {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected ellipse parameters on line " + itos(get_line_num(prg)));
 		}
 		
@@ -2116,6 +2117,7 @@ bool interpret_primitives(PROGRAM &prg, std::string tok)
 		strings.push_back(rx);
 		strings.push_back(ry);
 		strings.push_back(thickness);
+		strings.push_back(sections);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
 
 		SDL_Colour c;
@@ -2132,8 +2134,9 @@ bool interpret_primitives(PROGRAM &prg, std::string tok)
 		float _rx = values[6];
 		float _ry = values[7];
 		float thick = values[8];
+		float _sections = values[9];
 
-		gfx::draw_ellipse(c, p, _rx, _ry, thick);
+		gfx::draw_ellipse(c, p, _rx, _ry, thick, _sections);
 	}
 	else if (tok == "filled_ellipse") {
 		std::string r =  token(prg);
@@ -2144,8 +2147,9 @@ bool interpret_primitives(PROGRAM &prg, std::string tok)
 		std::string y =  token(prg);
 		std::string rx =  token(prg);
 		std::string ry =  token(prg);
+		std::string sections =  token(prg);
 		
-		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || rx == "" || ry == "") {
+		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || rx == "" || ry == "" || sections == "") {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected filled_ellipse parameters on line " + itos(get_line_num(prg)));
 		}
 		
@@ -2158,6 +2162,7 @@ bool interpret_primitives(PROGRAM &prg, std::string tok)
 		strings.push_back(y);
 		strings.push_back(rx);
 		strings.push_back(ry);
+		strings.push_back(sections);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
 
 		SDL_Colour c;
@@ -2173,8 +2178,9 @@ bool interpret_primitives(PROGRAM &prg, std::string tok)
 
 		float _rx = values[6];
 		float _ry = values[7];
+		float _sections = values[8];
 
-		gfx::draw_filled_ellipse(c, p, _rx, _ry);
+		gfx::draw_filled_ellipse(c, p, _rx, _ry, _sections);
 	}
 	else if (tok == "circle") {
 		std::string r =  token(prg);
@@ -2417,8 +2423,10 @@ bool interpret_image(PROGRAM &prg, std::string tok)
 		std::string a = token(prg);
 		std::string x = token(prg);
 		std::string y = token(prg);
+		std::string flip_h = token(prg);
+		std::string flip_v = token(prg);
 
-		if (id == "" || r == "" || g == "" || b == "" || a == "" || x == "" || y == "") {
+		if (id == "" || r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || flip_h == "" || flip_v == "") {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected image_draw parameters on line " + itos(get_line_num(prg)));
 		}
 
@@ -2430,6 +2438,8 @@ bool interpret_image(PROGRAM &prg, std::string tok)
 		strings.push_back(a);
 		strings.push_back(x);
 		strings.push_back(y);
+		strings.push_back(flip_h);
+		strings.push_back(flip_v);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
 		
 		if (values[0] < 0 || values[0] >= prg.images.size()) {
@@ -2444,7 +2454,15 @@ bool interpret_image(PROGRAM &prg, std::string tok)
 		c.b = values[3];
 		c.a = values[4];
 
-		img->draw_tinted(c, util::Point<float>(values[5], values[6]));
+		int flags = 0;
+		if (values[7] != 0.0) {
+			flags |= gfx::Image::FLIP_H;
+		}
+		if (values[8] != 0.0) {
+			flags |= gfx::Image::FLIP_V;
+		}
+
+		img->draw_tinted(c, util::Point<float>(values[5], values[6]), flags);
 	}
 	else if (tok == "image_draw_rotated_scaled") {
 		std::string id = token(prg);
@@ -2459,8 +2477,10 @@ bool interpret_image(PROGRAM &prg, std::string tok)
 		std::string angle = token(prg);
 		std::string scale_x = token(prg);
 		std::string scale_y = token(prg);
+		std::string flip_h = token(prg);
+		std::string flip_v = token(prg);
 
-		if (id == "" || r == "" || g == "" || b == "" || a == "" || cx == "" || cy == "" || x == "" || y == "" || angle == "" || scale_x == "" || scale_y == "") {
+		if (id == "" || r == "" || g == "" || b == "" || a == "" || cx == "" || cy == "" || x == "" || y == "" || angle == "" || scale_x == "" || scale_y == "" || flip_h == "" || flip_v == "") {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected image_draw_rotated_scaled parameters on line " + itos(get_line_num(prg)));
 		}
 
@@ -2477,6 +2497,8 @@ bool interpret_image(PROGRAM &prg, std::string tok)
 		strings.push_back(angle);
 		strings.push_back(scale_x);
 		strings.push_back(scale_y);
+		strings.push_back(flip_h);
+		strings.push_back(flip_v);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
 		
 		if (values[0] < 0 || values[0] >= prg.images.size()) {
@@ -2490,6 +2512,14 @@ bool interpret_image(PROGRAM &prg, std::string tok)
 		c.g = values[2];
 		c.b = values[3];
 		c.a = values[4];
+
+		int flags = 0;
+		if (values[12] != 0.0) {
+			flags |= gfx::Image::FLIP_H;
+		}
+		if (values[13] != 0.0) {
+			flags |= gfx::Image::FLIP_V;
+		}
 
 		img->draw_tinted_rotated_scaledxy(c, util::Point<float>(values[5], values[6]), util::Point<float>(values[7], values[8]), values[9], values[10], values[11]);
 	}
