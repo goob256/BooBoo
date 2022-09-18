@@ -8,6 +8,7 @@ vector_add programs "walk.boo"
 vector_add programs "secret.boo"
 vector_add programs "sine.boo"
 vector_add programs "sneaky.boo"
+vector_add programs "gradient.boo"
 var number size
 vector_size programs size
 var number index

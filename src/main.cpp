@@ -144,6 +144,8 @@ void draw_all()
 {
 	gfx::clear(shim::black);
 
+	gfx::set_cull_mode(gfx::NO_FACE);
+
 	call_function(prg, "draw", "");
 
 	gfx::draw_guis();
@@ -514,6 +516,7 @@ again:
 	
 	process_includes(prg);
 	prg.labels = process_labels(prg);
+	process_functions(prg);
 
 	while (interpret(prg)) {
 	}

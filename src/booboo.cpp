@@ -522,6 +522,101 @@ void process_includes(PROGRAM &prg)
 	prg.line = 1;
 }
 
+void process_functions(PROGRAM &prg)
+{
+	std::string code;
+
+	std::string tok;
+
+	prg.p = 0;
+	prg.line = 1;
+	prg.line_numbers.clear();
+	prg.line_numbers.push_back(prg.line);
+
+	while ((tok = token(prg, true)) != "") {
+		if (tok == ";") {
+			while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
+				prg.p++;
+			}
+			prg.line++;
+			prg.line_numbers.push_back(prg.line);
+			if (prg.p < prg.code.length()) {
+				prg.p++;
+			}
+		}
+		else if (tok == "function") {
+			int start_line = prg.line;
+			std::string name = token(prg);
+			int save = get_line_num(prg);
+
+			if (name == "") {
+				throw PARSE_EXCEPTION(prg.name + ": " + "Expected function parameters on line " + itos(get_line_num(prg)));
+			}
+
+			PROGRAM p;
+			
+			std::string tok2;
+
+			while ((tok2 = token(prg)) != "") {
+				if (tok2 == "start") {
+					break;
+				}
+				else if (tok2 == ";") {
+					while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
+						prg.p++;
+					}
+					prg.line++;
+					if (prg.p < prg.code.length()) {
+						prg.p++;
+					}
+				}
+				if (tok2[0] != '_' && !isalpha(tok2[0])) {
+					throw PARSE_EXCEPTION(prg.name + ": " + "Invalid variable name " + tok2 + " on line " + itos(get_line_num(prg)));
+				}
+				p.parameters.push_back(tok2);
+			}
+			
+			if (tok2 != "start") {
+				throw PARSE_EXCEPTION(prg.name + ": " + "Function not terminated on line " + itos(save));
+			}
+
+			int save_p = prg.p;
+			int end_p = prg.p;
+
+			while ((tok2 = token(prg)) != "") {
+				if (tok2 == "end") {
+					break;
+				}
+				else if (tok2 == ";") {
+					while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
+						prg.p++;
+					}
+					prg.line++;
+					if (prg.p < prg.code.length()) {
+						prg.p++;
+					}
+				}
+				end_p = prg.p;
+			}
+
+			if (tok2 != "end") {
+				throw PARSE_EXCEPTION(prg.name + ": " + "Function not terminated on line " + itos(save));
+			}
+
+			p.name = name;
+			p.p = 0;
+			p.line = 1;
+			p.start_line = start_line;
+			p.code = prg.code.substr(save_p, end_p-save_p);
+			p.labels = process_labels(p);
+			prg.functions.push_back(p);
+		}
+	}
+
+	prg.p = 0;
+	prg.line = 1;
+}
+
 static void set_string_or_number(PROGRAM &prg, std::string name, std::string value)
 {
 	if (value.length() == 0) {
@@ -629,6 +724,7 @@ void call_function(PROGRAM &prg, std::string function_name, std::string result_n
 
 			process_includes(prg);
 			prg.labels = process_labels(prg);
+			process_functions(prg);
 
 			while (interpret(prg)) {
 			}
@@ -1395,7 +1491,7 @@ bool corefunc_function(PROGRAM &prg, std::string tok)
 	p.start_line = start_line;
 	p.code = prg.code.substr(save_p, end_p-save_p);
 	p.labels = process_labels(p);
-	prg.functions.push_back(p);
+	//prg.functions.push_back(p);
 
 	return true;
 }

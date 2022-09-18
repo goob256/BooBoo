@@ -43,6 +43,9 @@ image_load dog_img "misc/dog.tga"
 image_load fire_img "misc/explosion.tga"
 image_load grass_img "misc/grass.tga"
 
+var vector board
+call = board start_board
+
 function set_board board x y value
 start
 	var number index
@@ -144,9 +147,6 @@ start
 
 	return board
 end
-
-var vector board
-call = board start_board
 
 function draw
 start
