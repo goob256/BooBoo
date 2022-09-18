@@ -40,7 +40,7 @@ cfg_set_number "score2" score2
 :done_cfg
 
 var number font
-load_font font "DejaVuSans.ttf" 48 1
+font_load font "DejaVuSans.ttf" 48 1
 
 var number paddle1
 var number paddle2
@@ -66,8 +66,8 @@ var number half
 
 var number wall_sfx
 var number point_sfx
-load_mml wall_sfx "sfx/wall.mml"
-load_mml point_sfx "sfx/point.mml"
+mml_load wall_sfx "sfx/wall.mml"
+mml_load point_sfx "sfx/point.mml"
 
 function reset_ball
 start
@@ -99,7 +99,7 @@ end
 function logic
 start
 	var number nj
-	num_joysticks nj
+	joystick_count nj
 
 	include "poll_joystick.inc"
 
@@ -170,7 +170,7 @@ start
 	jl cpu
 
 :player2
-	poll_joystick 1 joy_x1 joy_y1 joy_x2 joy_y2 joy_x3 joy_y3 joy_l joy_r joy_u joy_d joy_a joy_b joy_x joy_y joy_lb joy_rb joy_ls joy_rs joy_back joy_start
+	joystick_poll 1 joy_x1 joy_y1 joy_x2 joy_y2 joy_x3 joy_y3 joy_l joy_r joy_u joy_d joy_a joy_b joy_x joy_y joy_lb joy_rb joy_ls joy_rs joy_back joy_start
 
 	? joy_y1 0
 	jl below2
@@ -238,7 +238,7 @@ start
 	jge no_point2
 
 	call reset_ball
-	play_mml point_sfx
+	mml_play point_sfx
 	+ score2 1
 
 :no_point2
@@ -250,7 +250,7 @@ start
 	jle no_point1
 
 	call reset_ball
-	play_mml point_sfx
+	mml_play point_sfx
 	+ score1 1
 
 :no_point1
@@ -261,7 +261,7 @@ start
 
 	- ball_y ball_vy
 	neg ball_vy
-	play_mml wall_sfx
+	mml_play wall_sfx
 
 :no_bounce_top
 
@@ -273,7 +273,7 @@ start
 
 	- ball_y ball_vy
 	neg ball_vy
-	play_mml wall_sfx
+	mml_play wall_sfx
 
 :no_bounce_bottom
 
@@ -307,7 +307,7 @@ start
 	neg ball_vx
 	+ ball_vx 0.25
 	+ ball_x ball_vx
-	play_mml wall_sfx
+	mml_play wall_sfx
 
 :done_hit_paddle1
 
@@ -338,7 +338,7 @@ start
 	neg ball_vx
 	- ball_vx 0.25
 	+ ball_x ball_vx
-	play_mml wall_sfx
+	mml_play wall_sfx
 
 :done_hit_paddle2
 
@@ -410,8 +410,8 @@ start
 	var number w1
 	var number w2
 
-	text_width font w1 text1
-	text_width font w2 text2
+	font_width font w1 text1
+	font_width font w2 text2
 
 	- x1 w1
 
@@ -422,8 +422,8 @@ start
 	- y fh
 	- y 8
 
-	draw_text font 255 255 255 255 text1 x1 y
-	draw_text font 255 255 255 255 text2 x2 y
+	font_draw font 255 255 255 255 text1 x1 y
+	font_draw font 255 255 255 255 text2 x2 y
 end
 
 function shutdown

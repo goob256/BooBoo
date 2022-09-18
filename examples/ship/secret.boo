@@ -10,7 +10,7 @@ var number hidden
 = hidden 1
 
 var number font
-load_font font "DejaVuSans.ttf" 128 1
+font_load font "DejaVuSans.ttf" 128 1
 
 function logic
 start
@@ -46,7 +46,7 @@ start
 	var number tw
 	var number fh
 
-	text_width font tw secret
+	font_width font tw secret
 	font_height font fh
 
 	/ tw 2
@@ -58,7 +58,7 @@ start
 	= y 180
 	- y fh
 
-	draw_text font 0 0 0 255 secret x y
+	font_draw font 0 0 0 255 secret x y
 end
 
 function shutdown

@@ -8,7 +8,7 @@ var number radius
 = radius 5000
 
 var number blip
-create_mml blip "@PO0 = { 0 100 100 100 0 }\n@VAS0 = { 0 }\nA o5 @TYPE3 @PO0 @VAS0 a16 @VAS0 @PO0"
+mml_create blip "@PO0 = { 0 100 100 100 0 }\n@VAS0 = { 0 }\nA o5 @TYPE3 @PO0 @VAS0 a16 @VAS0 @PO0"
 
 var number was_pressed
 = was_pressed 0
@@ -31,7 +31,7 @@ start
 :go
 	= was_pressed 1
 	= radius 0
-	play_mml blip
+	mml_play blip
 
 :finish
 	? radius 5000

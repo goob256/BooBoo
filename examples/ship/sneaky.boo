@@ -9,18 +9,18 @@ var number size
 
 var vector fonts
 
-:load_fonts
+:font_loads
 
 var number f
 
-load_font f "DejaVuSans.ttf" size 0
+font_load f "DejaVuSans.ttf" size 0
 
 vector_add fonts f
 
 + size 8
 
 ? size 64
-jle load_fonts
+jle font_loads
 
 var number half_x
 = half_x 320
@@ -55,10 +55,10 @@ start
 	= x half_x
 	var number f
 	vector_get fonts f i
-	text_width f w text
+	font_width f w text
 	/ w 2
 	- x w
-	draw_text f 0 0 0 255 text x y
+	font_draw f 0 0 0 255 text x y
 	var number fh
 	font_height f fh
 	+ y fh

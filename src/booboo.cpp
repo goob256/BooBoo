@@ -2121,12 +2121,12 @@ bool interpret_mml(PROGRAM &prg, std::string tok)
 	else if (tok == "stop_music") {
 		audio::stop_music();
 	}
-	else if (tok == "create_mml") {
+	else if (tok == "mml_create") {
 		std::string var = token(prg);
 		std::string str = token(prg);
 
 		if (var == "" || str == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected create_mml parameters on line " + itos(get_line_num(prg)));
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected mml_create parameters on line " + itos(get_line_num(prg)));
 		}
 
 		VARIABLE &v1 = find_variable(prg, var);
@@ -2163,12 +2163,12 @@ bool interpret_mml(PROGRAM &prg, std::string tok)
 
 		prg.mmls[prg.mml_id++] = mml;
 	}
-	else if (tok == "load_mml") {
+	else if (tok == "mml_load") {
 		std::string var = token(prg);
 		std::string name = token(prg);
 
 		if (var == "" || name == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected load_mml parameters on line " + itos(get_line_num(prg)));
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected mml_load parameters on line " + itos(get_line_num(prg)));
 		}
 
 		VARIABLE &v1 = find_variable(prg, var);
@@ -2187,11 +2187,11 @@ bool interpret_mml(PROGRAM &prg, std::string tok)
 
 		prg.mmls[prg.mml_id++] = mml;
 	}
-	else if (tok == "play_mml") {
+	else if (tok == "mml_play") {
 		std::string id = token(prg);
 
 		if (id == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected play_mml parameters on line " + itos(get_line_num(prg)));
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected mml_play parameters on line " + itos(get_line_num(prg)));
 		}
 
 		std::vector<std::string> strings;
@@ -2309,14 +2309,14 @@ bool interpret_image(PROGRAM &prg, std::string tok)
 
 bool interpret_font(PROGRAM &prg, std::string tok)
 {
-	if (tok == "load_font") {
+	if (tok == "font_load") {
 		std::string var = token(prg);
 		std::string name = token(prg);
 		std::string size = token(prg);
 		std::string smooth = token(prg);
 
 		if (var == "" || name == "" || size == "" || smooth == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected load_font parameters on line " + itos(get_line_num(prg)));
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected font_load parameters on line " + itos(get_line_num(prg)));
 		}
 
 		VARIABLE &v1 = find_variable(prg, var);
@@ -2341,7 +2341,7 @@ bool interpret_font(PROGRAM &prg, std::string tok)
 
 		prg.fonts[prg.font_id++] = font;
 	}
-	else if (tok == "draw_text") {
+	else if (tok == "font_draw") {
 		std::string id = token(prg);
 		std::string r = token(prg);
 		std::string g = token(prg);
@@ -2352,7 +2352,7 @@ bool interpret_font(PROGRAM &prg, std::string tok)
 		std::string y = token(prg);
 
 		if (id == "" || r == "" || g == "" || b == "" || a == "" || text == "" || x == "" || y == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected draw_text parameters on line " + itos(get_line_num(prg)));
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected font_draw parameters on line " + itos(get_line_num(prg)));
 		}
 
 		std::vector<std::string> strings;
@@ -2399,13 +2399,13 @@ bool interpret_font(PROGRAM &prg, std::string tok)
 
 		font->draw(c, txt, util::Point<float>(values[5], values[6]));
 	}
-	else if (tok == "text_width") {
+	else if (tok == "font_width") {
 		std::string id = token(prg);
 		std::string dest = token(prg);
 		std::string text = token(prg);
 		
 		if (id == "" || dest == "" || text == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected text_width parameters on line " + itos(get_line_num(prg)));
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected font_width parameters on line " + itos(get_line_num(prg)));
 		}
 
 		std::vector<std::string> strings;
@@ -2479,7 +2479,7 @@ bool interpret_font(PROGRAM &prg, std::string tok)
 
 bool interpret_joystick(PROGRAM &prg, std::string tok)
 {
-	if (tok == "poll_joystick") {
+	if (tok == "joystick_poll") {
 		std::string num = token(prg);
 		std::string x1 = token(prg);
 		std::string y1 = token(prg);
@@ -2503,7 +2503,7 @@ bool interpret_joystick(PROGRAM &prg, std::string tok)
 		std::string start = token(prg);
 	
 		if (num == "" || x1 == "" || y1 == "" || x2 == "" || y2 == "" || x3 == "" || y3 == "" || l == "" || r == "" || u == "" || d == "" || a == "" || b == "" || x == "" || y == "" || lb == "" || rb == "" || ls == "" || rs == "" || back == "" || start == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected poll_joystick parameters on line " + itos(get_line_num(prg)));
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected joystick_poll parameters on line " + itos(get_line_num(prg)));
 		}
 
 		std::vector<std::string> strings;
@@ -2696,11 +2696,11 @@ bool interpret_joystick(PROGRAM &prg, std::string tok)
 			set_string_or_number(prg, rs, rsb);
 		}
 	}
-	else if (tok == "num_joysticks") {
+	else if (tok == "joystick_count") {
 		std::string dest = token(prg);
 		
 		if (dest == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected num_joysticks parameters on line " + itos(get_line_num(prg)));
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected joystick_count parameters on line " + itos(get_line_num(prg)));
 		}
 
 		VARIABLE &v1 = find_variable(prg, dest);
@@ -3324,19 +3324,19 @@ void booboo_init()
 	library_map["filled_circle"] = interpret_primitives;
 	library_map["play_music"] = interpret_mml;
 	library_map["stop_music"] = interpret_mml;
-	library_map["create_mml"] = interpret_mml;
-	library_map["load_mml"] = interpret_mml;
-	library_map["play_mml"] = interpret_mml;
+	library_map["mml_create"] = interpret_mml;
+	library_map["mml_load"] = interpret_mml;
+	library_map["mml_play"] = interpret_mml;
 	library_map["image_load"] = interpret_image;
 	library_map["image_draw"] = interpret_image;
 	library_map["image_start"] = interpret_image;
 	library_map["image_end"] = interpret_image;
-	library_map["load_font"] = interpret_font;
-	library_map["draw_text"] = interpret_font;
-	library_map["text_width"] = interpret_font;
+	library_map["font_load"] = interpret_font;
+	library_map["font_draw"] = interpret_font;
+	library_map["font_width"] = interpret_font;
 	library_map["font_height"] = interpret_font;
-	library_map["poll_joystick"] = interpret_joystick;
-	library_map["num_joysticks"] = interpret_joystick;
+	library_map["joystick_poll"] = interpret_joystick;
+	library_map["joystick_count"] = interpret_joystick;
 	library_map["vector_add"] = interpret_vector;
 	library_map["vector_size"] = interpret_vector;
 	library_map["vector_set"] = interpret_vector;
@@ -3359,3 +3359,25 @@ void booboo_shutdown()
 
 	core_map.clear();
 }
+	SHIM4_EXPORT void stretch_region_tinted_repeat(SDL_Colour tint, util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, util::Size<int> dest_size, int flags = 0);
+	SHIM4_EXPORT void stretch_region_tinted(SDL_Colour tint, util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, util::Size<int> dest_size, int flags = 0);
+	SHIM4_EXPORT void stretch_region(util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, util::Size<int> dest_size, int flags = 0);
+	SHIM4_EXPORT void draw_region_lit_z_range(SDL_Colour colours[4], util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, float z_top, float z_bottom, int flags = 0);
+	SHIM4_EXPORT void draw_region_lit_z(SDL_Colour colours[4], util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, float z, int flags = 0);
+	SHIM4_EXPORT void draw_region_tinted_z_range(SDL_Colour tint, util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, float z_top, float z_bottom, int flags = 0);
+	SHIM4_EXPORT void draw_region_tinted_z(SDL_Colour tint, util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, float z, int flags = 0);
+	SHIM4_EXPORT void draw_region_tinted(SDL_Colour tint, util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, int flags = 0);
+	SHIM4_EXPORT void draw_region_z_range(util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, float z_top, float z_bottom, int flags = 0);
+	SHIM4_EXPORT void draw_region_z(util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, float z, int flags = 0);
+	SHIM4_EXPORT void draw_region(util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, int flags = 0);
+	SHIM4_EXPORT void draw_z(util::Point<float> dest_position, float z, int flags = 0);
+	SHIM4_EXPORT void draw_tinted(SDL_Colour tint, util::Point<float> dest_position, int flags = 0);
+	SHIM4_EXPORT void draw(util::Point<float> dest_position, int flags = 0);
+	SHIM4_EXPORT void draw_tinted_rotated(SDL_Colour tint, util::Point<float> centre, util::Point<float> dest_position, float angle, int flags = 0);
+	SHIM4_EXPORT void draw_tinted_rotated_scaledxy_z(SDL_Colour tint, util::Point<float> centre, util::Point<float> dest_position, float angle, float scale_x, float scale_y, float z, int flags = 0);
+	SHIM4_EXPORT void draw_tinted_rotated_scaled_z(SDL_Colour tint, util::Point<float> centre, util::Point<float> dest_position, float angle, float scale, float z, int flags = 0);
+	SHIM4_EXPORT void draw_rotated_scaled_z(util::Point<float> centre, util::Point<float> dest_position, float angle, float scale, float z, int flags = 0);
+	SHIM4_EXPORT void draw_tinted_rotated_scaled(SDL_Colour tint, util::Point<float> centre, util::Point<float> dest_position, float angle, float scale, int flags = 0);
+	SHIM4_EXPORT void draw_tinted_rotated_scaledxy(SDL_Colour tint, util::Point<float> centre, util::Point<float> dest_position, float angle, float scale_x, float scale_y, int flags = 0);
+	SHIM4_EXPORT void draw_rotated(util::Point<float> centre, util::Point<float> dest_position, float angle, int flags = 0);
+	SHIM4_EXPORT void draw_rotated_scaled(util::Point<float> centre, util::Point<float> dest_position, float angle, float scale, int flags = 0);

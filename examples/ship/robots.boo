@@ -1,7 +1,7 @@
 ; a demo game
 
 var number crash_mml
-create_mml crash_mml "A @TYPE1 a16"
+mml_create crash_mml "A @TYPE1 a16"
 
 var string reset_game_name
 = reset_game_name "sneaky.boo"
@@ -376,7 +376,7 @@ start
 
 :crash
 	call set_board board new_x new_y 3
-	play_mml crash_mml
+	mml_play crash_mml
 	? value 1
 	je game_over
 	goto continue2
@@ -477,7 +477,7 @@ start
 	= gameover 1
 	= gameover_start tick
 	vector_set board index 3
-	play_mml crash_mml
+	mml_play crash_mml
 
 :done
 	? gameover 0
@@ -790,7 +790,7 @@ start
 :lets_go
 
 	var number nj
-	num_joysticks nj
+	joystick_count nj
 
 	? nj 0
 	je cpu
