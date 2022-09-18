@@ -1,5 +1,3 @@
-; joystick input and sfx
-
 var string reset_game_name
 = reset_game_name "gameover.boo"
 include "slideshow_start.inc"
@@ -31,7 +29,7 @@ start
 :go
 	= was_pressed 1
 	= radius 0
-	mml_play blip
+	mml_play blip 1.0 0 
 
 :finish
 	? radius 5000

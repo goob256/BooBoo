@@ -2109,19 +2109,7 @@ bool interpret_primitives(PROGRAM &prg, std::string tok)
 
 bool interpret_mml(PROGRAM &prg, std::string tok)
 {
-	if (tok == "play_music") {
-		std::string name = token(prg);
-
-		if (name == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected play_music parameters on line " + itos(get_line_num(prg)));
-		}
-
-		audio::play_music(remove_quotes(unescape(name)));
-	}
-	else if (tok == "stop_music") {
-		audio::stop_music();
-	}
-	else if (tok == "mml_create") {
+	if (tok == "mml_create") {
 		std::string var = token(prg);
 		std::string str = token(prg);
 
@@ -2189,9 +2177,32 @@ bool interpret_mml(PROGRAM &prg, std::string tok)
 	}
 	else if (tok == "mml_play") {
 		std::string id = token(prg);
+		std::string volume = token(prg);
+		std::string loop = token(prg);
+
+		if (id == "" || volume == "" || loop == "") {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected mml_play parameters on line " + itos(get_line_num(prg)));
+		}
+
+		std::vector<std::string> strings;
+		strings.push_back(id);
+		strings.push_back(volume);
+		strings.push_back(loop);
+		std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+		if (values[0] < 0 || values[0] >= prg.mmls.size()) {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid MML on line " + itos(get_line_num(prg)));
+		}
+
+		audio::MML *mml = prg.mmls[values[0]];
+
+		mml->play(values[1], values[2] == 0 ? false : true);
+	}
+	else if (tok == "mml_stop") {
+		std::string id = token(prg);
 
 		if (id == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected mml_play parameters on line " + itos(get_line_num(prg)));
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected mml_stop parameters on line " + itos(get_line_num(prg)));
 		}
 
 		std::vector<std::string> strings;
@@ -2204,7 +2215,7 @@ bool interpret_mml(PROGRAM &prg, std::string tok)
 
 		audio::MML *mml = prg.mmls[values[0]];
 
-		mml->play(false);
+		mml->stop();
 	}
 	else {
 		return false;
@@ -3322,11 +3333,10 @@ void booboo_init()
 	library_map["filled_ellipse"] = interpret_primitives;
 	library_map["circle"] = interpret_primitives;
 	library_map["filled_circle"] = interpret_primitives;
-	library_map["play_music"] = interpret_mml;
-	library_map["stop_music"] = interpret_mml;
 	library_map["mml_create"] = interpret_mml;
 	library_map["mml_load"] = interpret_mml;
 	library_map["mml_play"] = interpret_mml;
+	library_map["mml_stop"] = interpret_mml;
 	library_map["image_load"] = interpret_image;
 	library_map["image_draw"] = interpret_image;
 	library_map["image_start"] = interpret_image;

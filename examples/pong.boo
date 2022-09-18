@@ -1,5 +1,3 @@
-; a small demo (1 or 2 players)
-
 var string reset_game_name
 = reset_game_name "secret.boo"
 include "slideshow_start.inc"
@@ -238,7 +236,7 @@ start
 	jge no_point2
 
 	call reset_ball
-	mml_play point_sfx
+	mml_play point_sfx 1.0 0
 	+ score2 1
 
 :no_point2
@@ -250,7 +248,7 @@ start
 	jle no_point1
 
 	call reset_ball
-	mml_play point_sfx
+	mml_play point_sfx 1.0 0
 	+ score1 1
 
 :no_point1
@@ -261,7 +259,7 @@ start
 
 	- ball_y ball_vy
 	neg ball_vy
-	mml_play wall_sfx
+	mml_play wall_sfx 1.0 0
 
 :no_bounce_top
 
@@ -273,7 +271,7 @@ start
 
 	- ball_y ball_vy
 	neg ball_vy
-	mml_play wall_sfx
+	mml_play wall_sfx 1.0 0
 
 :no_bounce_bottom
 
@@ -307,7 +305,7 @@ start
 	neg ball_vx
 	+ ball_vx 0.25
 	+ ball_x ball_vx
-	mml_play wall_sfx
+	mml_play wall_sfx 1.0 0
 
 :done_hit_paddle1
 
@@ -338,7 +336,7 @@ start
 	neg ball_vx
 	- ball_vx 0.25
 	+ ball_x ball_vx
-	mml_play wall_sfx
+	mml_play wall_sfx 1.0 0
 
 :done_hit_paddle2
 

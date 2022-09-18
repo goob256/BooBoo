@@ -1,5 +1,3 @@
-; a demo game
-
 var number crash_mml
 mml_create crash_mml "A @TYPE1 a16"
 
@@ -376,7 +374,7 @@ start
 
 :crash
 	call set_board board new_x new_y 3
-	mml_play crash_mml
+	mml_play crash_mml 1.0 0
 	? value 1
 	je game_over
 	goto continue2
@@ -477,7 +475,7 @@ start
 	= gameover 1
 	= gameover_start tick
 	vector_set board index 3
-	mml_play crash_mml
+	mml_play crash_mml 1.0 0
 
 :done
 	? gameover 0

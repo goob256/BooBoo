@@ -1,6 +1,6 @@
-; subroutines
-
-play_music "music/main.mml"
+var number music
+mml_load music "music/secret.mml"
+mml_play music 1.0 1
 
 var string reset_game_name
 = reset_game_name "sine.boo"
@@ -63,5 +63,5 @@ end
 
 function shutdown
 start
-	stop_music
+	mml_stop music
 end

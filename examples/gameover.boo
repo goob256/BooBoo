@@ -1,10 +1,10 @@
-; music and images
-
 var string reset_game_name
 = reset_game_name "memory.boo"
 include "slideshow_start.inc"
 
-play_music "music/gameover.mml"
+var number music
+mml_load music "music/gameover.mml"
+mml_play music 1.0 1
 
 var number guy
 var number glasses
@@ -35,5 +35,5 @@ end
 
 function shutdown
 start
-	stop_music
+	mml_stop music
 end
