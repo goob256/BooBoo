@@ -2252,15 +2252,23 @@ bool interpret_image(PROGRAM &prg, std::string tok)
 	}
 	else if (tok == "image_draw") {
 		std::string id = token(prg);
+		std::string r = token(prg);
+		std::string g = token(prg);
+		std::string b = token(prg);
+		std::string a = token(prg);
 		std::string x = token(prg);
 		std::string y = token(prg);
 
-		if (id == "" || x == "" || y == "") {
+		if (id == "" || r == "" || g == "" || b == "" || a == "" || x == "" || y == "") {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Expected image_draw parameters on line " + itos(get_line_num(prg)));
 		}
 
 		std::vector<std::string> strings;
 		strings.push_back(id);
+		strings.push_back(r);
+		strings.push_back(g);
+		strings.push_back(b);
+		strings.push_back(a);
 		strings.push_back(x);
 		strings.push_back(y);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -2271,7 +2279,61 @@ bool interpret_image(PROGRAM &prg, std::string tok)
 
 		gfx::Image *img = prg.images[values[0]];
 
-		img->draw(util::Point<float>(values[1], values[2]));
+		SDL_Colour c;
+		c.r = values[1];
+		c.g = values[2];
+		c.b = values[3];
+		c.a = values[4];
+
+		img->draw_tinted(c, util::Point<float>(values[5], values[6]));
+	}
+	else if (tok == "image_draw_rotated_scaled") {
+		std::string id = token(prg);
+		std::string r = token(prg);
+		std::string g = token(prg);
+		std::string b = token(prg);
+		std::string a = token(prg);
+		std::string cx = token(prg);
+		std::string cy = token(prg);
+		std::string x = token(prg);
+		std::string y = token(prg);
+		std::string angle = token(prg);
+		std::string scale_x = token(prg);
+		std::string scale_y = token(prg);
+
+		if (id == "" || r == "" || g == "" || b == "" || a == "" || cx == "" || cy == "" || x == "" || y == "" || angle == "" || scale_x == "" || scale_y == "") {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected image_draw_rotated_scaled parameters on line " + itos(get_line_num(prg)));
+		}
+
+		std::vector<std::string> strings;
+		strings.push_back(id);
+		strings.push_back(r);
+		strings.push_back(g);
+		strings.push_back(b);
+		strings.push_back(a);
+		strings.push_back(cx);
+		strings.push_back(cy);
+		strings.push_back(x);
+		strings.push_back(y);
+		strings.push_back(y);
+		strings.push_back(angle);
+		strings.push_back(scale_x);
+		strings.push_back(scale_y);
+		std::vector<double> values = variable_names_to_numbers(prg, strings);
+		
+		if (values[0] < 0 || values[0] >= prg.images.size()) {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid Image on line " + itos(get_line_num(prg)));
+		}
+
+		gfx::Image *img = prg.images[values[0]];
+
+		SDL_Colour c;
+		c.r = values[1];
+		c.g = values[2];
+		c.b = values[3];
+		c.a = values[4];
+
+		img->draw_tinted_rotated_scaledxy(c, util::Point<float>(values[5], values[6]), util::Point<float>(values[7], values[8]), values[9], values[10], values[11]);
 	}
 	else if (tok == "image_start") {
 		std::string img = token(prg);
@@ -3339,6 +3401,7 @@ void booboo_init()
 	library_map["mml_stop"] = interpret_mml;
 	library_map["image_load"] = interpret_image;
 	library_map["image_draw"] = interpret_image;
+	library_map["image_draw_rotated_scaled"] = interpret_image;
 	library_map["image_start"] = interpret_image;
 	library_map["image_end"] = interpret_image;
 	library_map["font_load"] = interpret_font;
@@ -3369,25 +3432,3 @@ void booboo_shutdown()
 
 	core_map.clear();
 }
-	SHIM4_EXPORT void stretch_region_tinted_repeat(SDL_Colour tint, util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, util::Size<int> dest_size, int flags = 0);
-	SHIM4_EXPORT void stretch_region_tinted(SDL_Colour tint, util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, util::Size<int> dest_size, int flags = 0);
-	SHIM4_EXPORT void stretch_region(util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, util::Size<int> dest_size, int flags = 0);
-	SHIM4_EXPORT void draw_region_lit_z_range(SDL_Colour colours[4], util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, float z_top, float z_bottom, int flags = 0);
-	SHIM4_EXPORT void draw_region_lit_z(SDL_Colour colours[4], util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, float z, int flags = 0);
-	SHIM4_EXPORT void draw_region_tinted_z_range(SDL_Colour tint, util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, float z_top, float z_bottom, int flags = 0);
-	SHIM4_EXPORT void draw_region_tinted_z(SDL_Colour tint, util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, float z, int flags = 0);
-	SHIM4_EXPORT void draw_region_tinted(SDL_Colour tint, util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, int flags = 0);
-	SHIM4_EXPORT void draw_region_z_range(util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, float z_top, float z_bottom, int flags = 0);
-	SHIM4_EXPORT void draw_region_z(util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, float z, int flags = 0);
-	SHIM4_EXPORT void draw_region(util::Point<float> source_position, util::Size<int> source_size, util::Point<float> dest_position, int flags = 0);
-	SHIM4_EXPORT void draw_z(util::Point<float> dest_position, float z, int flags = 0);
-	SHIM4_EXPORT void draw_tinted(SDL_Colour tint, util::Point<float> dest_position, int flags = 0);
-	SHIM4_EXPORT void draw(util::Point<float> dest_position, int flags = 0);
-	SHIM4_EXPORT void draw_tinted_rotated(SDL_Colour tint, util::Point<float> centre, util::Point<float> dest_position, float angle, int flags = 0);
-	SHIM4_EXPORT void draw_tinted_rotated_scaledxy_z(SDL_Colour tint, util::Point<float> centre, util::Point<float> dest_position, float angle, float scale_x, float scale_y, float z, int flags = 0);
-	SHIM4_EXPORT void draw_tinted_rotated_scaled_z(SDL_Colour tint, util::Point<float> centre, util::Point<float> dest_position, float angle, float scale, float z, int flags = 0);
-	SHIM4_EXPORT void draw_rotated_scaled_z(util::Point<float> centre, util::Point<float> dest_position, float angle, float scale, float z, int flags = 0);
-	SHIM4_EXPORT void draw_tinted_rotated_scaled(SDL_Colour tint, util::Point<float> centre, util::Point<float> dest_position, float angle, float scale, int flags = 0);
-	SHIM4_EXPORT void draw_tinted_rotated_scaledxy(SDL_Colour tint, util::Point<float> centre, util::Point<float> dest_position, float angle, float scale_x, float scale_y, int flags = 0);
-	SHIM4_EXPORT void draw_rotated(util::Point<float> centre, util::Point<float> dest_position, float angle, int flags = 0);
-	SHIM4_EXPORT void draw_rotated_scaled(util::Point<float> centre, util::Point<float> dest_position, float angle, float scale, int flags = 0);

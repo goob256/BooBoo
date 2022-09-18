@@ -23,14 +23,14 @@ end
 
 function draw
 start
-	image_draw guy 0 0
+	image_draw guy 255 255 255 255 0 0
 
 	var number yy
 	= yy y
 	% yy 180
 	- yy 100
 
-	image_draw glasses 180 yy
+	image_draw glasses 255 255 255 255 180 yy
 end
 
 function shutdown

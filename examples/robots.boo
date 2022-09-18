@@ -171,7 +171,7 @@ start
 	= yy y
 	* yy rect_h
 
-	image_draw grass_img xx yy
+	image_draw grass_img 255 255 255 255 xx yy
 
 	+ x 1
 	? x width
@@ -195,7 +195,7 @@ start
 	= yy y
 	* yy rect_h
 
-	;image_draw grass_img xx yy
+	;image_draw grass_img 255 255 255 255 xx yy
 
 	? value 1
 	jl past_draw
@@ -223,7 +223,7 @@ start
 
 :done_image
 
-	image_draw image xx yy
+	image_draw image 255 255 255 255 xx yy
 
 :past_draw
 	+ index 1
