@@ -2,7 +2,7 @@ var number crash_mml
 mml_create crash_mml "A @TYPE1 a16"
 
 var string reset_game_name
-= reset_game_name "sneaky.boo"
+= reset_game_name "walk.boo"
 include "slideshow_start.inc"
 
 var number width

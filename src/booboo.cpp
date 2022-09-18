@@ -1575,6 +1575,28 @@ bool interpret_math(PROGRAM &prg, std::string tok)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 		}
 	}
+	else if (tok == "abs") {
+		std::string dest = token(prg);
+		std::string vs = token(prg);
+		float v;
+		
+		if (dest == "" || vs == "") {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected abs parameters on line " + itos(get_line_num(prg)));
+		}
+
+		std::vector<std::string> strings;
+		strings.push_back(vs);
+		std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+		VARIABLE &v1 = find_variable(prg, dest);
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = abs(values[0]);
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+		}
+	}
 	else if (tok == "pow") {
 		std::string dest = token(prg);
 		std::string vs1 = token(prg);
@@ -2314,7 +2336,6 @@ bool interpret_image(PROGRAM &prg, std::string tok)
 		strings.push_back(cx);
 		strings.push_back(cy);
 		strings.push_back(x);
-		strings.push_back(y);
 		strings.push_back(y);
 		strings.push_back(angle);
 		strings.push_back(scale_x);
@@ -3381,6 +3402,7 @@ void booboo_init()
 	library_map["sin"] = interpret_math;
 	library_map["cos"] = interpret_math;
 	library_map["atan2"] = interpret_math;
+	library_map["abs"] = interpret_math;
 	library_map["pow"] = interpret_math;
 	library_map["sqrt"] = interpret_math;
 	library_map["rand"] = interpret_math;

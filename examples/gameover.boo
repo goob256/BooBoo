@@ -1,5 +1,5 @@
 var string reset_game_name
-= reset_game_name "memory.boo"
+= reset_game_name "pong.boo"
 include "slideshow_start.inc"
 
 var number music
