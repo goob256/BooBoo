@@ -521,8 +521,6 @@ again:
 	while (interpret(prg)) {
 	}
 	
-	call_function(prg, "init", "");
-
 	if (reset_game_name == "") {
 		go();
 	}
