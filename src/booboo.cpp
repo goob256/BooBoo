@@ -1051,6 +1051,47 @@ bool corefunc_intmod(PROGRAM &prg, std::string tok)
 	return true;
 }
 
+bool corefunc_fmod(PROGRAM &prg, std::string tok)
+{
+	std::string dest = token(prg);
+	std::string src = token(prg);
+
+	if (dest == "" || src == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected fmod parameters on line " + itos(get_line_num(prg)));
+	}
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (src[0] == '-' || isdigit(src[0])) {
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = fmod(v1.n, atof(src.c_str()));
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+	else if (src[0] == '"') {
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = fmod(v1.n, atof(remove_quotes(src).c_str()));
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+	else {
+		VARIABLE &v2 = find_variable(prg, src);
+
+		if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+			v1.n = fmod(v1.n, v2.n);
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+		}
+	}
+
+	return true;
+}
+
 bool corefunc_neg(PROGRAM &prg, std::string tok)
 {
 	std::string name = token(prg);
@@ -3384,6 +3425,7 @@ void booboo_init()
 	library_map["*"] = corefunc_multiply;
 	library_map["/"] = corefunc_divide;
 	library_map["%"] = corefunc_intmod;
+	library_map["fmod"] = corefunc_fmod;
 	library_map["neg"] = corefunc_neg;
 	library_map[":"] = corefunc_label;
 	library_map["goto"] = corefunc_goto;
