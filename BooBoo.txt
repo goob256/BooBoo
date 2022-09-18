@@ -4,6 +4,8 @@ draw - called at refresh rate
 logic - called 60 times per second
 shutdown - called when the program is exiting
 
+The screen is 640x360.
+
 ---
 
 var
@@ -105,6 +107,14 @@ sin
 cos
 	trigonometry functions
 	e.g. cos dest 3.14159
+
+asin
+	trigonometry functions
+	e.g. asin dest f
+
+acos
+	trigonometry functions
+	e.g. acos dest f
 
 atan2
 	trigonometry functions

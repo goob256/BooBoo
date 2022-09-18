@@ -1688,6 +1688,50 @@ bool interpret_math(PROGRAM &prg, std::string tok)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 		}
 	}
+	else if (tok == "asin") {
+		std::string dest = token(prg);
+		std::string vs = token(prg);
+		float v;
+		
+		if (dest == "" || vs == "") {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected asin parameters on line " + itos(get_line_num(prg)));
+		}
+
+		std::vector<std::string> strings;
+		strings.push_back(vs);
+		std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+		VARIABLE &v1 = find_variable(prg, dest);
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = asin(values[0]);
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+		}
+	}
+	else if (tok == "acos") {
+		std::string dest = token(prg);
+		std::string vs = token(prg);
+		float v;
+		
+		if (dest == "" || vs == "") {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected acos paramters on line " + itos(get_line_num(prg)));
+		}
+
+		std::vector<std::string> strings;
+		strings.push_back(vs);
+		std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+		VARIABLE &v1 = find_variable(prg, dest);
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = acos(values[0]);
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+		}
+	}
 	else if (tok == "atan2") {
 		std::string dest = token(prg);
 		std::string vs1 = token(prg);
@@ -3604,6 +3648,8 @@ void booboo_init()
 	library_map["string_format"] = corefunc_string_format;
 	library_map["sin"] = interpret_math;
 	library_map["cos"] = interpret_math;
+	library_map["asin"] = interpret_math;
+	library_map["acos"] = interpret_math;
 	library_map["atan2"] = interpret_math;
 	library_map["abs"] = interpret_math;
 	library_map["pow"] = interpret_math;
