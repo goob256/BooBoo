@@ -1505,12 +1505,6 @@ bool corefunc_string_format(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-bool interpret_core(PROGRAM &prg, std::string tok)
-{
-	library_func func = core_map[tok];
-	return func(prg, tok);
-}
-
 bool interpret_math(PROGRAM &prg, std::string tok)
 {
 	if (tok == "sin") {
@@ -3289,28 +3283,28 @@ void booboo_init()
 	// these two are special as they can terminate the program
 	//library_map["reset"] = interpret_foo;
 	//library_map["return"] = interpret_foo;
-	library_map["var"] = interpret_core;
-	library_map["="] = interpret_core;
-	library_map["+"] = interpret_core;
-	library_map["-"] = interpret_core;
-	library_map["*"] = interpret_core;
-	library_map["/"] = interpret_core;
-	library_map["%"] = interpret_core;
-	library_map["neg"] = interpret_core;
-	library_map[":"] = interpret_core;
-	library_map["goto"] = interpret_core;
-	library_map["?"] = interpret_core;
-	library_map["je"] = interpret_core;
-	library_map["jne"] = interpret_core;
-	library_map["jl"] = interpret_core;
-	library_map["jle"] = interpret_core;
-	library_map["jg"] = interpret_core;
-	library_map["jge"] = interpret_core;
-	library_map["call"] = interpret_core;
-	library_map["function"] = interpret_core;
-	library_map[";"] = interpret_core;
-	library_map["inspect"] = interpret_core;
-	library_map["string_format"] = interpret_core;
+	library_map["var"] = corefunc_var;
+	library_map["="] = corefunc_set;
+	library_map["+"] = corefunc_add;
+	library_map["-"] = corefunc_subtract;
+	library_map["*"] = corefunc_multiply;
+	library_map["/"] = corefunc_divide;
+	library_map["%"] = corefunc_intmod;
+	library_map["neg"] = corefunc_neg;
+	library_map[":"] = corefunc_label;
+	library_map["goto"] = corefunc_goto;
+	library_map["?"] = corefunc_compare;
+	library_map["je"] = corefunc_je;
+	library_map["jne"] = corefunc_jne;
+	library_map["jl"] = corefunc_jl;
+	library_map["jle"] = corefunc_jle;
+	library_map["jg"] = corefunc_jg;
+	library_map["jge"] = corefunc_jge;
+	library_map["call"] = corefunc_call;
+	library_map["function"] = corefunc_function;
+	library_map[";"] = corefunc_comment;
+	library_map["inspect"] = corefunc_inspect;
+	library_map["string_format"] = corefunc_string_format;
 	library_map["sin"] = interpret_math;
 	library_map["cos"] = interpret_math;
 	library_map["atan2"] = interpret_math;
@@ -3357,29 +3351,6 @@ void booboo_init()
 	library_map["cfg_set_string"] = interpret_cfg;
 	library_map["cfg_number_exists"] = interpret_cfg;
 	library_map["cfg_string_exists"] = interpret_cfg;
-
-	core_map["var"] = corefunc_var;
-	core_map["="] = corefunc_set;
-	core_map["+"] = corefunc_add;
-	core_map["-"] = corefunc_subtract;
-	core_map["*"] = corefunc_multiply;
-	core_map["/"] = corefunc_divide;
-	core_map["%"] = corefunc_intmod;
-	core_map["neg"] = corefunc_neg;
-	core_map[":"] = corefunc_label;
-	core_map["goto"] = corefunc_goto;
-	core_map["?"] = corefunc_compare;
-	core_map["je"] = corefunc_je;
-	core_map["jne"] = corefunc_jne;
-	core_map["jl"] = corefunc_jl;
-	core_map["jle"] = corefunc_jle;
-	core_map["jg"] = corefunc_jg;
-	core_map["jge"] = corefunc_jge;
-	core_map["call"] = corefunc_call;
-	core_map["function"] = corefunc_function;
-	core_map[";"] = corefunc_comment;
-	core_map["inspect"] = corefunc_inspect;
-	core_map["string_format"] = corefunc_string_format;
 }
 
 void booboo_shutdown()

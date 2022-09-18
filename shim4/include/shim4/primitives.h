@@ -17,7 +17,8 @@ void SHIM4_EXPORT draw_line(SDL_Colour colour, util::Point<float> a, util::Point
 // winding order matters for triangles (use gfx::set_cull_mode(gfx::NO_FACE) to never cull these)
 void SHIM4_EXPORT draw_filled_triangle(SDL_Colour vertex_colours[3], util::Point<float> a, util::Point<float> b, util::Point<float> c);
 void SHIM4_EXPORT draw_filled_triangle(SDL_Colour colour, util::Point<float> a, util::Point<float> b, util::Point<float> c);
-void SHIM4_EXPORT draw_triangle_3d(SDL_Colour c1, SDL_Colour c2, SDL_Colour c3, util::Vec3D<float> a, util::Vec3D<float> b, util::Vec3D<float> c);
+void SHIM4_EXPORT draw_filled_triangle_3d(SDL_Colour vertex_colours[3], util::Vec3D<float> a, util::Vec3D<float> b, util::Vec3D<float> c);
+void SHIM4_EXPORT draw_filled_triangle_3d(SDL_Colour colour, util::Vec3D<float> a, util::Vec3D<float> b, util::Vec3D<float> c);
 void SHIM4_EXPORT draw_rectangle(SDL_Colour colour, util::Point<float> pos, util::Size<float> size, float thickness = 1.0f);
 void SHIM4_EXPORT draw_filled_rectangle(SDL_Colour vertex_colours[4], util::Point<float> dest_position, util::Size<float> dest_size);
 void SHIM4_EXPORT draw_filled_rectangle(SDL_Colour colour, util::Point<float> dest_position, util::Size<float> dest_size);

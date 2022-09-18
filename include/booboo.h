@@ -17,11 +17,12 @@ public:
 	PARSE_EXCEPTION(std::string error);
 };
 
-struct VARIABLE {
+struct VARIABLE
+{
 	enum VARIABLE_TYPE {
 		NUMBER,
 		STRING,
-		VECTOR
+		VECTOR,
 	} type;
 
 	std::string name;
