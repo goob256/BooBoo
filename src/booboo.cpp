@@ -8,6 +8,10 @@
 static std::map< std::string, double > cfg_numbers;
 static std::map< std::string, std::string > cfg_strings;
 
+typedef bool (*library_func)(PROGRAM &prg, std::string tok);
+std::map<std::string, library_func> library_map;
+std::map<std::string, library_func> core_map;
+
 static std::string itos(int i)
 {
 	char buf[1000];
@@ -148,19 +152,19 @@ static bool load_cfg(std::string cfg_name)
 
 	while ((line = t.next()) != "") {
 		util::Tokenizer t2(line, '=');
-		std::string part1 = t2.next();
+		std::string name = t2.next();
 		std::string value = t2.next();
 		util::trim(value);
 
-		util::Tokenizer t3(part1, ' ');
-		std::string type = t3.next();
-		std::string name = t3.next();
-
-		if (type == "number") {
-			cfg_numbers[name] = atof(value.c_str());
+		if (name == "") {
+			continue;
 		}
-		else if (type == "string") {
+
+		if (name[0] == '"') {
 			cfg_strings[name] = remove_quotes(value);
+		}
+		else {
+			cfg_numbers[name] = atof(value.c_str());
 		}
 	}
 
@@ -176,12 +180,12 @@ static void save_cfg(std::string cfg_name)
 
 	for (std::map<std::string, double>::iterator it = cfg_numbers.begin(); it != cfg_numbers.end(); it++) {
 		std::pair<std::string, double> p = *it;
-		fprintf(f, "number %s=%g\n", p.first.c_str(), p.second);
+		fprintf(f, "%s=%g\n", p.first.c_str(), p.second);
 	}
 
 	for (std::map<std::string, std::string>::iterator it = cfg_strings.begin(); it != cfg_strings.end(); it++) {
 		std::pair<std::string, std::string> p = *it;
-		fprintf(f, "string %s=\"%s\"\n", p.first.c_str(), p.second.c_str());
+		fprintf(f, "%s=\"%s\"\n", p.first.c_str(), p.second.c_str());
 	}
 
 	fclose(f);
@@ -676,319 +680,840 @@ void call_function(PROGRAM &prg, std::string function_name, std::string result_n
 	}
 }
 
-bool interpret(PROGRAM &prg)
+bool interpret_breakers(PROGRAM &prg, std::string tok)
 {
-	std::string tok = token(prg);
+	if (tok == "reset") {
+		std::string name = token(prg);
 
-	if (tok == "") {
+		if (name == "") {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected reset parameters on line " + itos(get_line_num(prg)));
+		}
+
+		std::string names;
+
+		if (name[0] == '"') {
+			names = remove_quotes(unescape(name));
+		}
+		else {
+			VARIABLE &v1 = find_variable(prg, name);
+			if (v1.type == VARIABLE::STRING) {
+				names = v1.s;
+			}
+			else {
+				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			}
+		}
+
+		reset_game_name = names;
+	}
+	else if (tok == "return") {
+		std::string value = token(prg);
+
+		if (value == "") {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected return parameters on line " + itos(get_line_num(prg)));
+		}
+		
+		if (value[0] == '-' || isdigit(value[0])) {
+			prg.result.type = VARIABLE::NUMBER;
+			prg.result.n = atof(value.c_str());
+		}
+		else if (value[0] == '"') {
+			prg.result.type = VARIABLE::STRING;
+			prg.result.s = remove_quotes(unescape(value));
+		}
+		else {
+			VARIABLE &v1 = find_variable(prg, value);
+			prg.result = v1;
+		}
+
+		prg.result.name = "result";
+	}
+	else {
 		return false;
 	}
 
-	if (tok == "var") {
-		VARIABLE var;
+	return true;
+}
 
-		std::string type = token(prg);
-		std::string name =  token(prg);
+bool corefunc_var(PROGRAM &prg, std::string tok)
+{
+	VARIABLE var;
 
-		if (type == "" || name == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected var parameters on line " + itos(get_line_num(prg)));
+	std::string type = token(prg);
+	std::string name =  token(prg);
+
+	if (type == "" || name == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected var parameters on line " + itos(get_line_num(prg)));
+	}
+
+	var.name = name;
+	var.function = prg.name;
+
+	if (type == "number") {
+		var.type = VARIABLE::NUMBER;
+	}
+	else if (type == "string") {
+		var.type = VARIABLE::STRING;
+	}
+	else if (type == "vector") {
+		var.type = VARIABLE::VECTOR;
+		var.n = prg.vector_id++;
+		std::vector<VARIABLE> vec;
+		prg.vectors[var.n] = vec;
+	}
+	else {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+	}
+
+	std::map<std::string, VARIABLE> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
+	std::map<std::string, VARIABLE>::iterator it3;
+	if ((it3 = prg.variables.find(var.name)) != prg.variables.end()) {
+		if ((*it3).second.function != prg.name) {
+			variables_backup[var.name] = prg.variables[var.name];
 		}
+	}
 
-		var.name = name;
-		var.function = prg.name;
+	prg.variables[var.name] = var;
 
-		if (type == "number") {
-			var.type = VARIABLE::NUMBER;
+	return true;
+}
+
+bool corefunc_set(PROGRAM &prg, std::string tok)
+{
+	std::string dest =  token(prg);
+	std::string src =  token(prg);
+
+	if (dest == "" || src == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected = parameters on line " + itos(get_line_num(prg)));
+	}
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (src[0] == '-' || isdigit(src[0])) {
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = atof(src.c_str());
 		}
-		else if (type == "string") {
-			var.type = VARIABLE::STRING;
-		}
-		else if (type == "vector") {
-			var.type = VARIABLE::VECTOR;
-			var.n = prg.vector_id++;
-			std::vector<VARIABLE> vec;
-			prg.vectors[var.n] = vec;
+		else if (v1.type == VARIABLE::STRING) {
+			v1.s = src;
 		}
 		else {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
-
-		std::map<std::string, VARIABLE> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
-		std::map<std::string, VARIABLE>::iterator it3;
-		if ((it3 = prg.variables.find(var.name)) != prg.variables.end()) {
-			if ((*it3).second.function != prg.name) {
-				variables_backup[var.name] = prg.variables[var.name];
-			}
-		}
-
-		prg.variables[var.name] = var;
 	}
-	else if (tok == "=") {
-		std::string dest =  token(prg);
-		std::string src =  token(prg);
-
-		if (dest == "" || src == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected = parameters on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (src[0] == '-' || isdigit(src[0])) {
-			if (v1.type == VARIABLE::NUMBER) {
-				v1.n = atof(src.c_str());
-			}
-			else if (v1.type == VARIABLE::STRING) {
-				v1.s = src;
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-		else if (src[0] == '"') {
-			if (v1.type == VARIABLE::NUMBER) {
-				v1.n = atof(remove_quotes(src).c_str());
-			}
-			else if (v1.type == VARIABLE::STRING) {
-				v1.s = remove_quotes(unescape(src));
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-		else {
-			VARIABLE &v2 = find_variable(prg, src);
-
-			if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
-				v1.n = v2.n;
-			}
-			else if (v1.type == VARIABLE::STRING && v2.type == VARIABLE::NUMBER) {
-				v1.s = itos(v2.n);
-			}
-			else if (v1.type == VARIABLE::STRING && v2.type == VARIABLE::STRING) {
-				v1.s = v2.s;
-			}
-			else if (v1.type == VARIABLE::VECTOR && v2.type == VARIABLE::VECTOR) {
-				prg.vectors[(int)v1.n] = prg.vectors[(int)v2.n];
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
-			}
-		}
-	}
-	else if (tok == "+") {
-		std::string dest =  token(prg);
-		std::string src =  token(prg);
-
-		if (dest == "" || src == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected + parameters on line " + itos(get_line_num(prg)));
-		}
-		
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (src[0] == '-' || isdigit(src[0])) {
-			if (v1.type == VARIABLE::NUMBER) {
-				v1.n += atof(src.c_str());
-			}
-			else if (v1.type == VARIABLE::STRING) {
-				v1.s += src;
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-		else if (src[0] == '"') {
-			if (v1.type == VARIABLE::NUMBER) {
-				v1.n += atof(remove_quotes(src).c_str());
-			}
-			else if (v1.type == VARIABLE::STRING) {
-				v1.s += remove_quotes(unescape(src));
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-		else {
-			VARIABLE &v2 = find_variable(prg, src);
-
-			if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
-				v1.n += v2.n;
-			}
-			else if (v1.type == VARIABLE::STRING && v2.type == VARIABLE::NUMBER) {
-				v1.s += itos(v2.n);
-			}
-			else if (v1.type == VARIABLE::STRING && v2.type == VARIABLE::STRING) {
-				v1.s += v2.s;
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
-			}
-		}
-	}
-	else if (tok == "-") {
-		std::string dest =  token(prg);
-		std::string src =  token(prg);
-
-		if (dest == "" || src == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected - parameters on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (src[0] == '-' || isdigit(src[0])) {
-			if (v1.type == VARIABLE::NUMBER) {
-				v1.n -= atof(src.c_str());
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-		else if (src[0] == '"') {
-			if (v1.type == VARIABLE::NUMBER) {
-				v1.n -= atof(remove_quotes(src).c_str());
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-		else {
-			VARIABLE &v2 = find_variable(prg, src);
-
-			if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
-				v1.n -= v2.n;
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
-			}
-		}
-	}
-	else if (tok == "*") {
-		std::string dest =  token(prg);
-		std::string src =  token(prg);
-
-		if (dest == "" || src == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected * parameters on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (src[0] == '-' || isdigit(src[0])) {
-			if (v1.type == VARIABLE::NUMBER) {
-				v1.n *= atof(src.c_str());
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-		else if (src[0] == '"') {
-			if (v1.type == VARIABLE::NUMBER) {
-				v1.n *= atof(remove_quotes(src).c_str());
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-		else {
-			VARIABLE &v2 = find_variable(prg, src);
-
-			if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
-				v1.n *= v2.n;
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
-			}
-		}
-	}
-	else if (tok == "/") {
-		std::string dest =  token(prg);
-		std::string src =  token(prg);
-
-		if (dest == "" || src == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected / parameters on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (src[0] == '-' || isdigit(src[0])) {
-			if (v1.type == VARIABLE::NUMBER) {
-				v1.n /= atof(src.c_str());
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-		else if (src[0] == '"') {
-			if (v1.type == VARIABLE::NUMBER) {
-				v1.n /= atof(remove_quotes(src).c_str());
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-		else {
-			VARIABLE &v2 = find_variable(prg, src);
-
-			if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
-				v1.n /= v2.n;
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
-			}
-		}
-	}
-	else if (tok == "%") {
-		std::string dest =  token(prg);
-		std::string src =  token(prg);
-
-		if (dest == "" || src == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected %% parameters on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (src[0] == '-' || isdigit(src[0])) {
-			if (v1.type == VARIABLE::NUMBER) {
-				v1.n = (int)v1.n % (int)atof(src.c_str());
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-		else if (src[0] == '"') {
-			if (v1.type == VARIABLE::NUMBER) {
-				v1.n = (int)v1.n % (int)atof(remove_quotes(src).c_str());
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-		else {
-			VARIABLE &v2 = find_variable(prg, src);
-
-			if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
-				v1.n = (int)v1.n % (int)v2.n;
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
-			}
-		}
-	}
-	else if (tok == "neg") {
-		std::string name = token(prg);
-		
-		if (name == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected neg parameters on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE &v1 = find_variable(prg, name);
-
+	else if (src[0] == '"') {
 		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = -v1.n;
+			v1.n = atof(remove_quotes(src).c_str());
+		}
+		else if (v1.type == VARIABLE::STRING) {
+			v1.s = remove_quotes(unescape(src));
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+	else {
+		VARIABLE &v2 = find_variable(prg, src);
+
+		if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+			v1.n = v2.n;
+		}
+		else if (v1.type == VARIABLE::STRING && v2.type == VARIABLE::NUMBER) {
+			v1.s = itos(v2.n);
+		}
+		else if (v1.type == VARIABLE::STRING && v2.type == VARIABLE::STRING) {
+			v1.s = v2.s;
+		}
+		else if (v1.type == VARIABLE::VECTOR && v2.type == VARIABLE::VECTOR) {
+			prg.vectors[(int)v1.n] = prg.vectors[(int)v2.n];
 		}
 		else {
 			throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 		}
 	}
-	else if (tok == "sin") {
+
+	return true;
+}
+
+bool corefunc_add(PROGRAM &prg, std::string tok)
+{
+	std::string dest =  token(prg);
+	std::string src =  token(prg);
+
+	if (dest == "" || src == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected + parameters on line " + itos(get_line_num(prg)));
+	}
+	
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (src[0] == '-' || isdigit(src[0])) {
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n += atof(src.c_str());
+		}
+		else if (v1.type == VARIABLE::STRING) {
+			v1.s += src;
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+	else if (src[0] == '"') {
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n += atof(remove_quotes(src).c_str());
+		}
+		else if (v1.type == VARIABLE::STRING) {
+			v1.s += remove_quotes(unescape(src));
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+	else {
+		VARIABLE &v2 = find_variable(prg, src);
+
+		if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+			v1.n += v2.n;
+		}
+		else if (v1.type == VARIABLE::STRING && v2.type == VARIABLE::NUMBER) {
+			v1.s += itos(v2.n);
+		}
+		else if (v1.type == VARIABLE::STRING && v2.type == VARIABLE::STRING) {
+			v1.s += v2.s;
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+		}
+	}
+
+	return true;
+}
+
+bool corefunc_subtract(PROGRAM &prg, std::string tok)
+{
+	std::string dest =  token(prg);
+	std::string src =  token(prg);
+
+	if (dest == "" || src == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected - parameters on line " + itos(get_line_num(prg)));
+	}
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (src[0] == '-' || isdigit(src[0])) {
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n -= atof(src.c_str());
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+	else if (src[0] == '"') {
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n -= atof(remove_quotes(src).c_str());
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+	else {
+		VARIABLE &v2 = find_variable(prg, src);
+
+		if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+			v1.n -= v2.n;
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+		}
+	}
+
+	return true;
+}
+
+bool corefunc_multiply(PROGRAM &prg, std::string tok)
+{
+	std::string dest =  token(prg);
+	std::string src =  token(prg);
+
+	if (dest == "" || src == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected * parameters on line " + itos(get_line_num(prg)));
+	}
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (src[0] == '-' || isdigit(src[0])) {
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n *= atof(src.c_str());
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+	else if (src[0] == '"') {
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n *= atof(remove_quotes(src).c_str());
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+	else {
+		VARIABLE &v2 = find_variable(prg, src);
+
+		if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+			v1.n *= v2.n;
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+		}
+	}
+
+	return true;
+}
+
+bool corefunc_divide(PROGRAM &prg, std::string tok)
+{
+	std::string dest =  token(prg);
+	std::string src =  token(prg);
+
+	if (dest == "" || src == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected / parameters on line " + itos(get_line_num(prg)));
+	}
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (src[0] == '-' || isdigit(src[0])) {
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n /= atof(src.c_str());
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+	else if (src[0] == '"') {
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n /= atof(remove_quotes(src).c_str());
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+	else {
+		VARIABLE &v2 = find_variable(prg, src);
+
+		if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+			v1.n /= v2.n;
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+		}
+	}
+
+	return true;
+}
+
+bool corefunc_intmod(PROGRAM &prg, std::string tok)
+{
+	std::string dest =  token(prg);
+	std::string src =  token(prg);
+
+	if (dest == "" || src == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected %% parameters on line " + itos(get_line_num(prg)));
+	}
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (src[0] == '-' || isdigit(src[0])) {
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = (int)v1.n % (int)atof(src.c_str());
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+	else if (src[0] == '"') {
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = (int)v1.n % (int)atof(remove_quotes(src).c_str());
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+	else {
+		VARIABLE &v2 = find_variable(prg, src);
+
+		if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+			v1.n = (int)v1.n % (int)v2.n;
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+		}
+	}
+
+	return true;
+}
+
+bool corefunc_neg(PROGRAM &prg, std::string tok)
+{
+	std::string name = token(prg);
+	
+	if (name == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected neg parameters on line " + itos(get_line_num(prg)));
+	}
+
+	VARIABLE &v1 = find_variable(prg, name);
+
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = -v1.n;
+	}
+	else {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+	}
+
+	return true;
+}
+
+bool corefunc_label(PROGRAM &prg, std::string tok)
+{
+	std::string name = token(prg);
+
+	if (name == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected label paramters on line " + itos(get_line_num(prg)));
+	}
+
+	if (name[0] != '_' && isalpha(name[0]) == false) {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Invalid label name on line " + itos(get_line_num(prg)));
+	}
+
+	LABEL l;
+	l.name = name;
+	l.p = prg.p;
+	l.line = prg.line;
+	
+	//prg.labels.push_back(l);
+	//already got these
+
+	return true;
+}
+
+bool corefunc_goto(PROGRAM &prg, std::string tok)
+{
+	std::string name = token(prg);
+
+	if (name == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected goto paramters on line " + itos(get_line_num(prg)));
+	}
+
+	for (size_t i = 0; i < prg.labels.size(); i++) {
+		if (prg.labels[i].name == name) {
+			prg.p = prg.labels[i].p;
+			prg.line = prg.labels[i].line;
+		}
+	}
+
+	return true;
+}
+
+bool corefunc_compare(PROGRAM &prg, std::string tok)
+{
+	std::string a = token(prg);
+	std::string b = token(prg);
+
+	if (a == "" || b == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected ? parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(a);
+	strings.push_back(b);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	if (values[0] < values[1]) {
+		prg.compare_flag = -1;
+	}
+	else if (values[0] == values[1]) {
+		prg.compare_flag = 0;
+	}
+	else {
+		prg.compare_flag = 1;
+	}
+
+	return true;
+}
+
+bool corefunc_je(PROGRAM &prg, std::string tok)
+{
+	std::string label = token(prg);
+
+	if (label == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected je parameters on line " + itos(get_line_num(prg)));
+	}
+
+	if (prg.compare_flag == 0) {
+		for (size_t i = 0; i < prg.labels.size(); i++) {
+			if (prg.labels[i].name == label) {
+				prg.p = prg.labels[i].p;
+				prg.line = prg.labels[i].line;
+			}
+		}
+	}
+
+	return true;
+}
+
+bool corefunc_jne(PROGRAM &prg, std::string tok)
+{
+	std::string label = token(prg);
+
+	if (label == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected jne parameters on line " + itos(get_line_num(prg)));
+	}
+
+	if (prg.compare_flag != 0) {
+		for (size_t i = 0; i < prg.labels.size(); i++) {
+			if (prg.labels[i].name == label) {
+				prg.p = prg.labels[i].p;
+				prg.line = prg.labels[i].line;
+			}
+		}
+	}
+
+	return true;
+}
+
+bool corefunc_jl(PROGRAM &prg, std::string tok)
+{
+	std::string label = token(prg);
+
+	if (label == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected jl parameters on line " + itos(get_line_num(prg)));
+	}
+
+	if (prg.compare_flag < 0) {
+		for (size_t i = 0; i < prg.labels.size(); i++) {
+			if (prg.labels[i].name == label) {
+				prg.p = prg.labels[i].p;
+				prg.line = prg.labels[i].line;
+			}
+		}
+	}
+
+	return true;
+}
+
+bool corefunc_jle(PROGRAM &prg, std::string tok)
+{
+	std::string label = token(prg);
+
+	if (label == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected jle parameters on line " + itos(get_line_num(prg)));
+	}
+
+	if (prg.compare_flag <= 0) {
+		for (size_t i = 0; i < prg.labels.size(); i++) {
+			if (prg.labels[i].name == label) {
+				prg.p = prg.labels[i].p;
+				prg.line = prg.labels[i].line;
+			}
+		}
+	}
+
+	return true;
+}
+
+bool corefunc_jg(PROGRAM &prg, std::string tok)
+{
+	std::string label = token(prg);
+
+	if (label == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected jg parameters on line " + itos(get_line_num(prg)));
+	}
+
+	if (prg.compare_flag > 0) {
+		for (size_t i = 0; i < prg.labels.size(); i++) {
+			if (prg.labels[i].name == label) {
+				prg.p = prg.labels[i].p;
+				prg.line = prg.labels[i].line;
+			}
+		}
+	}
+
+	return true;
+}
+
+bool corefunc_jge(PROGRAM &prg, std::string tok)
+{
+	std::string label = token(prg);
+
+	if (label == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected jge parameters on line " + itos(get_line_num(prg)));
+	}
+
+	if (prg.compare_flag >= 0) {
+		for (size_t i = 0; i < prg.labels.size(); i++) {
+			if (prg.labels[i].name == label) {
+				prg.p = prg.labels[i].p;
+				prg.line = prg.labels[i].line;
+			}
+		}
+	}
+
+	return true;
+}
+
+bool corefunc_call(PROGRAM &prg, std::string tok)
+{
+	std::string tok2 = token(prg);
+	std::string function_name;
+	std::string result_name;
+
+	if (tok2 == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected call parameters on line " + itos(get_line_num(prg)));
+	}
+
+	if (tok2 == "=") {
+		result_name = token(prg);
+		function_name = token(prg);
+		if (result_name == "" || function_name == "") {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected call parameters on line " + itos(get_line_num(prg)));
+		}
+
+		// check for errors
+		find_variable(prg, result_name);
+	}
+	else {
+		function_name = tok2;
+	}
+
+	call_function(prg, function_name, result_name);
+
+	return true;
+}
+
+bool corefunc_function(PROGRAM &prg, std::string tok)
+{
+	int start_line = prg.line;
+	std::string name = token(prg);
+	int save = get_line_num(prg);
+
+	if (name == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected function parameters on line " + itos(get_line_num(prg)));
+	}
+
+	PROGRAM p;
+	
+	std::string tok2;
+
+	while ((tok2 = token(prg)) != "") {
+		if (tok2 == "start") {
+			break;
+		}
+		else if (tok2 == ";") {
+			while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
+				prg.p++;
+			}
+			prg.line++;
+			if (prg.p < prg.code.length()) {
+				prg.p++;
+			}
+		}
+		if (tok2[0] != '_' && !isalpha(tok2[0])) {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid variable name " + tok2 + " on line " + itos(get_line_num(prg)));
+		}
+		p.parameters.push_back(tok2);
+	}
+	
+	if (tok2 != "start") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Function not terminated on line " + itos(save));
+	}
+
+	int save_p = prg.p;
+	int end_p = prg.p;
+
+	while ((tok2 = token(prg)) != "") {
+		if (tok2 == "end") {
+			break;
+		}
+		else if (tok2 == ";") {
+			while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
+				prg.p++;
+			}
+			prg.line++;
+			if (prg.p < prg.code.length()) {
+				prg.p++;
+			}
+		}
+		end_p = prg.p;
+	}
+
+	if (tok2 != "end") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Function not terminated on line " + itos(save));
+	}
+
+	p.name = name;
+	p.p = 0;
+	p.line = 1;
+	p.start_line = start_line;
+	p.code = prg.code.substr(save_p, end_p-save_p);
+	p.labels = process_labels(p);
+	prg.functions.push_back(p);
+
+	return true;
+}
+
+bool corefunc_comment(PROGRAM &prg, std::string tok)
+{
+	while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
+		prg.p++;
+	}
+	prg.line++;
+	if (prg.p < prg.code.length()) {
+		prg.p++;
+	}
+
+	return true;
+}
+
+bool corefunc_inspect(PROGRAM &prg, std::string tok)
+{
+	std::string name = token(prg);
+	
+	if (name == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected inspect parameters on line " + itos(get_line_num(prg)));
+	}
+
+	VARIABLE &v1 = find_variable(prg, name);
+
+	char buf[1000];
+
+	if (name[0] == '-' || isdigit(name[0])) {
+		snprintf(buf, 1000, "%s", name.c_str());
+	}
+	else if (name[0] == '"') {
+		std::string s = remove_quotes(unescape(name));
+		snprintf(buf, 1000, "%s", s.c_str());
+	}
+	else if (v1.type == VARIABLE::NUMBER) {
+		snprintf(buf, 1000, "%g", v1.n);
+	}
+	else if (v1.type == VARIABLE::STRING) {
+		snprintf(buf, 1000, "\"%s\"", v1.s.c_str());
+	}
+	else {
+		strcpy(buf, "Unknown");
+	}
+
+	gui::popup("INSPECTOR", buf, gui::OK);
+
+	return true;
+}
+
+bool corefunc_string_format(PROGRAM &prg, std::string tok)
+{
+	std::string dest = token(prg);
+	std::string fmt = token(prg);
+	
+	if (dest == "" || fmt == "") {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Expected string_format parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::string fmts;
+
+	if (fmt[0] == '"') {
+		fmts = remove_quotes(unescape(fmt));
+	}
+	else {
+		VARIABLE &v1 = find_variable(prg, fmt);
+
+		if (v1.type == VARIABLE::STRING) {
+			fmts = v1.s;
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+
+	int prev = 0;
+	int arg_count = 0;
+
+	for (int i = 0; i < fmts.length(); i++) {
+		if (fmts[i] == '%' && prev != '%') {
+			arg_count++;
+		}
+		prev = fmts[i];
+	}
+
+	std::string result;
+	int c = 0;
+	prev = 0;
+
+	for (int arg = 0; arg < arg_count; arg++) {
+		int start = c;
+		while (c < fmts.length()) {
+			if (fmts[c] == '%' && prev != '%') {
+				break;
+			}
+			prev = fmts[c];
+			c++;
+		}
+
+		result += fmts.substr(start, c-start);
+
+		std::string param = token(prg);
+
+		if (param == "") {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected string_format parameters on line " + itos(get_line_num(prg)));
+		}
+
+		std::string val;
+
+		if (param[0] == '-' || isdigit(param[0])) {
+			val = param;
+		}
+		else if (param[0] == '"') {
+			val = remove_quotes(unescape(param));
+		}
+		else {
+			VARIABLE &v1 = find_variable(prg, param);
+			if (v1.type == VARIABLE::NUMBER) {
+				char buf[1000];
+				snprintf(buf, 1000, "%g", v1.n);
+				val = buf;
+			}
+			else if (v1.type == VARIABLE::STRING) {
+				val = v1.s;
+			}
+			else if (v1.type == VARIABLE::VECTOR) {
+				val = "-vector-";
+			}
+			else {
+				val = "-unknown-";
+			}
+		}
+
+		result += val;
+
+		c++;
+	}
+
+	if (c < fmts.length()) {
+		result += fmts.substr(c);
+	}
+
+	VARIABLE &v1 = find_variable(prg, dest);
+	v1.type = VARIABLE::STRING;
+	v1.s = result;
+
+	return true;
+}
+
+bool interpret_core(PROGRAM &prg, std::string tok)
+{
+	library_func func = core_map[tok];
+	return func(prg, tok);
+}
+
+bool interpret_math(PROGRAM &prg, std::string tok)
+{
+	if (tok == "sin") {
 		std::string dest = token(prg);
 		std::string vs = token(prg);
 		float v;
@@ -1102,207 +1627,6 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 		}
 	}
-	else if (tok == ":") {
-		std::string name = token(prg);
-
-		if (name == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected label paramters on line " + itos(get_line_num(prg)));
-		}
-
-		if (name[0] != '_' && isalpha(name[0]) == false) {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid label name on line " + itos(get_line_num(prg)));
-		}
-
-		LABEL l;
-		l.name = name;
-		l.p = prg.p;
-		l.line = prg.line;
-		
-		//prg.labels.push_back(l);
-		//already got these
-	}
-	else if (tok == "goto") {
-		std::string name = token(prg);
-
-		if (name == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected goto paramters on line " + itos(get_line_num(prg)));
-		}
-
-		for (size_t i = 0; i < prg.labels.size(); i++) {
-			if (prg.labels[i].name == name) {
-				prg.p = prg.labels[i].p;
-				prg.line = prg.labels[i].line;
-			}
-		}
-	}
-	else if (tok == "?") {
-		std::string a = token(prg);
-		std::string b = token(prg);
-
-		if (a == "" || b == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected ? parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<std::string> strings;
-		strings.push_back(a);
-		strings.push_back(b);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		if (values[0] < values[1]) {
-			prg.compare_flag = -1;
-		}
-		else if (values[0] == values[1]) {
-			prg.compare_flag = 0;
-		}
-		else {
-			prg.compare_flag = 1;
-		}
-	}
-	else if (tok == "je") {
-		std::string label = token(prg);
-
-		if (label == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected je parameters on line " + itos(get_line_num(prg)));
-		}
-
-		if (prg.compare_flag == 0) {
-			for (size_t i = 0; i < prg.labels.size(); i++) {
-				if (prg.labels[i].name == label) {
-					prg.p = prg.labels[i].p;
-					prg.line = prg.labels[i].line;
-				}
-			}
-		}
-	}
-	else if (tok == "jne") {
-		std::string label = token(prg);
-
-		if (label == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected jne parameters on line " + itos(get_line_num(prg)));
-		}
-
-		if (prg.compare_flag != 0) {
-			for (size_t i = 0; i < prg.labels.size(); i++) {
-				if (prg.labels[i].name == label) {
-					prg.p = prg.labels[i].p;
-					prg.line = prg.labels[i].line;
-				}
-			}
-		}
-	}
-	else if (tok == "jl") {
-		std::string label = token(prg);
-
-		if (label == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected jl parameters on line " + itos(get_line_num(prg)));
-		}
-
-		if (prg.compare_flag < 0) {
-			for (size_t i = 0; i < prg.labels.size(); i++) {
-				if (prg.labels[i].name == label) {
-					prg.p = prg.labels[i].p;
-					prg.line = prg.labels[i].line;
-				}
-			}
-		}
-	}
-	else if (tok == "jle") {
-		std::string label = token(prg);
-
-		if (label == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected jle parameters on line " + itos(get_line_num(prg)));
-		}
-
-		if (prg.compare_flag <= 0) {
-			for (size_t i = 0; i < prg.labels.size(); i++) {
-				if (prg.labels[i].name == label) {
-					prg.p = prg.labels[i].p;
-					prg.line = prg.labels[i].line;
-				}
-			}
-		}
-	}
-	else if (tok == "jg") {
-		std::string label = token(prg);
-
-		if (label == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected jg parameters on line " + itos(get_line_num(prg)));
-		}
-
-		if (prg.compare_flag > 0) {
-			for (size_t i = 0; i < prg.labels.size(); i++) {
-				if (prg.labels[i].name == label) {
-					prg.p = prg.labels[i].p;
-					prg.line = prg.labels[i].line;
-				}
-			}
-		}
-	}
-	else if (tok == "jge") {
-		std::string label = token(prg);
-
-		if (label == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected jge parameters on line " + itos(get_line_num(prg)));
-		}
-
-		if (prg.compare_flag >= 0) {
-			for (size_t i = 0; i < prg.labels.size(); i++) {
-				if (prg.labels[i].name == label) {
-					prg.p = prg.labels[i].p;
-					prg.line = prg.labels[i].line;
-				}
-			}
-		}
-	}
-	else if (tok == "return") {
-		std::string value = token(prg);
-
-		if (value == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected return parameters on line " + itos(get_line_num(prg)));
-		}
-		
-		if (value[0] == '-' || isdigit(value[0])) {
-			prg.result.type = VARIABLE::NUMBER;
-			prg.result.n = atof(value.c_str());
-		}
-		else if (value[0] == '"') {
-			prg.result.type = VARIABLE::STRING;
-			prg.result.s = remove_quotes(unescape(value));
-		}
-		else {
-			VARIABLE &v1 = find_variable(prg, value);
-			prg.result = v1;
-		}
-
-		prg.result.name = "result";
-		
-		return false;
-	}
-	else if (tok == "call") {
-		std::string tok2 = token(prg);
-		std::string function_name;
-		std::string result_name;
-
-		if (tok2 == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected call parameters on line " + itos(get_line_num(prg)));
-		}
-
-		if (tok2 == "=") {
-			result_name = token(prg);
-			function_name = token(prg);
-			if (result_name == "" || function_name == "") {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Expected call parameters on line " + itos(get_line_num(prg)));
-			}
-
-			// check for errors
-			find_variable(prg, result_name);
-		}
-		else {
-			function_name = tok2;
-		}
-
-		call_function(prg, function_name, result_name);
-	}
 	else if (tok == "rand") {
 		std::string dest = token(prg);
 		std::string min_incl = token(prg);
@@ -1329,74 +1653,16 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 		}
 	}
-	else if (tok == "function") {
-		int start_line = prg.line;
-		std::string name = token(prg);
-		int save = get_line_num(prg);
-
-		if (name == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected function parameters on line " + itos(get_line_num(prg)));
-		}
-
-		PROGRAM p;
-		
-		std::string tok2;
-
-		while ((tok2 = token(prg)) != "") {
-			if (tok2 == "start") {
-				break;
-			}
-			else if (tok2 == ";") {
-				while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
-					prg.p++;
-				}
-				prg.line++;
-				if (prg.p < prg.code.length()) {
-					prg.p++;
-				}
-			}
-			if (tok2[0] != '_' && !isalpha(tok2[0])) {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid variable name " + tok2 + " on line " + itos(get_line_num(prg)));
-			}
-			p.parameters.push_back(tok2);
-		}
-		
-		if (tok2 != "start") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Function not terminated on line " + itos(save));
-		}
-
-		int save_p = prg.p;
-		int end_p = prg.p;
-
-		while ((tok2 = token(prg)) != "") {
-			if (tok2 == "end") {
-				break;
-			}
-			else if (tok2 == ";") {
-				while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
-					prg.p++;
-				}
-				prg.line++;
-				if (prg.p < prg.code.length()) {
-					prg.p++;
-				}
-			}
-			end_p = prg.p;
-		}
-
-		if (tok2 != "end") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Function not terminated on line " + itos(save));
-		}
-
-		p.name = name;
-		p.p = 0;
-		p.line = 1;
-		p.start_line = start_line;
-		p.code = prg.code.substr(save_p, end_p-save_p);
-		p.labels = process_labels(p);
-		prg.functions.push_back(p);
+	else {
+		return false;
 	}
-	else if (tok == "clear") {
+
+	return true;
+}
+
+bool interpret_gfx(PROGRAM &prg, std::string tok)
+{
+	if (tok == "clear") {
 		std::string r =  token(prg);
 		std::string g =  token(prg);
 		std::string b =  token(prg);
@@ -1419,7 +1685,16 @@ bool interpret(PROGRAM &prg)
 
 		gfx::clear(c);
 	}
-	else if (tok == "start_primitives") {
+	else {
+		return false;
+	}
+
+	return true;
+}
+
+bool interpret_primitives(PROGRAM &prg, std::string tok)
+{
+	if (tok == "start_primitives") {
 		gfx::draw_primitives_start();
 	}
 	else if (tok == "end_primitives") {
@@ -1831,16 +2106,16 @@ bool interpret(PROGRAM &prg)
 
 		gfx::draw_filled_circle(c, p, _r, _sections);
 	}
-	else if (tok == ";") {
-		while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
-			prg.p++;
-		}
-		prg.line++;
-		if (prg.p < prg.code.length()) {
-			prg.p++;
-		}
+	else {
+		return false;
 	}
-	else if (tok == "play_music") {
+
+	return true;
+}
+
+bool interpret_mml(PROGRAM &prg, std::string tok)
+{
+	if (tok == "play_music") {
 		std::string name = token(prg);
 
 		if (name == "") {
@@ -1918,59 +2193,6 @@ bool interpret(PROGRAM &prg)
 
 		prg.mmls[prg.mml_id++] = mml;
 	}
-	else if (tok == "load_image") {
-		std::string var = token(prg);
-		std::string name = token(prg);
-
-		if (var == "" || name == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected load_image parameters on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE &v1 = find_variable(prg, var);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = prg.image_id;
-		}
-		else if (v1.type == VARIABLE::STRING) {
-			v1.s = itos(prg.image_id);
-		}
-		else {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-		}
-
-		gfx::Image *img = new gfx::Image(remove_quotes(unescape(name)));
-
-		prg.images[prg.image_id++] = img;
-	}
-	else if (tok == "load_font") {
-		std::string var = token(prg);
-		std::string name = token(prg);
-		std::string size = token(prg);
-
-		if (var == "" || name == "" || size == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected load_font parameters on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE &v1 = find_variable(prg, var);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = prg.font_id;
-		}
-		else if (v1.type == VARIABLE::STRING) {
-			v1.s = itos(prg.font_id);
-		}
-		else {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<std::string> strings;
-		strings.push_back(size);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		gfx::TTF *font = new gfx::TTF(remove_quotes(unescape(name)), values[0], 256);
-
-		prg.fonts[prg.font_id++] = font;
-	}
 	else if (tok == "play_mml") {
 		std::string id = token(prg);
 
@@ -1990,13 +2212,46 @@ bool interpret(PROGRAM &prg)
 
 		mml->play(false);
 	}
-	else if (tok == "draw_image") {
+	else {
+		return false;
+	}
+
+	return true;
+}
+
+bool interpret_image(PROGRAM &prg, std::string tok)
+{
+	if (tok == "image_load") {
+		std::string var = token(prg);
+		std::string name = token(prg);
+
+		if (var == "" || name == "") {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected image_load parameters on line " + itos(get_line_num(prg)));
+		}
+
+		VARIABLE &v1 = find_variable(prg, var);
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = prg.image_id;
+		}
+		else if (v1.type == VARIABLE::STRING) {
+			v1.s = itos(prg.image_id);
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+
+		gfx::Image *img = new gfx::Image(remove_quotes(unescape(name)));
+
+		prg.images[prg.image_id++] = img;
+	}
+	else if (tok == "image_draw") {
 		std::string id = token(prg);
 		std::string x = token(prg);
 		std::string y = token(prg);
 
 		if (id == "" || x == "" || y == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected draw_image parameters on line " + itos(get_line_num(prg)));
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected image_draw parameters on line " + itos(get_line_num(prg)));
 		}
 
 		std::vector<std::string> strings;
@@ -2012,6 +2267,85 @@ bool interpret(PROGRAM &prg)
 		gfx::Image *img = prg.images[values[0]];
 
 		img->draw(util::Point<float>(values[1], values[2]));
+	}
+	else if (tok == "image_start") {
+		std::string img = token(prg);
+
+		if (img == "") {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected image_start parameters on line " + itos(get_line_num(prg)));
+		}
+
+		std::vector<std::string> strings;
+		strings.push_back(img);
+		std::vector<double> values = variable_names_to_numbers(prg, strings);
+ 
+		if (prg.images.find(values[0]) == prg.images.end()) {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Unknown image \"" + img + "\" on line " + itos(get_line_num(prg)));
+		}
+ 
+		gfx::Image *image = prg.images[values[0]];
+ 
+		image->start_batch();
+ 	}
+	else if (tok == "image_end") {
+		std::string img = token(prg);
+
+		if (img == "") {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected image_end parameters on line " + itos(get_line_num(prg)));
+		}
+ 
+		std::vector<std::string> strings;
+		strings.push_back(img);
+		std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+		if (prg.images.find(values[0]) == prg.images.end()) {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Unknown image \"" + img + "\" on line " + itos(get_line_num(prg)));
+		}
+
+		gfx::Image *image = prg.images[values[0]];
+ 
+		image->end_batch();
+ 	}
+	else {
+		return false;
+	}
+
+	return true;
+}
+
+bool interpret_font(PROGRAM &prg, std::string tok)
+{
+	if (tok == "load_font") {
+		std::string var = token(prg);
+		std::string name = token(prg);
+		std::string size = token(prg);
+		std::string smooth = token(prg);
+
+		if (var == "" || name == "" || size == "" || smooth == "") {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected load_font parameters on line " + itos(get_line_num(prg)));
+		}
+
+		VARIABLE &v1 = find_variable(prg, var);
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = prg.font_id;
+		}
+		else if (v1.type == VARIABLE::STRING) {
+			v1.s = itos(prg.font_id);
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+
+		std::vector<std::string> strings;
+		strings.push_back(size);
+		strings.push_back(smooth);
+		std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+		gfx::TTF *font = new gfx::TTF(remove_quotes(unescape(name)), values[0], 256);
+		font->set_smooth(values[1]);
+
+		prg.fonts[prg.font_id++] = font;
 	}
 	else if (tok == "draw_text") {
 		std::string id = token(prg);
@@ -2142,24 +2476,16 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
-	else if (tok == "font_smooth") {
-		std::string id = token(prg);
-		std::string smooth = token(prg);
-		
-		if (id == "" || smooth == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected font_smooth parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<std::string> strings;
-		strings.push_back(id);
-		strings.push_back(smooth);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		gfx::TTF *font = prg.fonts[values[0]];
-
-		font->set_smooth(values[1]);
+	else {
+		return false;
 	}
-	else if (tok == "poll_joystick") {
+
+	return true;
+}
+
+bool interpret_joystick(PROGRAM &prg, std::string tok)
+{
+	if (tok == "poll_joystick") {
 		std::string num = token(prg);
 		std::string x1 = token(prg);
 		std::string y1 = token(prg);
@@ -2392,7 +2718,16 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 		}
 	}
-	else if (tok == "vector_add") {
+	else {
+		return false;
+	}
+
+	return true;
+}
+
+bool interpret_vector(PROGRAM &prg, std::string tok)
+{
+	if (tok == "vector_add") {
 		std::string id = token(prg);
 		std::string value = token(prg);
 
@@ -2607,132 +2942,16 @@ bool interpret(PROGRAM &prg)
 
 		v.erase(v.begin() + int(values[1]));
 	}
-	else if (tok == "inspect") {
-		std::string name = token(prg);
-		
-		if (name == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected inspect parameters on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE &v1 = find_variable(prg, name);
-
-		char buf[1000];
-
-		if (name[0] == '-' || isdigit(name[0])) {
-			snprintf(buf, 1000, "%s", name.c_str());
-		}
-		else if (name[0] == '"') {
-			std::string s = remove_quotes(unescape(name));
-			snprintf(buf, 1000, "%s", s.c_str());
-		}
-		else if (v1.type == VARIABLE::NUMBER) {
-			snprintf(buf, 1000, "%g", v1.n);
-		}
-		else if (v1.type == VARIABLE::STRING) {
-			snprintf(buf, 1000, "\"%s\"", v1.s.c_str());
-		}
-		else {
-			strcpy(buf, "Unknown");
-		}
-
-		gui::popup("INSPECTOR", buf, gui::OK);
+	else {
+		return false;
 	}
-	else if (tok == "string_format") {
-		std::string dest = token(prg);
-		std::string fmt = token(prg);
-		
-		if (dest == "" || fmt == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected string_format parameters on line " + itos(get_line_num(prg)));
-		}
 
-		std::string fmts;
+	return true;
+}
 
-		if (fmt[0] == '"') {
-			fmts = remove_quotes(unescape(fmt));
-		}
-		else {
-			VARIABLE &v1 = find_variable(prg, fmt);
-
-			if (v1.type == VARIABLE::STRING) {
-				fmts = v1.s;
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-
-		int prev = 0;
-		int arg_count = 0;
-
-		for (int i = 0; i < fmts.length(); i++) {
-			if (fmts[i] == '%' && prev != '%') {
-				arg_count++;
-			}
-			prev = fmts[i];
-		}
-
-		std::string result;
-		int c = 0;
-		prev = 0;
-
-		for (int arg = 0; arg < arg_count; arg++) {
-			int start = c;
-			while (c < fmts.length()) {
-				if (fmts[c] == '%' && prev != '%') {
-					break;
-				}
-				prev = fmts[c];
-				c++;
-			}
-
-			result += fmts.substr(start, c-start);
-
-			std::string param = token(prg);
-
-			if (param == "") {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Expected string_format parameters on line " + itos(get_line_num(prg)));
-			}
-
-			std::string val;
-
-			if (param[0] == '-' || isdigit(param[0])) {
-				val = param;
-			}
-			else if (param[0] == '"') {
-				val = remove_quotes(unescape(param));
-			}
-			else {
-				VARIABLE &v1 = find_variable(prg, param);
-				if (v1.type == VARIABLE::NUMBER) {
-					char buf[1000];
-					snprintf(buf, 1000, "%g", v1.n);
-					val = buf;
-				}
-				else if (v1.type == VARIABLE::STRING) {
-					val = v1.s;
-				}
-				else if (v1.type == VARIABLE::VECTOR) {
-					val = "-vector-";
-				}
-				else {
-					val = "-unknown-";
-				}
-			}
-
-			result += val;
-
-			c++;
-		}
-
-		if (c < fmts.length()) {
-			result += fmts.substr(c);
-		}
-
-		VARIABLE &v1 = find_variable(prg, dest);
-		v1.type = VARIABLE::STRING;
-		v1.s = result;
-	}
-	else if (tok == "cfg_load") {
+bool interpret_cfg(PROGRAM &prg, std::string tok)
+{
+	if (tok == "cfg_load") {
 		cfg_numbers.clear();
 		cfg_strings.clear();
 
@@ -3006,72 +3225,32 @@ bool interpret(PROGRAM &prg)
 			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
-	else if (tok == "reset") {
-		std::string name = token(prg);
-
-		if (name == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected reset parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::string names;
-
-		if (name[0] == '"') {
-			names = remove_quotes(unescape(name));
-		}
-		else {
-			VARIABLE &v1 = find_variable(prg, name);
-			if (v1.type == VARIABLE::STRING) {
-				names = v1.s;
-			}
-			else {
-				throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-
-		reset_game_name = names;
-
+	else {
 		return false;
 	}
-	else if (tok == "start_image") {
-		std::string img = token(prg);
 
-		if (img == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected start_image parameters on line " + itos(get_line_num(prg)));
-		}
+	return true;
+}
 
-		std::vector<std::string> strings;
-		strings.push_back(img);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
+bool interpret(PROGRAM &prg)
+{
+	std::string tok = token(prg);
 
-		if (prg.images.find(values[0]) == prg.images.end()) {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Unknown image \"" + img + "\" on line " + itos(get_line_num(prg)));
-		}
-
-		gfx::Image *image = prg.images[values[0]];
-
-		image->start_batch();
+	if (tok == "") {
+		return false;
 	}
-	else if (tok == "end_image") {
-		std::string img = token(prg);
 
-		if (img == "") {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Expected end_image parameters on line " + itos(get_line_num(prg)));
-		}
+	if (interpret_breakers(prg, tok) == true) {
+		return false;
+	}
 
-		std::vector<std::string> strings;
-		strings.push_back(img);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		if (prg.images.find(values[0]) == prg.images.end()) {
-			throw PARSE_EXCEPTION(prg.name + ": " + "Unknown image \"" + img + "\" on line " + itos(get_line_num(prg)));
-		}
-
-		gfx::Image *image = prg.images[values[0]];
-
-		image->end_batch();
+	std::map<std::string, library_func>::iterator it = library_map.find(tok);
+	if (it == library_map.end()) {
+		throw PARSE_EXCEPTION(prg.name + ": " + "Invalid token \"" + tok + "\" on line " + itos(get_line_num(prg)));
 	}
 	else {
-		throw PARSE_EXCEPTION(prg.name + ": " + "Invalid token \"" + tok + "\" on line " + itos(get_line_num(prg)));
+		library_func func = (*it).second;
+		return func(prg, tok);
 	}
 
 	return true;
@@ -3103,4 +3282,109 @@ void destroy_program(PROGRAM &prg, bool destroy_vectors)
 	prg.variables.clear();
 	prg.functions.clear();
 	prg.labels.clear();
+}
+
+void booboo_init()
+{
+	// these two are special as they can terminate the program
+	//library_map["reset"] = interpret_foo;
+	//library_map["return"] = interpret_foo;
+	library_map["var"] = interpret_core;
+	library_map["="] = interpret_core;
+	library_map["+"] = interpret_core;
+	library_map["-"] = interpret_core;
+	library_map["*"] = interpret_core;
+	library_map["/"] = interpret_core;
+	library_map["%"] = interpret_core;
+	library_map["neg"] = interpret_core;
+	library_map[":"] = interpret_core;
+	library_map["goto"] = interpret_core;
+	library_map["?"] = interpret_core;
+	library_map["je"] = interpret_core;
+	library_map["jne"] = interpret_core;
+	library_map["jl"] = interpret_core;
+	library_map["jle"] = interpret_core;
+	library_map["jg"] = interpret_core;
+	library_map["jge"] = interpret_core;
+	library_map["call"] = interpret_core;
+	library_map["function"] = interpret_core;
+	library_map[";"] = interpret_core;
+	library_map["inspect"] = interpret_core;
+	library_map["string_format"] = interpret_core;
+	library_map["sin"] = interpret_math;
+	library_map["cos"] = interpret_math;
+	library_map["atan2"] = interpret_math;
+	library_map["pow"] = interpret_math;
+	library_map["sqrt"] = interpret_math;
+	library_map["rand"] = interpret_math;
+	library_map["clear"] = interpret_gfx;
+	library_map["start_primitives"] = interpret_primitives;
+	library_map["end_primitives"] = interpret_primitives;
+	library_map["line"] = interpret_primitives;
+	library_map["filled_triangle"] = interpret_primitives;
+	library_map["rectangle"] = interpret_primitives;
+	library_map["filled_rectangle"] = interpret_primitives;
+	library_map["ellipse"] = interpret_primitives;
+	library_map["filled_ellipse"] = interpret_primitives;
+	library_map["circle"] = interpret_primitives;
+	library_map["filled_circle"] = interpret_primitives;
+	library_map["play_music"] = interpret_mml;
+	library_map["stop_music"] = interpret_mml;
+	library_map["create_mml"] = interpret_mml;
+	library_map["load_mml"] = interpret_mml;
+	library_map["play_mml"] = interpret_mml;
+	library_map["image_load"] = interpret_image;
+	library_map["image_draw"] = interpret_image;
+	library_map["image_start"] = interpret_image;
+	library_map["image_end"] = interpret_image;
+	library_map["load_font"] = interpret_font;
+	library_map["draw_text"] = interpret_font;
+	library_map["text_width"] = interpret_font;
+	library_map["font_height"] = interpret_font;
+	library_map["poll_joystick"] = interpret_joystick;
+	library_map["num_joysticks"] = interpret_joystick;
+	library_map["vector_add"] = interpret_vector;
+	library_map["vector_size"] = interpret_vector;
+	library_map["vector_set"] = interpret_vector;
+	library_map["vector_insert"] = interpret_vector;
+	library_map["vector_get"] = interpret_vector;
+	library_map["vector_erase"] = interpret_vector;
+	library_map["cfg_load"] = interpret_cfg;
+	library_map["cfg_save"] = interpret_cfg;
+	library_map["cfg_get_number"] = interpret_cfg;
+	library_map["cfg_get_string"] = interpret_cfg;
+	library_map["cfg_set_number"] = interpret_cfg;
+	library_map["cfg_set_string"] = interpret_cfg;
+	library_map["cfg_number_exists"] = interpret_cfg;
+	library_map["cfg_string_exists"] = interpret_cfg;
+
+	core_map["var"] = corefunc_var;
+	core_map["="] = corefunc_set;
+	core_map["+"] = corefunc_add;
+	core_map["-"] = corefunc_subtract;
+	core_map["*"] = corefunc_multiply;
+	core_map["/"] = corefunc_divide;
+	core_map["%"] = corefunc_intmod;
+	core_map["neg"] = corefunc_neg;
+	core_map[":"] = corefunc_label;
+	core_map["goto"] = corefunc_goto;
+	core_map["?"] = corefunc_compare;
+	core_map["je"] = corefunc_je;
+	core_map["jne"] = corefunc_jne;
+	core_map["jl"] = corefunc_jl;
+	core_map["jle"] = corefunc_jle;
+	core_map["jg"] = corefunc_jg;
+	core_map["jge"] = corefunc_jge;
+	core_map["call"] = corefunc_call;
+	core_map["function"] = corefunc_function;
+	core_map[";"] = corefunc_comment;
+	core_map["inspect"] = corefunc_inspect;
+	core_map["string_format"] = corefunc_string_format;
+}
+
+void booboo_shutdown()
+{
+	library_map.clear();
+
+	core_map.clear();
 }

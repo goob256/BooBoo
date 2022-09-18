@@ -13,7 +13,7 @@ var vector fonts
 
 var number f
 
-load_font f "DejaVuSans.ttf" size
+load_font f "DejaVuSans.ttf" size 0
 
 vector_add fonts f
 
@@ -21,18 +21,6 @@ vector_add fonts f
 
 ? size 64
 jle load_fonts
-
-var number i
-= i 0
-:smooth
-var number f
-vector_get fonts f i
-font_smooth f 0
-+ i 1
-var number sz
-vector_size fonts sz
-? i sz
-jl smooth
 
 var number half_x
 = half_x 320

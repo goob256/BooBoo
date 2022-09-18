@@ -9,8 +9,8 @@ play_music "music/gameover.mml"
 var number guy
 var number glasses
 
-load_image guy "misc/guy.png"
-load_image glasses "misc/glasses.png"
+image_load guy "misc/guy.png"
+image_load glasses "misc/glasses.png"
 
 var number y
 = y 0
@@ -23,14 +23,14 @@ end
 
 function draw
 start
-	draw_image guy 0 0
+	image_draw guy 0 0
 
 	var number yy
 	= yy y
 	% yy 180
 	- yy 100
 
-	draw_image glasses 180 yy
+	image_draw glasses 180 yy
 end
 
 function shutdown

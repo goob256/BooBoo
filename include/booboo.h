@@ -71,5 +71,7 @@ std::vector<LABEL> process_labels(PROGRAM prg);
 void destroy_program(PROGRAM &prg, bool destroy_vectors);
 void process_includes(PROGRAM &prg);
 void call_function(PROGRAM &prg, std::string function_name, std::string result_name);
+void booboo_init();
+void booboo_shutdown();
 
 #endif // BOOBOO_H

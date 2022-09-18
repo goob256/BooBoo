@@ -40,7 +40,7 @@ cfg_set_number "score2" score2
 :done_cfg
 
 var number font
-load_font font "DejaVuSans.ttf" 48
+load_font font "DejaVuSans.ttf" 48 1
 
 var number paddle1
 var number paddle2

@@ -103,6 +103,51 @@ void draw_line(SDL_Colour colour, util::Point<float> a, util::Point<float> b, fl
 	}
 }
 
+void draw_triangle_3d(SDL_Colour c1, SDL_Colour c2, SDL_Colour c3, util::Vec3D<float> a, util::Vec3D<float> b, util::Vec3D<float> c)
+{
+	bool prim_held = primitives_held;
+	if (prim_held == false) {
+		draw_primitives_start();
+	}
+
+	static float verts[9];
+	static int faces[3];
+	static float colours[12];
+
+	verts[0] = a.x;
+	verts[1] = a.y;
+	verts[2] = a.z;
+	verts[3] = a.x;
+	verts[4] = a.y;
+	verts[5] = a.z;
+	verts[6] = a.x;
+	verts[7] = a.y;
+	verts[8] = a.z;
+
+	faces[0] = 0;
+	faces[1] = 0;
+	faces[2] = 0;
+
+	colours[0] = c1.r / 255.0f;
+	colours[1] = c1.g / 255.0f;
+	colours[2] = c1.b / 255.0f;
+	colours[3] = c1.a / 255.0f;
+	colours[4] = c2.r / 255.0f;
+	colours[5] = c2.g / 255.0f;
+	colours[6] = c2.b / 255.0f;
+	colours[7] = c2.a / 255.0f;
+	colours[8] = c3.r / 255.0f;
+	colours[9] = c3.g / 255.0f;
+	colours[10] = c3.b / 255.0f;
+	colours[11] = c3.a / 255.0f;
+
+	Vertex_Cache::instance()->cache_3d(shim::white, verts, faces, nullptr, nullptr, colours, 1);
+
+	if (prim_held == false) {
+		draw_primitives_end();
+	}
+}
+
 void draw_filled_triangle(SDL_Colour vertex_colours[3], util::Point<float> a, util::Point<float> b, util::Point<float> c)
 {
 	bool prim_held = primitives_held;

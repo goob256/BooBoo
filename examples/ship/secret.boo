@@ -10,7 +10,7 @@ var number hidden
 = hidden 1
 
 var number font
-load_font font "DejaVuSans.ttf" 128
+load_font font "DejaVuSans.ttf" 128 1
 
 function logic
 start

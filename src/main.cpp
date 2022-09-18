@@ -385,6 +385,8 @@ void set_shim_args(bool initial, bool force_windowed, bool force_fullscreen)
 
 int main(int argc, char **argv)
 {
+	try {
+
 #ifdef _WIN32
 	SDL_RegisterApp("BooBoo", 0, 0);
 #endif
@@ -441,8 +443,6 @@ int main(int argc, char **argv)
 	}
 
 again:
-	try {
-
 	quit = false;
 
 	if (reset_game_name != "") {
@@ -454,6 +454,8 @@ again:
 		}
 		reset_game_name = "";
 	}
+
+	booboo_init();
 
 	prg.name = "main";
 	prg.mml_id = 0;
@@ -510,15 +512,10 @@ again:
 	prg.start_line = 0;
 	prg.p = 0;
 	
-	try {
-		process_includes(prg);
-		prg.labels = process_labels(prg);
+	process_includes(prg);
+	prg.labels = process_labels(prg);
 
-		while (interpret(prg)) {
-		}
-	}
-	catch (EXCEPTION e) {
-		gui::fatalerror("ERROR", e.error.c_str(), gui::OK, true);
+	while (interpret(prg)) {
 	}
 	
 	call_function(prg, "init", "");
@@ -531,17 +528,22 @@ again:
 
 	destroy_program(prg, true);
 
-	}
-	catch (util::Error e) {
-		gui::fatalerror("ERROR", e.error_message.c_str(), gui::OK, true);
-	}
-
 	if (reset_game_name != "") {
 		fn = "";
 		goto again;
 	}
 
 	end();
+
+	booboo_shutdown();
+
+	}
+	catch (util::Error e) {
+		gui::fatalerror("ERROR", e.error_message.c_str(), gui::OK, true);
+	}
+	catch (EXCEPTION e) {
+		gui::fatalerror("ERROR", e.error.c_str(), gui::OK, true);
+	}
 
 	return 0;
 }

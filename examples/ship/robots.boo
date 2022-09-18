@@ -40,10 +40,10 @@ var number robot_img
 var number dog_img
 var number fire_img
 var number grass_img
-load_image robot_img "misc/robot.tga"
-load_image dog_img "misc/dog.tga"
-load_image fire_img "misc/explosion.tga"
-load_image grass_img "misc/grass.tga"
+image_load robot_img "misc/robot.tga"
+image_load dog_img "misc/dog.tga"
+image_load fire_img "misc/explosion.tga"
+image_load grass_img "misc/grass.tga"
 
 function set_board board x y value
 start
@@ -158,7 +158,7 @@ start
 	var number xx
 	var number yy
 
-	start_image grass_img
+	image_start grass_img
 
 	var number index
 	= index 0
@@ -173,7 +173,7 @@ start
 	= yy y
 	* yy rect_h
 
-	draw_image grass_img xx yy
+	image_draw grass_img xx yy
 
 	+ x 1
 	? x width
@@ -183,7 +183,7 @@ start
 	? y height
 	jl loop_y
 
-	end_image grass_img
+	image_end grass_img
 
 	= y 0
 :loop_y1
@@ -197,7 +197,7 @@ start
 	= yy y
 	* yy rect_h
 
-	;draw_image grass_img xx yy
+	;image_draw grass_img xx yy
 
 	? value 1
 	jl past_draw
@@ -225,7 +225,7 @@ start
 
 :done_image
 
-	draw_image image xx yy
+	image_draw image xx yy
 
 :past_draw
 	+ index 1
