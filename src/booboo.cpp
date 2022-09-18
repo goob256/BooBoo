@@ -2435,6 +2435,41 @@ bool interpret_image(PROGRAM &prg, std::string tok)
  
 		image->end_batch();
  	}
+	else if (tok == "image_size") {
+		std::string id = token(prg);
+		std::string dest1 = token(prg);
+		std::string dest2 = token(prg);
+
+		if (id == "" || dest1 == "" || dest2 == "") {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Expected image_size parameters on line " + itos(get_line_num(prg)));
+		}
+		
+		std::vector<std::string> strings;
+		strings.push_back(id);
+		std::vector<double> values = variable_names_to_numbers(prg, strings);
+		
+		if (prg.vectors.find(values[0]) == prg.vectors.end()) {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
+		}
+
+		gfx::Image *img = prg.images[values[0]];
+
+		VARIABLE &v1 = find_variable(prg, dest1);
+		VARIABLE &v2 = find_variable(prg, dest2);
+
+		if (v1.type == VARIABLE::NUMBER) {
+			v1.n = img->size.w;
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+		if (v2.type == VARIABLE::NUMBER) {
+			v2.n = img->size.h;
+		}
+		else {
+			throw PARSE_EXCEPTION(prg.name + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
 	else {
 		return false;
 	}
@@ -3468,6 +3503,7 @@ void booboo_init()
 	library_map["image_draw_rotated_scaled"] = interpret_image;
 	library_map["image_start"] = interpret_image;
 	library_map["image_end"] = interpret_image;
+	library_map["image_size"] = interpret_image;
 	library_map["font_load"] = interpret_font;
 	library_map["font_draw"] = interpret_font;
 	library_map["font_width"] = interpret_font;
