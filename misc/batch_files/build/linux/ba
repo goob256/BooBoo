@@ -5,8 +5,8 @@ else
 	NPROC=`nproc`
 fi
 CWD=`pwd`
-cd ~/code/3crystals
-rm "build/3crystals"
+cd ~/code/booboo
+rm "build/booboo"
 cd tgui6/build
 make -j$NPROC
 cd ../../shim4/build

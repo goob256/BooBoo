@@ -81,6 +81,7 @@ elseif(APPLE)
 	set(LIBS ${LIBS} ${SHIM4_LIB} ${TGUI6_LIB} SDL2 z)
 else() # Linux
 	SET(FLAGS "-Wall -Wno-comment -Wno-strict-aliasing -std=c++0x")
+	SET(FLAGS "${FLAGS} -DUSE_TTF -DUSE_PNG")
 	set(LFLAGS "-Wl,-rpath,\$ORIGIN")
 	if(DEBUG)
 		set(FLAGS "${FLAGS} -DDEBUG=1 -g -fsanitize=address -fsanitize=leak")
@@ -100,7 +101,7 @@ else() # Linux
 	set_target_properties("booboo" PROPERTIES OUTPUT_NAME "BooBoo")
 	#set(LIBS ${LIBS} shim4_static tgui6_static SDL2 GL Xcursor X11 z vorbisfile vorbis ogg)
 	#set(LIBS ${LIBS} shim4_static tgui6_static SDL2 GL Xcursor X11 FLAC ogg z)
-	set(LIBS ${LIBS} shim4_static tgui6_static SDL2 GL Xcursor X11 FLAC ogg z)
+	set(LIBS ${LIBS} shim4_static tgui6_static SDL2 GL Xcursor X11 FLAC vorbis ogg freetype png z)
 endif()
 
 target_link_libraries("booboo" ${LIBS})
