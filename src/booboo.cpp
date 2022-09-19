@@ -2327,7 +2327,7 @@ bool interpret_mml(PROGRAM &prg, std::string tok)
 		Uint8 *bytes = (Uint8 *)strs.c_str();
 		SDL_RWops *file = SDL_RWFromMem(bytes, strs.length());
 		audio::MML *mml = new audio::MML(file);
-		SDL_RWclose(file);
+		//SDL_RWclose(file);
 
 		prg.mmls[prg.mml_id++] = mml;
 	}
