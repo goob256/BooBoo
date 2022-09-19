@@ -9,6 +9,5 @@ end
 
 function draw
 start
-	filled_triangle 255 0 0 255 0 255 0 255 0 0 255 255 0 0 0 360 640 360
-	filled_triangle 255 0 0 255 0 0 255 255 0 0 0 255 0 0 640 360 640 0
+	filled_rectangle 255 0 0 255 0 255 0 255 0 0 255 255 0 0 0 255 0 0 640 360
 end
