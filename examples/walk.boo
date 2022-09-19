@@ -49,7 +49,7 @@ var number moving
 
 function draw
 start
-	clear 251 242 54
+	clear 50 60 57
 
 	var number img
 
