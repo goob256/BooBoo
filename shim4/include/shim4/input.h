@@ -34,6 +34,7 @@ void SHIM4_EXPORT drop_repeats(bool joystick = true, bool mouse = true);
 int SHIM4_EXPORT get_num_joysticks();
 SDL_JoystickID SHIM4_EXPORT get_controller_id(int index);
 SDL_Joystick SHIM4_EXPORT *get_sdl_joystick(SDL_JoystickID id);
+SDL_GameController SHIM4_EXPORT *get_sdl_gamecontroller(SDL_JoystickID id);
 
 #ifdef STEAMWORKS
 ControllerHandle_t SHIM4_EXPORT get_controller_handle();

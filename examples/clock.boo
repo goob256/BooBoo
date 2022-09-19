@@ -1,5 +1,5 @@
 var string reset_game_name
-= reset_game_name "gradient.boo"
+= reset_game_name "blip.boo"
 include "slideshow_start.inc"
 
 var number ticks

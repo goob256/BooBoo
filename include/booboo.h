@@ -47,6 +47,9 @@ struct PROGRAM {
 	int p;
 	int line;
 	int start_line;
+
+	int prev_tok_p;
+	int prev_tok_line;
 	
 	std::map<std::string, VARIABLE> variables;
 	std::vector< std::map<std::string, VARIABLE> > variables_backup_stack;

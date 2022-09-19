@@ -513,6 +513,8 @@ again:
 	prg.line_numbers.clear();
 	prg.start_line = 0;
 	prg.p = 0;
+	prg.prev_tok_p = 0;
+	prg.prev_tok_line = 1;
 	
 	process_includes(prg);
 	prg.labels = process_labels(prg);

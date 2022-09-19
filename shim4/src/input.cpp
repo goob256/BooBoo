@@ -1215,6 +1215,17 @@ SDL_Joystick *get_sdl_joystick(SDL_JoystickID id)
 	}
 }
 
+SDL_GameController *get_sdl_gamecontroller(SDL_JoystickID id)
+{
+	Joystick *j = find_joystick(id);
+	if (j) {
+		return j->gc;
+	}
+	else {
+		return nullptr;
+	}
+}
+
 #ifdef STEAM_INPUT
 ControllerHandle_t get_controller_handle()
 {
