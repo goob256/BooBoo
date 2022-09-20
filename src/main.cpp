@@ -516,7 +516,7 @@ again:
 	prg.prev_tok_p = 0;
 	prg.prev_tok_line = 1;
 	
-	process_includes(prg);
+	while(process_includes(prg));
 	prg.labels = process_labels(prg);
 	process_functions(prg);
 

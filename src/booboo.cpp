@@ -434,8 +434,10 @@ std::vector<LABEL> process_labels(PROGRAM prg)
 	return labels;
 }
 
-void process_includes(PROGRAM &prg)
+bool process_includes(PROGRAM &prg)
 {
+	bool ret = false;
+
 	std::string code;
 
 	std::string tok;
@@ -459,23 +461,6 @@ void process_includes(PROGRAM &prg)
 			prg.line_numbers.push_back(prg.line);
 			if (prg.p < prg.code.length()) {
 				prg.p++;
-			}
-		}
-		else if (tok == "function") {
-			while ((tok = token(prg)) != "") {
-				if (tok == ";") {
-					while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
-						prg.p++;
-					}
-					prg.line++;
-					prg.line_numbers.push_back(prg.line);
-					if (prg.p < prg.code.length()) {
-						prg.p++;
-					}
-				}
-				else if (tok == "end") {
-					break;
-				}
 			}
 		}
 		else if (tok == "include") {
@@ -517,6 +502,8 @@ void process_includes(PROGRAM &prg)
 			}
 
 			start = prg.p;
+
+			ret = true;
 		}
 
 		prev = prg.p;
@@ -529,6 +516,8 @@ void process_includes(PROGRAM &prg)
 	prg.line = 1;
 	prg.prev_tok_p = 0;
 	prg.prev_tok_line = 1;
+
+	return ret;
 }
 
 void process_functions(PROGRAM &prg)
@@ -737,7 +726,7 @@ void call_function(PROGRAM &prg, std::string function_name, std::string result_n
 			prg.name = prg.functions[i].name;
 			prg.labels = prg.functions[i].labels;
 
-			process_includes(prg);
+			while (process_includes(prg));
 			prg.labels = process_labels(prg);
 			process_functions(prg);
 
