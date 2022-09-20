@@ -2739,171 +2739,178 @@ bool imagefunc_size(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-bool interpret_font(PROGRAM &prg, std::string tok)
+bool fontfunc_load(PROGRAM &prg, std::string tok)
 {
-	if (tok == "font_load") {
-		std::string var = token(prg);
-		std::string name = token(prg);
-		std::string size = token(prg);
-		std::string smooth = token(prg);
+	std::string var = token(prg);
+	std::string name = token(prg);
+	std::string size = token(prg);
+	std::string smooth = token(prg);
 
-		if (var == "" || name == "" || size == "" || smooth == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected font_load parameters on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE &v1 = find_variable(prg, var);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = prg.font_id;
-		}
-		else if (v1.type == VARIABLE::STRING) {
-			v1.s = itos(prg.font_id);
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<std::string> strings;
-		strings.push_back(size);
-		strings.push_back(smooth);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		gfx::TTF *font = new gfx::TTF(remove_quotes(unescape(name)), values[0], 256);
-		font->set_smooth(values[1]);
-
-		prg.fonts[prg.font_id++] = font;
+	if (var == "" || name == "" || size == "" || smooth == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected font_load parameters on line " + itos(get_line_num(prg)));
 	}
-	else if (tok == "font_draw") {
-		std::string id = token(prg);
-		std::string r = token(prg);
-		std::string g = token(prg);
-		std::string b = token(prg);
-		std::string a = token(prg);
-		std::string text = token(prg);
-		std::string x = token(prg);
-		std::string y = token(prg);
 
-		if (id == "" || r == "" || g == "" || b == "" || a == "" || text == "" || x == "" || y == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected font_draw parameters on line " + itos(get_line_num(prg)));
-		}
+	VARIABLE &v1 = find_variable(prg, var);
 
-		std::vector<std::string> strings;
-		strings.push_back(id);
-		strings.push_back(r);
-		strings.push_back(g);
-		strings.push_back(b);
-		strings.push_back(a);
-		strings.push_back(x);
-		strings.push_back(y);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		if (values[0] < 0 || values[0] >= prg.fonts.size()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid Font on line " + itos(get_line_num(prg)));
-		}
-
-		gfx::TTF *font = prg.fonts[values[0]];
-
-		SDL_Colour c;
-		c.r = values[1];
-		c.g = values[2];
-		c.b = values[3];
-		c.a = values[4];
-
-		std::string txt;
-
-		if (text[0] == '"') {
-			txt = remove_quotes(unescape(text));
-		}
-		else {
-			VARIABLE &v1 = find_variable(prg, text);
-			if (v1.type == VARIABLE::NUMBER) {
-				char buf[1000];
-				snprintf(buf, 1000, "%g", v1.n);
-				txt = buf;
-			}
-			else if (v1.type == VARIABLE::STRING) {
-				txt = v1.s;
-			}
-			else {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Unknown variable \"" + text + "\" on line " + itos(get_line_num(prg)));
-			}
-		}
-
-		font->draw(c, txt, util::Point<float>(values[5], values[6]));
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = prg.font_id;
 	}
-	else if (tok == "font_width") {
-		std::string id = token(prg);
-		std::string dest = token(prg);
-		std::string text = token(prg);
-		
-		if (id == "" || dest == "" || text == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected font_width parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<std::string> strings;
-		strings.push_back(id);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		std::string txt;
-
-		if (text[0] == '"') {
-			txt = remove_quotes(unescape(text));
-		}
-		else {
-			VARIABLE &v1 = find_variable(prg, text);
-			if (v1.type == VARIABLE::NUMBER) {
-				char buf[1000];
-				snprintf(buf, 1000, "%g", v1.n);
-				txt = buf;
-			}
-			else if (v1.type == VARIABLE::STRING) {
-				txt = v1.s;
-			}
-			else {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Unknown variable \"" + dest + "\" on line " + itos(get_line_num(prg)));
-			}
-		}
-
-		gfx::TTF *font = prg.fonts[values[0]];
-
-		int w = font->get_text_width(txt);
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = w;
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-		}
-	}
-	else if (tok == "font_height") {
-		std::string id = token(prg);
-		std::string dest = token(prg);
-		
-		if (id == "" || dest == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected font_height parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<std::string> strings;
-		strings.push_back(id);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		gfx::TTF *font = prg.fonts[values[0]];
-
-		int h = font->get_height();
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = h;
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-		}
+	else if (v1.type == VARIABLE::STRING) {
+		v1.s = itos(prg.font_id);
 	}
 	else {
-		return false;
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(size);
+	strings.push_back(smooth);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	gfx::TTF *font = new gfx::TTF(remove_quotes(unescape(name)), values[0], 256);
+	font->set_smooth(values[1]);
+
+	prg.fonts[prg.font_id++] = font;
+
+	return true;
+}
+
+bool fontfunc_draw(PROGRAM &prg, std::string tok)
+{
+	std::string id = token(prg);
+	std::string r = token(prg);
+	std::string g = token(prg);
+	std::string b = token(prg);
+	std::string a = token(prg);
+	std::string text = token(prg);
+	std::string x = token(prg);
+	std::string y = token(prg);
+
+	if (id == "" || r == "" || g == "" || b == "" || a == "" || text == "" || x == "" || y == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected font_draw parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(id);
+	strings.push_back(r);
+	strings.push_back(g);
+	strings.push_back(b);
+	strings.push_back(a);
+	strings.push_back(x);
+	strings.push_back(y);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	if (values[0] < 0 || values[0] >= prg.fonts.size()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid Font on line " + itos(get_line_num(prg)));
+	}
+
+	gfx::TTF *font = prg.fonts[values[0]];
+
+	SDL_Colour c;
+	c.r = values[1];
+	c.g = values[2];
+	c.b = values[3];
+	c.a = values[4];
+
+	std::string txt;
+
+	if (text[0] == '"') {
+		txt = remove_quotes(unescape(text));
+	}
+	else {
+		VARIABLE &v1 = find_variable(prg, text);
+		if (v1.type == VARIABLE::NUMBER) {
+			char buf[1000];
+			snprintf(buf, 1000, "%g", v1.n);
+			txt = buf;
+		}
+		else if (v1.type == VARIABLE::STRING) {
+			txt = v1.s;
+		}
+		else {
+			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Unknown variable \"" + text + "\" on line " + itos(get_line_num(prg)));
+		}
+	}
+
+	font->draw(c, txt, util::Point<float>(values[5], values[6]));
+
+	return true;
+}
+
+bool fontfunc_width(PROGRAM &prg, std::string tok)
+{
+	std::string id = token(prg);
+	std::string dest = token(prg);
+	std::string text = token(prg);
+	
+	if (id == "" || dest == "" || text == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected font_width parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(id);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	std::string txt;
+
+	if (text[0] == '"') {
+		txt = remove_quotes(unescape(text));
+	}
+	else {
+		VARIABLE &v1 = find_variable(prg, text);
+		if (v1.type == VARIABLE::NUMBER) {
+			char buf[1000];
+			snprintf(buf, 1000, "%g", v1.n);
+			txt = buf;
+		}
+		else if (v1.type == VARIABLE::STRING) {
+			txt = v1.s;
+		}
+		else {
+			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Unknown variable \"" + dest + "\" on line " + itos(get_line_num(prg)));
+		}
+	}
+
+	gfx::TTF *font = prg.fonts[values[0]];
+
+	int w = font->get_text_width(txt);
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = w;
+	}
+	else {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+	}
+
+	return true;
+}
+
+bool fontfunc_height(PROGRAM &prg, std::string tok)
+{
+	std::string id = token(prg);
+	std::string dest = token(prg);
+	
+	if (id == "" || dest == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected font_height parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(id);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	gfx::TTF *font = prg.fonts[values[0]];
+
+	int h = font->get_height();
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = h;
+	}
+	else {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -3729,10 +3736,10 @@ void booboo_init()
 	library_map["image_start"] = imagefunc_start;
 	library_map["image_end"] = imagefunc_end;
 	library_map["image_size"] = imagefunc_size;
-	library_map["font_load"] = interpret_font;
-	library_map["font_draw"] = interpret_font;
-	library_map["font_width"] = interpret_font;
-	library_map["font_height"] = interpret_font;
+	library_map["font_load"] = fontfunc_load;
+	library_map["font_draw"] = fontfunc_draw;
+	library_map["font_width"] = fontfunc_width;
+	library_map["font_height"] = fontfunc_height;
 	library_map["joystick_poll"] = interpret_joystick;
 	library_map["joystick_count"] = interpret_joystick;
 	library_map["vector_add"] = interpret_vector;
