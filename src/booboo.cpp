@@ -2916,432 +2916,444 @@ bool fontfunc_height(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-bool interpret_joystick(PROGRAM &prg, std::string tok)
+bool joyfunc_poll(PROGRAM &prg, std::string tok)
 {
-	if (tok == "joystick_poll") {
-		std::string num = token(prg);
-		std::string x1 = token(prg);
-		std::string y1 = token(prg);
-		std::string x2 = token(prg);
-		std::string y2 = token(prg);
-		std::string x3 = token(prg);
-		std::string y3 = token(prg);
-		std::string l = token(prg);
-		std::string r = token(prg);
-		std::string u = token(prg);
-		std::string d = token(prg);
-		std::string a = token(prg);
-		std::string b = token(prg);
-		std::string x = token(prg);
-		std::string y = token(prg);
-		std::string lb = token(prg);
-		std::string rb = token(prg);
-		std::string ls = token(prg);
-		std::string rs = token(prg);
-		std::string back = token(prg);
-		std::string start = token(prg);
-	
-		if (num == "" || x1 == "" || y1 == "" || x2 == "" || y2 == "" || x3 == "" || y3 == "" || l == "" || r == "" || u == "" || d == "" || a == "" || b == "" || x == "" || y == "" || lb == "" || rb == "" || ls == "" || rs == "" || back == "" || start == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected joystick_poll parameters on line " + itos(get_line_num(prg)));
-		}
+	std::string num = token(prg);
+	std::string x1 = token(prg);
+	std::string y1 = token(prg);
+	std::string x2 = token(prg);
+	std::string y2 = token(prg);
+	std::string x3 = token(prg);
+	std::string y3 = token(prg);
+	std::string l = token(prg);
+	std::string r = token(prg);
+	std::string u = token(prg);
+	std::string d = token(prg);
+	std::string a = token(prg);
+	std::string b = token(prg);
+	std::string x = token(prg);
+	std::string y = token(prg);
+	std::string lb = token(prg);
+	std::string rb = token(prg);
+	std::string ls = token(prg);
+	std::string rs = token(prg);
+	std::string back = token(prg);
+	std::string start = token(prg);
 
-		std::vector<std::string> strings;
-		strings.push_back(num);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		std::vector<std::string> names;
-		names.push_back(x1);
-		names.push_back(y1);
-		names.push_back(x2);
-		names.push_back(y2);
-		names.push_back(l);
-		names.push_back(r);
-		names.push_back(u);
-		names.push_back(d);
-		names.push_back(a);
-		names.push_back(b);
-		names.push_back(x);
-		names.push_back(y);
-		names.push_back(lb);
-		names.push_back(rb);
-		names.push_back(back);
-		names.push_back(start);
-		names.push_back(x3);
-		names.push_back(y3);
-		names.push_back(ls);
-		names.push_back(rs);
-
-		for (size_t i = 0; i < names.size(); i++) {
-			find_variable(prg, names[i]);
-		}
-
-		SDL_JoystickID id = input::get_controller_id(values[0]);
-		SDL_GameController *gc = input::get_sdl_gamecontroller(id);
-		bool connected = gc != nullptr;
-
-		if (connected == false) {
-			set_string_or_number(prg, x1, 0);
-			set_string_or_number(prg, y1, 0);
-			set_string_or_number(prg, x2, 0);
-			set_string_or_number(prg, y2, 0);
-			set_string_or_number(prg, a, 0);
-			set_string_or_number(prg, l, 0);
-			set_string_or_number(prg, r, 0);
-			set_string_or_number(prg, u, 0);
-			set_string_or_number(prg, d, 0);
-			set_string_or_number(prg, b, 0);
-			set_string_or_number(prg, x, 0);
-			set_string_or_number(prg, y, 0);
-			set_string_or_number(prg, lb, 0);
-			set_string_or_number(prg, rb, 0);
-			set_string_or_number(prg, back, 0);
-			set_string_or_number(prg, start, 0);
-			set_string_or_number(prg, ls, 0);
-			set_string_or_number(prg, rs, 0);
-			set_string_or_number(prg, x3, 0);
-			set_string_or_number(prg, y3, 0);
-		}
-		else {
-
-			Sint16 si_x1 = SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_LEFTX);
-			Sint16 si_y1 = SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_LEFTY);
-			Sint16 si_x2 = SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_RIGHTX);
-			Sint16 si_y2 = SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_RIGHTY);
-			Sint16 si_x3 = SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_TRIGGERLEFT);
-			Sint16 si_y3 = SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
-
-			double x1f;
-			double y1f;
-			double x2f;
-			double y2f;
-			double x3f;
-			double y3f;
-
-			if (si_x1 < 0) {
-				x1f = si_x1 / 32768.0;
-			}
-			else {
-				x1f = si_x1 / 32767.0;
-			}
-
-			if (si_y1 < 0) {
-				y1f = si_y1 / 32768.0;
-			}
-			else {
-				y1f = si_y1 / 32767.0;
-			}
-
-			if (si_x2 < 0) {
-				x2f = si_x2 / 32768.0;
-			}
-			else {
-				x2f = si_x2 / 32767.0;
-			}
-
-			if (si_y2 < 0) {
-				y2f = si_y2 / 32768.0;
-			}
-			else {
-				y2f = si_y2 / 32767.0;
-			}
-
-			if (si_x3 < 0) {
-				x3f = si_x3 / 32768.0;
-			}
-			else {
-				x3f = si_x3 / 32767.0;
-			}
-
-			if (si_y3 < 0) {
-				y3f = si_y3 / 32768.0;
-			}
-			else {
-				y3f = si_y3 / 32767.0;
-			}
-
-			set_string_or_number(prg, x1, x1f);
-			set_string_or_number(prg, y1, y1f);
-			set_string_or_number(prg, x2, x2f);
-			set_string_or_number(prg, y2, y2f);
-			set_string_or_number(prg, x3, x3f);
-			set_string_or_number(prg, y3, y3f);
-
-			double ab = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_A);
-			double bb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_B);
-			double xb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_X);
-			double yb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_Y);
-			double lbb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_LB);
-			double rbb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_RB);
-			double backb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_BACK);
-			double startb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_START);
-			double lsb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_LS);
-			double rsb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_RS);
-			double _lb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_L);
-			double _rb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_R);
-			double ub = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_U);
-			double db = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_D);
-
-			set_string_or_number(prg, l, _lb);
-			set_string_or_number(prg, r, _rb);
-			set_string_or_number(prg, u, ub);
-			set_string_or_number(prg, d, db);
-			set_string_or_number(prg, a, ab);
-			set_string_or_number(prg, b, bb);
-			set_string_or_number(prg, x, xb);
-			set_string_or_number(prg, y, yb);
-			set_string_or_number(prg, lb, lbb);
-			set_string_or_number(prg, rb, rbb);
-			set_string_or_number(prg, ls, lsb);
-			set_string_or_number(prg, rs, rsb);
-			set_string_or_number(prg, back, backb);
-			set_string_or_number(prg, start, startb);
-		}
+	if (num == "" || x1 == "" || y1 == "" || x2 == "" || y2 == "" || x3 == "" || y3 == "" || l == "" || r == "" || u == "" || d == "" || a == "" || b == "" || x == "" || y == "" || lb == "" || rb == "" || ls == "" || rs == "" || back == "" || start == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected joystick_poll parameters on line " + itos(get_line_num(prg)));
 	}
-	else if (tok == "joystick_count") {
-		std::string dest = token(prg);
-		
-		if (dest == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected joystick_count parameters on line " + itos(get_line_num(prg)));
-		}
 
-		VARIABLE &v1 = find_variable(prg, dest);
+	std::vector<std::string> strings;
+	strings.push_back(num);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = input::get_num_joysticks();
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
-		}
+	std::vector<std::string> names;
+	names.push_back(x1);
+	names.push_back(y1);
+	names.push_back(x2);
+	names.push_back(y2);
+	names.push_back(l);
+	names.push_back(r);
+	names.push_back(u);
+	names.push_back(d);
+	names.push_back(a);
+	names.push_back(b);
+	names.push_back(x);
+	names.push_back(y);
+	names.push_back(lb);
+	names.push_back(rb);
+	names.push_back(back);
+	names.push_back(start);
+	names.push_back(x3);
+	names.push_back(y3);
+	names.push_back(ls);
+	names.push_back(rs);
+
+	for (size_t i = 0; i < names.size(); i++) {
+		find_variable(prg, names[i]);
+	}
+
+	SDL_JoystickID id = input::get_controller_id(values[0]);
+	SDL_GameController *gc = input::get_sdl_gamecontroller(id);
+	bool connected = gc != nullptr;
+
+	if (connected == false) {
+		set_string_or_number(prg, x1, 0);
+		set_string_or_number(prg, y1, 0);
+		set_string_or_number(prg, x2, 0);
+		set_string_or_number(prg, y2, 0);
+		set_string_or_number(prg, a, 0);
+		set_string_or_number(prg, l, 0);
+		set_string_or_number(prg, r, 0);
+		set_string_or_number(prg, u, 0);
+		set_string_or_number(prg, d, 0);
+		set_string_or_number(prg, b, 0);
+		set_string_or_number(prg, x, 0);
+		set_string_or_number(prg, y, 0);
+		set_string_or_number(prg, lb, 0);
+		set_string_or_number(prg, rb, 0);
+		set_string_or_number(prg, back, 0);
+		set_string_or_number(prg, start, 0);
+		set_string_or_number(prg, ls, 0);
+		set_string_or_number(prg, rs, 0);
+		set_string_or_number(prg, x3, 0);
+		set_string_or_number(prg, y3, 0);
 	}
 	else {
-		return false;
+
+		Sint16 si_x1 = SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_LEFTX);
+		Sint16 si_y1 = SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_LEFTY);
+		Sint16 si_x2 = SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_RIGHTX);
+		Sint16 si_y2 = SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_RIGHTY);
+		Sint16 si_x3 = SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_TRIGGERLEFT);
+		Sint16 si_y3 = SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
+
+		double x1f;
+		double y1f;
+		double x2f;
+		double y2f;
+		double x3f;
+		double y3f;
+
+		if (si_x1 < 0) {
+			x1f = si_x1 / 32768.0;
+		}
+		else {
+			x1f = si_x1 / 32767.0;
+		}
+
+		if (si_y1 < 0) {
+			y1f = si_y1 / 32768.0;
+		}
+		else {
+			y1f = si_y1 / 32767.0;
+		}
+
+		if (si_x2 < 0) {
+			x2f = si_x2 / 32768.0;
+		}
+		else {
+			x2f = si_x2 / 32767.0;
+		}
+
+		if (si_y2 < 0) {
+			y2f = si_y2 / 32768.0;
+		}
+		else {
+			y2f = si_y2 / 32767.0;
+		}
+
+		if (si_x3 < 0) {
+			x3f = si_x3 / 32768.0;
+		}
+		else {
+			x3f = si_x3 / 32767.0;
+		}
+
+		if (si_y3 < 0) {
+			y3f = si_y3 / 32768.0;
+		}
+		else {
+			y3f = si_y3 / 32767.0;
+		}
+
+		set_string_or_number(prg, x1, x1f);
+		set_string_or_number(prg, y1, y1f);
+		set_string_or_number(prg, x2, x2f);
+		set_string_or_number(prg, y2, y2f);
+		set_string_or_number(prg, x3, x3f);
+		set_string_or_number(prg, y3, y3f);
+
+		double ab = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_A);
+		double bb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_B);
+		double xb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_X);
+		double yb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_Y);
+		double lbb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_LB);
+		double rbb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_RB);
+		double backb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_BACK);
+		double startb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_START);
+		double lsb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_LS);
+		double rsb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_RS);
+		double _lb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_L);
+		double _rb = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_R);
+		double ub = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_U);
+		double db = SDL_GameControllerGetButton(gc, (SDL_GameControllerButton)TGUI_B_D);
+
+		set_string_or_number(prg, l, _lb);
+		set_string_or_number(prg, r, _rb);
+		set_string_or_number(prg, u, ub);
+		set_string_or_number(prg, d, db);
+		set_string_or_number(prg, a, ab);
+		set_string_or_number(prg, b, bb);
+		set_string_or_number(prg, x, xb);
+		set_string_or_number(prg, y, yb);
+		set_string_or_number(prg, lb, lbb);
+		set_string_or_number(prg, rb, rbb);
+		set_string_or_number(prg, ls, lsb);
+		set_string_or_number(prg, rs, rsb);
+		set_string_or_number(prg, back, backb);
+		set_string_or_number(prg, start, startb);
 	}
 
 	return true;
 }
 
-bool interpret_vector(PROGRAM &prg, std::string tok)
+bool joyfunc_count(PROGRAM &prg, std::string tok)
 {
-	if (tok == "vector_add") {
-		std::string id = token(prg);
-		std::string value = token(prg);
-
-		if (id == "" || value == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected vector_add parameters on line " + itos(get_line_num(prg)));
-		}
-		
-		std::vector<std::string> strings;
-		strings.push_back(id);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
+	std::string dest = token(prg);
 	
-		if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
-		}
-		/*
-		if (values[0] < 0 || values[0] >= prg.vectors.size()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
-		}
-		*/
-
-		std::vector<VARIABLE> &v = prg.vectors[values[0]];
-
-		VARIABLE var;
-
-		if (value[0] == '"') {
-			var.type = VARIABLE::STRING;
-			var.function = prg.name;
-			var.name = "-constant-";
-			var.s = remove_quotes(unescape(value));
-		}
-		else if (value[0] == '-' || isdigit(value[0])) {
-			var.type = VARIABLE::NUMBER;
-			var.function = prg.name;
-			var.name = "-constant-";
-			var.n = atof(value.c_str());
-		}
-		else {
-			var = find_variable(prg, value);
-		}
-
-		v.push_back(var);
+	if (dest == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected joystick_count parameters on line " + itos(get_line_num(prg)));
 	}
-	else if (tok == "vector_size") {
-		std::string id = token(prg);
-		std::string dest = token(prg);
 
-		if (id == "" || dest == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected vector_size parameters on line " + itos(get_line_num(prg)));
-		}
-		
-		std::vector<std::string> strings;
-		strings.push_back(id);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-		
-		if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
-		}
+	VARIABLE &v1 = find_variable(prg, dest);
 
-		std::vector<VARIABLE> &v = prg.vectors[values[0]];
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = v.size();
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-		}
-	}
-	else if (tok == "vector_set") {
-		std::string id = token(prg);
-		std::string index = token(prg);
-		std::string value = token(prg);
-
-		if (id == "" || index == "" || value == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected vector_set parameters on line " + itos(get_line_num(prg)));
-		}
-		
-		std::vector<std::string> strings;
-		strings.push_back(id);
-		strings.push_back(index);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-		
-		if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<VARIABLE> &v = prg.vectors[values[0]];
-
-		if (values[1] < 0 || values[1] >= v.size()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid index on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE var;
-
-		if (value[0] == '"') {
-			var.type = VARIABLE::STRING;
-			var.function = prg.name;
-			var.name = "-constant-";
-			var.s = remove_quotes(unescape(value));
-		}
-		else if (value[0] == '-' || isdigit(value[0])) {
-			var.type = VARIABLE::NUMBER;
-			var.function = prg.name;
-			var.name = "-constant-";
-			var.n = atof(value.c_str());
-		}
-		else {
-			var = find_variable(prg, value);
-		}
-
-		v[values[1]] = var;
-	}
-	else if (tok == "vector_insert") {
-		std::string id = token(prg);
-		std::string index = token(prg);
-		std::string value = token(prg);
-
-		if (id == "" || index == "" || value == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected vector_insert parameters on line " + itos(get_line_num(prg)));
-		}
-		
-		std::vector<std::string> strings;
-		strings.push_back(id);
-		strings.push_back(index);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-		
-		if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<VARIABLE> &v = prg.vectors[values[0]];
-
-		if (values[1] < 0 || values[1] > v.size()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid index on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE var;
-
-		if (value[0] == '"') {
-			var.type = VARIABLE::STRING;
-			var.function = prg.name;
-			var.name = "-constant-";
-			var.s = remove_quotes(unescape(value));
-		}
-		else if (value[0] == '-' || isdigit(value[0])) {
-			var.type = VARIABLE::NUMBER;
-			var.function = prg.name;
-			var.name = "-constant-";
-			var.n = atof(value.c_str());
-		}
-		else {
-			var = find_variable(prg, value);
-		}
-
-		v.insert(v.begin()+values[1], var);
-	}
-	else if (tok == "vector_get") {
-		std::string id = token(prg);
-		std::string dest = token(prg);
-		std::string index = token(prg);
-
-		if (id == "" || dest == "" || index == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected vector_get parameters on line " + itos(get_line_num(prg)));
-		}
-		
-		std::vector<std::string> strings;
-		strings.push_back(id);
-		strings.push_back(index);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<VARIABLE> &v = prg.vectors[values[0]];
-
-		if (values[1] < 0 || values[1] >= v.size()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid index on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		std::string bak = v1.name;
-		std::string bak2 = v1.function;
-		v1 = v[values[1]];
-		v1.name = bak;
-		v1.function = bak2;
-	}
-	else if (tok == "vector_erase") {
-		std::string id = token(prg);
-		std::string index = token(prg);
-
-		if (id == "" || index == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected vector_erase parameters on line " + itos(get_line_num(prg)));
-		}
-		
-		std::vector<std::string> strings;
-		strings.push_back(id);
-		strings.push_back(index);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<VARIABLE> &v = prg.vectors[values[0]];
-
-		if (values[1] < 0 || values[1] >= v.size()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid index on line " + itos(get_line_num(prg)));
-		}
-
-		v.erase(v.begin() + int(values[1]));
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = input::get_num_joysticks();
 	}
 	else {
-		return false;
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
+}
+
+bool vectorfunc_add(PROGRAM &prg, std::string tok)
+{
+	std::string id = token(prg);
+	std::string value = token(prg);
+
+	if (id == "" || value == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected vector_add parameters on line " + itos(get_line_num(prg)));
+	}
+	
+	std::vector<std::string> strings;
+	strings.push_back(id);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
+	}
+	/*
+	if (values[0] < 0 || values[0] >= prg.vectors.size()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
+	}
+	*/
+
+	std::vector<VARIABLE> &v = prg.vectors[values[0]];
+
+	VARIABLE var;
+
+	if (value[0] == '"') {
+		var.type = VARIABLE::STRING;
+		var.function = prg.name;
+		var.name = "-constant-";
+		var.s = remove_quotes(unescape(value));
+	}
+	else if (value[0] == '-' || isdigit(value[0])) {
+		var.type = VARIABLE::NUMBER;
+		var.function = prg.name;
+		var.name = "-constant-";
+		var.n = atof(value.c_str());
+	}
+	else {
+		var = find_variable(prg, value);
+	}
+
+	v.push_back(var);
+
+	return true;
+}
+
+bool vectorfunc_size(PROGRAM &prg, std::string tok)
+{
+	std::string id = token(prg);
+	std::string dest = token(prg);
+
+	if (id == "" || dest == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected vector_size parameters on line " + itos(get_line_num(prg)));
+	}
+	
+	std::vector<std::string> strings;
+	strings.push_back(id);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+	
+	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<VARIABLE> &v = prg.vectors[values[0]];
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = v.size();
+	}
+	else {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+	}
+
+	return true;
+}
+
+bool vectorfunc_set(PROGRAM &prg, std::string tok)
+{
+	std::string id = token(prg);
+	std::string index = token(prg);
+	std::string value = token(prg);
+
+	if (id == "" || index == "" || value == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected vector_set parameters on line " + itos(get_line_num(prg)));
+	}
+	
+	std::vector<std::string> strings;
+	strings.push_back(id);
+	strings.push_back(index);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+	
+	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<VARIABLE> &v = prg.vectors[values[0]];
+
+	if (values[1] < 0 || values[1] >= v.size()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid index on line " + itos(get_line_num(prg)));
+	}
+
+	VARIABLE var;
+
+	if (value[0] == '"') {
+		var.type = VARIABLE::STRING;
+		var.function = prg.name;
+		var.name = "-constant-";
+		var.s = remove_quotes(unescape(value));
+	}
+	else if (value[0] == '-' || isdigit(value[0])) {
+		var.type = VARIABLE::NUMBER;
+		var.function = prg.name;
+		var.name = "-constant-";
+		var.n = atof(value.c_str());
+	}
+	else {
+		var = find_variable(prg, value);
+	}
+
+	v[values[1]] = var;
+
+	return true;
+}
+
+bool vectorfunc_insert(PROGRAM &prg, std::string tok)
+{
+	std::string id = token(prg);
+	std::string index = token(prg);
+	std::string value = token(prg);
+
+	if (id == "" || index == "" || value == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected vector_insert parameters on line " + itos(get_line_num(prg)));
+	}
+	
+	std::vector<std::string> strings;
+	strings.push_back(id);
+	strings.push_back(index);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+	
+	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<VARIABLE> &v = prg.vectors[values[0]];
+
+	if (values[1] < 0 || values[1] > v.size()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid index on line " + itos(get_line_num(prg)));
+	}
+
+	VARIABLE var;
+
+	if (value[0] == '"') {
+		var.type = VARIABLE::STRING;
+		var.function = prg.name;
+		var.name = "-constant-";
+		var.s = remove_quotes(unescape(value));
+	}
+	else if (value[0] == '-' || isdigit(value[0])) {
+		var.type = VARIABLE::NUMBER;
+		var.function = prg.name;
+		var.name = "-constant-";
+		var.n = atof(value.c_str());
+	}
+	else {
+		var = find_variable(prg, value);
+	}
+
+	v.insert(v.begin()+values[1], var);
+
+	return true;
+}
+
+bool vectorfunc_get(PROGRAM &prg, std::string tok)
+{
+	std::string id = token(prg);
+	std::string dest = token(prg);
+	std::string index = token(prg);
+
+	if (id == "" || dest == "" || index == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected vector_get parameters on line " + itos(get_line_num(prg)));
+	}
+	
+	std::vector<std::string> strings;
+	strings.push_back(id);
+	strings.push_back(index);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<VARIABLE> &v = prg.vectors[values[0]];
+
+	if (values[1] < 0 || values[1] >= v.size()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid index on line " + itos(get_line_num(prg)));
+	}
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	std::string bak = v1.name;
+	std::string bak2 = v1.function;
+	v1 = v[values[1]];
+	v1.name = bak;
+	v1.function = bak2;
+
+	return true;
+}
+
+bool vectorfunc_erase(PROGRAM &prg, std::string tok)
+{
+	std::string id = token(prg);
+	std::string index = token(prg);
+
+	if (id == "" || index == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected vector_erase parameters on line " + itos(get_line_num(prg)));
+	}
+	
+	std::vector<std::string> strings;
+	strings.push_back(id);
+	strings.push_back(index);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<VARIABLE> &v = prg.vectors[values[0]];
+
+	if (values[1] < 0 || values[1] >= v.size()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid index on line " + itos(get_line_num(prg)));
+	}
+
+	v.erase(v.begin() + int(values[1]));
 }
 
 bool interpret_cfg(PROGRAM &prg, std::string tok)
@@ -3740,14 +3752,14 @@ void booboo_init()
 	library_map["font_draw"] = fontfunc_draw;
 	library_map["font_width"] = fontfunc_width;
 	library_map["font_height"] = fontfunc_height;
-	library_map["joystick_poll"] = interpret_joystick;
-	library_map["joystick_count"] = interpret_joystick;
-	library_map["vector_add"] = interpret_vector;
-	library_map["vector_size"] = interpret_vector;
-	library_map["vector_set"] = interpret_vector;
-	library_map["vector_insert"] = interpret_vector;
-	library_map["vector_get"] = interpret_vector;
-	library_map["vector_erase"] = interpret_vector;
+	library_map["joystick_poll"] = joyfunc_poll;
+	library_map["joystick_count"] = joyfunc_count;
+	library_map["vector_add"] = vectorfunc_add;
+	library_map["vector_size"] = vectorfunc_size;
+	library_map["vector_set"] = vectorfunc_set;
+	library_map["vector_insert"] = vectorfunc_insert;
+	library_map["vector_get"] = vectorfunc_get;
+	library_map["vector_erase"] = vectorfunc_erase;
 	library_map["cfg_load"] = interpret_cfg;
 	library_map["cfg_save"] = interpret_cfg;
 	library_map["cfg_get_number"] = interpret_cfg;
