@@ -1646,172 +1646,191 @@ bool corefunc_string_format(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-bool interpret_math(PROGRAM &prg, std::string tok)
+bool mathfunc_sin(PROGRAM &prg, std::string tok)
 {
-	if (tok == "sin") {
-		std::string dest = token(prg);
-		std::string vs = token(prg);
-		float v;
-		
-		if (dest == "" || vs == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected sin parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<std::string> strings;
-		strings.push_back(vs);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = sin(values[0]);
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
-		}
+	std::string dest = token(prg);
+	std::string vs = token(prg);
+	float v;
+	
+	if (dest == "" || vs == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected sin parameters on line " + itos(get_line_num(prg)));
 	}
-	else if (tok == "cos") {
-		std::string dest = token(prg);
-		std::string vs = token(prg);
-		float v;
-		
-		if (dest == "" || vs == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cos paramters on line " + itos(get_line_num(prg)));
-		}
 
-		std::vector<std::string> strings;
-		strings.push_back(vs);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
+	std::vector<std::string> strings;
+	strings.push_back(vs);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-		VARIABLE &v1 = find_variable(prg, dest);
+	VARIABLE &v1 = find_variable(prg, dest);
 
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = cos(values[0]);
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
-		}
-	}
-	else if (tok == "atan2") {
-		std::string dest = token(prg);
-		std::string vs1 = token(prg);
-		std::string vs2 = token(prg);
-		float v;
-		
-		if (dest == "" || vs1 == "" || vs2 == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected atan2 parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<std::string> strings;
-		strings.push_back(vs1);
-		strings.push_back(vs2);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = atan2(values[0], values[1]);
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
-		}
-	}
-	else if (tok == "abs") {
-		std::string dest = token(prg);
-		std::string vs = token(prg);
-		float v;
-		
-		if (dest == "" || vs == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected abs parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<std::string> strings;
-		strings.push_back(vs);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = abs(values[0]);
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
-		}
-	}
-	else if (tok == "pow") {
-		std::string dest = token(prg);
-		std::string vs1 = token(prg);
-		std::string vs2 = token(prg);
-		float v;
-		
-		if (dest == "" || vs1 == "" || vs2 == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected pow parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<std::string> strings;
-		strings.push_back(vs1);
-		strings.push_back(vs2);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = pow(values[0], values[1]);
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
-		}
-	}
-	else if (tok == "sqrt") {
-		std::string dest = token(prg);
-		std::string vs1 = token(prg);
-		float v;
-		
-		if (dest == "" || vs1 == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected sqrt parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<std::string> strings;
-		strings.push_back(vs1);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = sqrt(values[0]);
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
-		}
-	}
-	else if (tok == "rand") {
-		std::string dest = token(prg);
-		std::string min_incl = token(prg);
-		std::string max_incl = token(prg);
-
-		if (dest == "" || min_incl == "" || max_incl == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected rand parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<std::string> strings;
-		strings.push_back(min_incl);
-		strings.push_back(max_incl);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = util::rand(values[0], values[1]);
-		}
-		else if (v1.type == VARIABLE::STRING) {
-			v1.s = itos(util::rand(values[0], values[1]));
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
-		}
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = sin(values[0]);
 	}
 	else {
-		return false;
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+	}
+
+	return true;
+}
+
+bool mathfunc_cos(PROGRAM &prg, std::string tok)
+{
+	std::string dest = token(prg);
+	std::string vs = token(prg);
+	float v;
+	
+	if (dest == "" || vs == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cos paramters on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(vs);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = cos(values[0]);
+	}
+	else {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+	}
+
+	return true;
+}
+
+bool mathfunc_atan2(PROGRAM &prg, std::string tok)
+{
+	std::string dest = token(prg);
+	std::string vs1 = token(prg);
+	std::string vs2 = token(prg);
+	float v;
+	
+	if (dest == "" || vs1 == "" || vs2 == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected atan2 parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(vs1);
+	strings.push_back(vs2);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = atan2(values[0], values[1]);
+	}
+	else {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+	}
+
+	return true;
+}
+
+bool mathfunc_abs(PROGRAM &prg, std::string tok)
+{
+	std::string dest = token(prg);
+	std::string vs = token(prg);
+	float v;
+	
+	if (dest == "" || vs == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected abs parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(vs);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = abs(values[0]);
+	}
+	else {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+	}
+
+	return true;
+}
+
+bool mathfunc_pow(PROGRAM &prg, std::string tok)
+{
+	std::string dest = token(prg);
+	std::string vs1 = token(prg);
+	std::string vs2 = token(prg);
+	float v;
+	
+	if (dest == "" || vs1 == "" || vs2 == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected pow parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(vs1);
+	strings.push_back(vs2);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = pow(values[0], values[1]);
+	}
+	else {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+	}
+
+	return true;
+}
+
+bool mathfunc_sqrt(PROGRAM &prg, std::string tok)
+{
+	std::string dest = token(prg);
+	std::string vs1 = token(prg);
+	float v;
+	
+	if (dest == "" || vs1 == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected sqrt parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(vs1);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = sqrt(values[0]);
+	}
+	else {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+	}
+
+	return true;
+}
+
+bool mathfunc_rand(PROGRAM &prg, std::string tok)
+{
+	std::string dest = token(prg);
+	std::string min_incl = token(prg);
+	std::string max_incl = token(prg);
+
+	if (dest == "" || min_incl == "" || max_incl == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected rand parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(min_incl);
+	strings.push_back(max_incl);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = util::rand(values[0], values[1]);
+	}
+	else if (v1.type == VARIABLE::STRING) {
+		v1.s = itos(util::rand(values[0], values[1]));
+	}
+	else {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -3629,15 +3648,13 @@ void booboo_init()
 	library_map[";"] = corefunc_comment;
 	library_map["inspect"] = corefunc_inspect;
 	library_map["string_format"] = corefunc_string_format;
-	library_map["sin"] = interpret_math;
-	library_map["cos"] = interpret_math;
-	library_map["asin"] = interpret_math;
-	library_map["acos"] = interpret_math;
-	library_map["atan2"] = interpret_math;
-	library_map["abs"] = interpret_math;
-	library_map["pow"] = interpret_math;
-	library_map["sqrt"] = interpret_math;
-	library_map["rand"] = interpret_math;
+	library_map["sin"] = mathfunc_sin;
+	library_map["cos"] = mathfunc_cos;
+	library_map["atan2"] = mathfunc_atan2;
+	library_map["abs"] = mathfunc_abs;
+	library_map["pow"] = mathfunc_pow;
+	library_map["sqrt"] = mathfunc_sqrt;
+	library_map["rand"] = mathfunc_rand;
 	library_map["clear"] = interpret_gfx;
 	library_map["start_primitives"] = interpret_primitives;
 	library_map["end_primitives"] = interpret_primitives;
