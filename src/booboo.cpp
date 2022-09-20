@@ -2445,276 +2445,295 @@ bool mmlfunc_stop(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-bool interpret_image(PROGRAM &prg, std::string tok)
+bool imagefunc_load(PROGRAM &prg, std::string tok)
 {
-	if (tok == "image_load") {
-		std::string var = token(prg);
-		std::string name = token(prg);
+	std::string var = token(prg);
+	std::string name = token(prg);
 
-		if (var == "" || name == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_load parameters on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE &v1 = find_variable(prg, var);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = prg.image_id;
-		}
-		else if (v1.type == VARIABLE::STRING) {
-			v1.s = itos(prg.image_id);
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-		}
-
-		gfx::Image *img = new gfx::Image(remove_quotes(unescape(name)));
-
-		prg.images[prg.image_id++] = img;
+	if (var == "" || name == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_load parameters on line " + itos(get_line_num(prg)));
 	}
-	else if (tok == "image_draw") {
-		std::string id = token(prg);
-		std::string r = token(prg);
-		std::string g = token(prg);
-		std::string b = token(prg);
-		std::string a = token(prg);
-		std::string x = token(prg);
-		std::string y = token(prg);
-		std::string flip_h = token(prg);
-		std::string flip_v = token(prg);
 
-		if (id == "" || r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || flip_h == "" || flip_v == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_draw parameters on line " + itos(get_line_num(prg)));
-		}
+	VARIABLE &v1 = find_variable(prg, var);
 
-		std::vector<std::string> strings;
-		strings.push_back(id);
-		strings.push_back(r);
-		strings.push_back(g);
-		strings.push_back(b);
-		strings.push_back(a);
-		strings.push_back(x);
-		strings.push_back(y);
-		strings.push_back(flip_h);
-		strings.push_back(flip_v);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-		
-		if (values[0] < 0 || values[0] >= prg.images.size()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + itos(get_line_num(prg)));
-		}
-
-		gfx::Image *img = prg.images[values[0]];
-
-		SDL_Colour c;
-		c.r = values[1];
-		c.g = values[2];
-		c.b = values[3];
-		c.a = values[4];
-
-		int flags = 0;
-		if (values[7] != 0.0) {
-			flags |= gfx::Image::FLIP_H;
-		}
-		if (values[8] != 0.0) {
-			flags |= gfx::Image::FLIP_V;
-		}
-
-		img->draw_tinted(c, util::Point<float>(values[5], values[6]), flags);
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = prg.image_id;
 	}
-	else if (tok == "image_stretch_region") {
-		std::string id = token(prg);
-		std::string r = token(prg);
-		std::string g = token(prg);
-		std::string b = token(prg);
-		std::string a = token(prg);
-		std::string sx = token(prg);
-		std::string sy = token(prg);
-		std::string sw = token(prg);
-		std::string sh = token(prg);
-		std::string dx = token(prg);
-		std::string dy = token(prg);
-		std::string dw = token(prg);
-		std::string dh = token(prg);
-		std::string flip_h = token(prg);
-		std::string flip_v = token(prg);
-
-		if (id == "" || r == "" || g == "" || b == "" || a == "" || sx == "" || sy == "" || sw == "" || sh == "" || dx == "" || dy == "" || dw == "" || dh == "" || flip_h == "" || flip_v == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_stretch_region parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<std::string> strings;
-		strings.push_back(id);
-		strings.push_back(r);
-		strings.push_back(g);
-		strings.push_back(b);
-		strings.push_back(a);
-		strings.push_back(sx);
-		strings.push_back(sy);
-		strings.push_back(sw);
-		strings.push_back(sh);
-		strings.push_back(dx);
-		strings.push_back(dy);
-		strings.push_back(dw);
-		strings.push_back(dh);
-		strings.push_back(flip_h);
-		strings.push_back(flip_v);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-		
-		if (values[0] < 0 || values[0] >= prg.images.size()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + itos(get_line_num(prg)));
-		}
-
-		gfx::Image *img = prg.images[values[0]];
-
-		SDL_Colour c;
-		c.r = values[1];
-		c.g = values[2];
-		c.b = values[3];
-		c.a = values[4];
-
-		int flags = 0;
-		if (values[13] != 0.0) {
-			flags |= gfx::Image::FLIP_H;
-		}
-		if (values[14] != 0.0) {
-			flags |= gfx::Image::FLIP_V;
-		}
-
-		img->stretch_region_tinted(c, util::Point<float>(values[5], values[6]), util::Size<float>(values[7], values[8]), util::Point<float>(values[9], values[10]), util::Size<float>(values[11], values[12]), flags);
-	}
-	else if (tok == "image_draw_rotated_scaled") {
-		std::string id = token(prg);
-		std::string r = token(prg);
-		std::string g = token(prg);
-		std::string b = token(prg);
-		std::string a = token(prg);
-		std::string cx = token(prg);
-		std::string cy = token(prg);
-		std::string x = token(prg);
-		std::string y = token(prg);
-		std::string angle = token(prg);
-		std::string scale_x = token(prg);
-		std::string scale_y = token(prg);
-		std::string flip_h = token(prg);
-		std::string flip_v = token(prg);
-
-		if (id == "" || r == "" || g == "" || b == "" || a == "" || cx == "" || cy == "" || x == "" || y == "" || angle == "" || scale_x == "" || scale_y == "" || flip_h == "" || flip_v == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_draw_rotated_scaled parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<std::string> strings;
-		strings.push_back(id);
-		strings.push_back(r);
-		strings.push_back(g);
-		strings.push_back(b);
-		strings.push_back(a);
-		strings.push_back(cx);
-		strings.push_back(cy);
-		strings.push_back(x);
-		strings.push_back(y);
-		strings.push_back(angle);
-		strings.push_back(scale_x);
-		strings.push_back(scale_y);
-		strings.push_back(flip_h);
-		strings.push_back(flip_v);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-		
-		if (values[0] < 0 || values[0] >= prg.images.size()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + itos(get_line_num(prg)));
-		}
-
-		gfx::Image *img = prg.images[values[0]];
-
-		SDL_Colour c;
-		c.r = values[1];
-		c.g = values[2];
-		c.b = values[3];
-		c.a = values[4];
-
-		int flags = 0;
-		if (values[12] != 0.0) {
-			flags |= gfx::Image::FLIP_H;
-		}
-		if (values[13] != 0.0) {
-			flags |= gfx::Image::FLIP_V;
-		}
-
-		img->draw_tinted_rotated_scaledxy(c, util::Point<float>(values[5], values[6]), util::Point<float>(values[7], values[8]), values[9], values[10], values[11]);
-	}
-	else if (tok == "image_start") {
-		std::string img = token(prg);
-
-		if (img == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_start parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<std::string> strings;
-		strings.push_back(img);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
- 
-		if (prg.images.find(values[0]) == prg.images.end()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Unknown image \"" + img + "\" on line " + itos(get_line_num(prg)));
-		}
- 
-		gfx::Image *image = prg.images[values[0]];
- 
-		image->start_batch();
- 	}
-	else if (tok == "image_end") {
-		std::string img = token(prg);
-
-		if (img == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_end parameters on line " + itos(get_line_num(prg)));
-		}
- 
-		std::vector<std::string> strings;
-		strings.push_back(img);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		if (prg.images.find(values[0]) == prg.images.end()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Unknown image \"" + img + "\" on line " + itos(get_line_num(prg)));
-		}
-
-		gfx::Image *image = prg.images[values[0]];
- 
-		image->end_batch();
- 	}
-	else if (tok == "image_size") {
-		std::string id = token(prg);
-		std::string dest1 = token(prg);
-		std::string dest2 = token(prg);
-
-		if (id == "" || dest1 == "" || dest2 == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_size parameters on line " + itos(get_line_num(prg)));
-		}
-		
-		std::vector<std::string> strings;
-		strings.push_back(id);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-		
-		if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
-		}
-
-		gfx::Image *img = prg.images[values[0]];
-
-		VARIABLE &v1 = find_variable(prg, dest1);
-		VARIABLE &v2 = find_variable(prg, dest2);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = img->size.w;
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-		}
-		if (v2.type == VARIABLE::NUMBER) {
-			v2.n = img->size.h;
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-		}
+	else if (v1.type == VARIABLE::STRING) {
+		v1.s = itos(prg.image_id);
 	}
 	else {
-		return false;
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+	}
+
+	gfx::Image *img = new gfx::Image(remove_quotes(unescape(name)));
+
+	prg.images[prg.image_id++] = img;
+
+	return true;
+}
+
+bool imagefunc_draw(PROGRAM &prg, std::string tok)
+{
+	std::string id = token(prg);
+	std::string r = token(prg);
+	std::string g = token(prg);
+	std::string b = token(prg);
+	std::string a = token(prg);
+	std::string x = token(prg);
+	std::string y = token(prg);
+	std::string flip_h = token(prg);
+	std::string flip_v = token(prg);
+
+	if (id == "" || r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || flip_h == "" || flip_v == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_draw parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(id);
+	strings.push_back(r);
+	strings.push_back(g);
+	strings.push_back(b);
+	strings.push_back(a);
+	strings.push_back(x);
+	strings.push_back(y);
+	strings.push_back(flip_h);
+	strings.push_back(flip_v);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+	
+	if (values[0] < 0 || values[0] >= prg.images.size()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + itos(get_line_num(prg)));
+	}
+
+	gfx::Image *img = prg.images[values[0]];
+
+	SDL_Colour c;
+	c.r = values[1];
+	c.g = values[2];
+	c.b = values[3];
+	c.a = values[4];
+
+	int flags = 0;
+	if (values[7] != 0.0) {
+		flags |= gfx::Image::FLIP_H;
+	}
+	if (values[8] != 0.0) {
+		flags |= gfx::Image::FLIP_V;
+	}
+
+	img->draw_tinted(c, util::Point<float>(values[5], values[6]), flags);
+
+	return true;
+}
+
+bool imagefunc_stretch_region(PROGRAM &prg, std::string tok)
+{
+	std::string id = token(prg);
+	std::string r = token(prg);
+	std::string g = token(prg);
+	std::string b = token(prg);
+	std::string a = token(prg);
+	std::string sx = token(prg);
+	std::string sy = token(prg);
+	std::string sw = token(prg);
+	std::string sh = token(prg);
+	std::string dx = token(prg);
+	std::string dy = token(prg);
+	std::string dw = token(prg);
+	std::string dh = token(prg);
+	std::string flip_h = token(prg);
+	std::string flip_v = token(prg);
+
+	if (id == "" || r == "" || g == "" || b == "" || a == "" || sx == "" || sy == "" || sw == "" || sh == "" || dx == "" || dy == "" || dw == "" || dh == "" || flip_h == "" || flip_v == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_stretch_region parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(id);
+	strings.push_back(r);
+	strings.push_back(g);
+	strings.push_back(b);
+	strings.push_back(a);
+	strings.push_back(sx);
+	strings.push_back(sy);
+	strings.push_back(sw);
+	strings.push_back(sh);
+	strings.push_back(dx);
+	strings.push_back(dy);
+	strings.push_back(dw);
+	strings.push_back(dh);
+	strings.push_back(flip_h);
+	strings.push_back(flip_v);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+	
+	if (values[0] < 0 || values[0] >= prg.images.size()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + itos(get_line_num(prg)));
+	}
+
+	gfx::Image *img = prg.images[values[0]];
+
+	SDL_Colour c;
+	c.r = values[1];
+	c.g = values[2];
+	c.b = values[3];
+	c.a = values[4];
+
+	int flags = 0;
+	if (values[13] != 0.0) {
+		flags |= gfx::Image::FLIP_H;
+	}
+	if (values[14] != 0.0) {
+		flags |= gfx::Image::FLIP_V;
+	}
+
+	img->stretch_region_tinted(c, util::Point<float>(values[5], values[6]), util::Size<float>(values[7], values[8]), util::Point<float>(values[9], values[10]), util::Size<float>(values[11], values[12]), flags);
+
+	return true;
+}
+
+bool imagefunc_draw_rotated_scaled(PROGRAM &prg, std::string tok)
+{
+	std::string id = token(prg);
+	std::string r = token(prg);
+	std::string g = token(prg);
+	std::string b = token(prg);
+	std::string a = token(prg);
+	std::string cx = token(prg);
+	std::string cy = token(prg);
+	std::string x = token(prg);
+	std::string y = token(prg);
+	std::string angle = token(prg);
+	std::string scale_x = token(prg);
+	std::string scale_y = token(prg);
+	std::string flip_h = token(prg);
+	std::string flip_v = token(prg);
+
+	if (id == "" || r == "" || g == "" || b == "" || a == "" || cx == "" || cy == "" || x == "" || y == "" || angle == "" || scale_x == "" || scale_y == "" || flip_h == "" || flip_v == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_draw_rotated_scaled parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(id);
+	strings.push_back(r);
+	strings.push_back(g);
+	strings.push_back(b);
+	strings.push_back(a);
+	strings.push_back(cx);
+	strings.push_back(cy);
+	strings.push_back(x);
+	strings.push_back(y);
+	strings.push_back(angle);
+	strings.push_back(scale_x);
+	strings.push_back(scale_y);
+	strings.push_back(flip_h);
+	strings.push_back(flip_v);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+	
+	if (values[0] < 0 || values[0] >= prg.images.size()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + itos(get_line_num(prg)));
+	}
+
+	gfx::Image *img = prg.images[values[0]];
+
+	SDL_Colour c;
+	c.r = values[1];
+	c.g = values[2];
+	c.b = values[3];
+	c.a = values[4];
+
+	int flags = 0;
+	if (values[12] != 0.0) {
+		flags |= gfx::Image::FLIP_H;
+	}
+	if (values[13] != 0.0) {
+		flags |= gfx::Image::FLIP_V;
+	}
+
+	img->draw_tinted_rotated_scaledxy(c, util::Point<float>(values[5], values[6]), util::Point<float>(values[7], values[8]), values[9], values[10], values[11]);
+
+	return true;
+}
+
+bool imagefunc_start(PROGRAM &prg, std::string tok)
+{
+	std::string img = token(prg);
+
+	if (img == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_start parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(img);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	if (prg.images.find(values[0]) == prg.images.end()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Unknown image \"" + img + "\" on line " + itos(get_line_num(prg)));
+	}
+
+	gfx::Image *image = prg.images[values[0]];
+
+	image->start_batch();
+
+	return true;
+}
+
+bool imagefunc_end(PROGRAM &prg, std::string tok)
+{
+	std::string img = token(prg);
+
+	if (img == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_end parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(img);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	if (prg.images.find(values[0]) == prg.images.end()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Unknown image \"" + img + "\" on line " + itos(get_line_num(prg)));
+	}
+
+	gfx::Image *image = prg.images[values[0]];
+
+	image->end_batch();
+
+	return true;
+}
+
+bool imagefunc_size(PROGRAM &prg, std::string tok)
+{
+	std::string id = token(prg);
+	std::string dest1 = token(prg);
+	std::string dest2 = token(prg);
+
+	if (id == "" || dest1 == "" || dest2 == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_size parameters on line " + itos(get_line_num(prg)));
+	}
+	
+	std::vector<std::string> strings;
+	strings.push_back(id);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+	
+	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
+	}
+
+	gfx::Image *img = prg.images[values[0]];
+
+	VARIABLE &v1 = find_variable(prg, dest1);
+	VARIABLE &v2 = find_variable(prg, dest2);
+
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = img->size.w;
+	}
+	else {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+	}
+	if (v2.type == VARIABLE::NUMBER) {
+		v2.n = img->size.h;
+	}
+	else {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -3703,13 +3722,13 @@ void booboo_init()
 	library_map["mml_load"] = mmlfunc_load;
 	library_map["mml_play"] = mmlfunc_play;
 	library_map["mml_stop"] = mmlfunc_stop;
-	library_map["image_load"] = interpret_image;
-	library_map["image_draw"] = interpret_image;
-	library_map["image_stretch_region"] = interpret_image;
-	library_map["image_draw_rotated_scaled"] = interpret_image;
-	library_map["image_start"] = interpret_image;
-	library_map["image_end"] = interpret_image;
-	library_map["image_size"] = interpret_image;
+	library_map["image_load"] = imagefunc_load;
+	library_map["image_draw"] = imagefunc_draw;
+	library_map["image_stretch_region"] = imagefunc_stretch_region;
+	library_map["image_draw_rotated_scaled"] = imagefunc_draw_rotated_scaled;
+	library_map["image_start"] = imagefunc_start;
+	library_map["image_end"] = imagefunc_end;
+	library_map["image_size"] = imagefunc_size;
 	library_map["font_load"] = interpret_font;
 	library_map["font_draw"] = interpret_font;
 	library_map["font_width"] = interpret_font;
