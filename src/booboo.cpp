@@ -2468,6 +2468,67 @@ bool interpret_image(PROGRAM &prg, std::string tok)
 
 		img->draw_tinted(c, util::Point<float>(values[5], values[6]), flags);
 	}
+	else if (tok == "image_stretch_region") {
+		std::string id = token(prg);
+		std::string r = token(prg);
+		std::string g = token(prg);
+		std::string b = token(prg);
+		std::string a = token(prg);
+		std::string sx = token(prg);
+		std::string sy = token(prg);
+		std::string sw = token(prg);
+		std::string sh = token(prg);
+		std::string dx = token(prg);
+		std::string dy = token(prg);
+		std::string dw = token(prg);
+		std::string dh = token(prg);
+		std::string flip_h = token(prg);
+		std::string flip_v = token(prg);
+
+		if (id == "" || r == "" || g == "" || b == "" || a == "" || sx == "" || sy == "" || sw == "" || sh == "" || dx == "" || dy == "" || dw == "" || dh == "" || flip_h == "" || flip_v == "") {
+			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_stretch_region parameters on line " + itos(get_line_num(prg)));
+		}
+
+		std::vector<std::string> strings;
+		strings.push_back(id);
+		strings.push_back(r);
+		strings.push_back(g);
+		strings.push_back(b);
+		strings.push_back(a);
+		strings.push_back(sx);
+		strings.push_back(sy);
+		strings.push_back(sw);
+		strings.push_back(sh);
+		strings.push_back(dx);
+		strings.push_back(dy);
+		strings.push_back(dw);
+		strings.push_back(dh);
+		strings.push_back(flip_h);
+		strings.push_back(flip_v);
+		std::vector<double> values = variable_names_to_numbers(prg, strings);
+		
+		if (values[0] < 0 || values[0] >= prg.images.size()) {
+			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + itos(get_line_num(prg)));
+		}
+
+		gfx::Image *img = prg.images[values[0]];
+
+		SDL_Colour c;
+		c.r = values[1];
+		c.g = values[2];
+		c.b = values[3];
+		c.a = values[4];
+
+		int flags = 0;
+		if (values[13] != 0.0) {
+			flags |= gfx::Image::FLIP_H;
+		}
+		if (values[14] != 0.0) {
+			flags |= gfx::Image::FLIP_V;
+		}
+
+		img->stretch_region_tinted(c, util::Point<float>(values[5], values[6]), util::Size<float>(values[7], values[8]), util::Point<float>(values[9], values[10]), util::Size<float>(values[11], values[12]), flags);
+	}
 	else if (tok == "image_draw_rotated_scaled") {
 		std::string id = token(prg);
 		std::string r = token(prg);
@@ -3594,6 +3655,7 @@ void booboo_init()
 	library_map["mml_stop"] = interpret_mml;
 	library_map["image_load"] = interpret_image;
 	library_map["image_draw"] = interpret_image;
+	library_map["image_stretch_region"] = interpret_image;
 	library_map["image_draw_rotated_scaled"] = interpret_image;
 	library_map["image_start"] = interpret_image;
 	library_map["image_end"] = interpret_image;

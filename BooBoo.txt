@@ -196,6 +196,10 @@ image_draw
 	draw an image
 	e.g. image_draw img tint_r tint_g tint_b tint_a x y flip_h flip_v
 
+image_stretch_region
+	draw a region of an image and maybe stretch it
+	e.g. image_stretch_region image r g b a source_x source_y source_w source_h dest_x dest_y dest_w dest_h flip_h flip_v
+
 image_draw_rotated_scaled
 	draw an image with rotation and scale
 	e.g. image_draw_rotated_scaled img tint_r tint_g tint_b tint_a pivot_x pivot_y x y angle scale_x scale_y flip_h flip_v
