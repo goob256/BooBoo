@@ -1836,461 +1836,487 @@ bool mathfunc_rand(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-bool interpret_gfx(PROGRAM &prg, std::string tok)
+bool gfxfunc_clear(PROGRAM &prg, std::string tok)
 {
-	if (tok == "clear") {
-		std::string r =  token(prg);
-		std::string g =  token(prg);
-		std::string b =  token(prg);
-		
-		if (r == "" || g == "" || b == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected clear parameters on line " + itos(get_line_num(prg)));
-		}
-		
-		std::vector<std::string> strings;
-		strings.push_back(r);
-		strings.push_back(g);
-		strings.push_back(b);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		SDL_Colour c;
-		c.r = values[0];
-		c.g = values[1];
-		c.b = values[2];
-		c.a = 255;
-
-		gfx::clear(c);
+	std::string r =  token(prg);
+	std::string g =  token(prg);
+	std::string b =  token(prg);
+	
+	if (r == "" || g == "" || b == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected clear parameters on line " + itos(get_line_num(prg)));
 	}
-	else {
-		return false;
-	}
+	
+	std::vector<std::string> strings;
+	strings.push_back(r);
+	strings.push_back(g);
+	strings.push_back(b);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	SDL_Colour c;
+	c.r = values[0];
+	c.g = values[1];
+	c.b = values[2];
+	c.a = 255;
+
+	gfx::clear(c);
 
 	return true;
 }
 
-bool interpret_primitives(PROGRAM &prg, std::string tok)
+bool primfunc_start_primitives(PROGRAM &prg, std::string tok)
 {
-	if (tok == "start_primitives") {
-		gfx::draw_primitives_start();
+	gfx::draw_primitives_start();
+
+	return true;
+}
+
+bool primfunc_end_primitives(PROGRAM &prg, std::string tok)
+{
+	gfx::draw_primitives_end();
+
+	return true;
+}
+
+bool primfunc_line(PROGRAM &prg, std::string tok)
+{
+	std::string r =  token(prg);
+	std::string g =  token(prg);
+	std::string b =  token(prg);
+	std::string a =  token(prg);
+	std::string x =  token(prg);
+	std::string y =  token(prg);
+	std::string x2 =  token(prg);
+	std::string y2 =  token(prg);
+	std::string thickness = token(prg);
+	
+	if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || x2 == "" || y2 == "" || thickness == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected line parameters on line " + itos(get_line_num(prg)));
 	}
-	else if (tok == "end_primitives") {
-		gfx::draw_primitives_end();
+	
+	std::vector<std::string> strings;
+	strings.push_back(r);
+	strings.push_back(g);
+	strings.push_back(b);
+	strings.push_back(a);
+	strings.push_back(x);
+	strings.push_back(y);
+	strings.push_back(x2);
+	strings.push_back(y2);
+	strings.push_back(thickness);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	SDL_Colour c;
+	c.r = values[0];
+	c.g = values[1];
+	c.b = values[2];
+	c.a = values[3];
+
+	util::Point<float> p1, p2;
+
+	p1.x = values[4];
+	p1.y = values[5];
+	p2.x = values[6];
+	p2.y = values[7];
+
+	float thick = values[8];
+
+	gfx::draw_line(c, p1, p2, thick);
+
+	return true;
+}
+
+bool primfunc_filled_triangle(PROGRAM &prg, std::string tok)
+{
+	std::string r1 =  token(prg);
+	std::string g1 =  token(prg);
+	std::string b1 =  token(prg);
+	std::string a1 =  token(prg);
+	std::string r2 =  token(prg);
+	std::string g2 =  token(prg);
+	std::string b2 =  token(prg);
+	std::string a2 =  token(prg);
+	std::string r3 =  token(prg);
+	std::string g3 =  token(prg);
+	std::string b3 =  token(prg);
+	std::string a3 =  token(prg);
+	std::string x =  token(prg);
+	std::string y =  token(prg);
+	std::string x2 =  token(prg);
+	std::string y2 =  token(prg);
+	std::string x3 =  token(prg);
+	std::string y3 =  token(prg);
+	
+	if (r1 == "" || g1 == "" || b1 == "" || a1 == "" || r2 == "" || g2 == "" || b2 == "" || a2 == "" || r3 == "" || g3 =="" || b3 == "" || a3 == "" || x == "" || y == "" || x2 == "" || y2 == "" || x3 == "" || y3 == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected filled_triangle parameters on line " + itos(get_line_num(prg)));
 	}
-	else if (tok == "line") {
-		std::string r =  token(prg);
-		std::string g =  token(prg);
-		std::string b =  token(prg);
-		std::string a =  token(prg);
-		std::string x =  token(prg);
-		std::string y =  token(prg);
-		std::string x2 =  token(prg);
-		std::string y2 =  token(prg);
-		std::string thickness = token(prg);
-		
-		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || x2 == "" || y2 == "" || thickness == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected line parameters on line " + itos(get_line_num(prg)));
-		}
-		
-		std::vector<std::string> strings;
-		strings.push_back(r);
-		strings.push_back(g);
-		strings.push_back(b);
-		strings.push_back(a);
-		strings.push_back(x);
-		strings.push_back(y);
-		strings.push_back(x2);
-		strings.push_back(y2);
-		strings.push_back(thickness);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
+	
+	std::vector<std::string> strings;
+	strings.push_back(r1);
+	strings.push_back(g1);
+	strings.push_back(b1);
+	strings.push_back(a1);
+	strings.push_back(r2);
+	strings.push_back(g2);
+	strings.push_back(b2);
+	strings.push_back(a2);
+	strings.push_back(r3);
+	strings.push_back(g3);
+	strings.push_back(b3);
+	strings.push_back(a3);
+	strings.push_back(x);
+	strings.push_back(y);
+	strings.push_back(x2);
+	strings.push_back(y2);
+	strings.push_back(x3);
+	strings.push_back(y3);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-		SDL_Colour c;
-		c.r = values[0];
-		c.g = values[1];
-		c.b = values[2];
-		c.a = values[3];
+	SDL_Colour c[3];
+	c[0].r = values[0];
+	c[0].g = values[1];
+	c[0].b = values[2];
+	c[0].a = values[3];
+	c[1].r = values[4];
+	c[1].g = values[5];
+	c[1].b = values[6];
+	c[1].a = values[7];
+	c[2].r = values[8];
+	c[2].g = values[9];
+	c[2].b = values[10];
+	c[2].a = values[11];
 
-		util::Point<float> p1, p2;
+	util::Point<float> p1, p2, p3;
 
-		p1.x = values[4];
-		p1.y = values[5];
-		p2.x = values[6];
-		p2.y = values[7];
+	p1.x = values[12];
+	p1.y = values[13];
+	p2.x = values[14];
+	p2.y = values[15];
+	p3.x = values[16];
+	p3.y = values[17];
 
-		float thick = values[8];
+	gfx::draw_filled_triangle(c, p1, p2, p3);
 
-		gfx::draw_line(c, p1, p2, thick);
+	return true;
+}
+
+bool primfunc_rectangle(PROGRAM &prg, std::string tok)
+{
+	std::string r =  token(prg);
+	std::string g =  token(prg);
+	std::string b =  token(prg);
+	std::string a =  token(prg);
+	std::string x =  token(prg);
+	std::string y =  token(prg);
+	std::string w =  token(prg);
+	std::string h =  token(prg);
+	std::string thickness =  token(prg);
+	
+	if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || w == "" || h == "" || thickness == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected rectangle parameters on line " + itos(get_line_num(prg)));
 	}
-	else if (tok == "filled_triangle") {
-		std::string r1 =  token(prg);
-		std::string g1 =  token(prg);
-		std::string b1 =  token(prg);
-		std::string a1 =  token(prg);
-		std::string r2 =  token(prg);
-		std::string g2 =  token(prg);
-		std::string b2 =  token(prg);
-		std::string a2 =  token(prg);
-		std::string r3 =  token(prg);
-		std::string g3 =  token(prg);
-		std::string b3 =  token(prg);
-		std::string a3 =  token(prg);
-		std::string x =  token(prg);
-		std::string y =  token(prg);
-		std::string x2 =  token(prg);
-		std::string y2 =  token(prg);
-		std::string x3 =  token(prg);
-		std::string y3 =  token(prg);
-		
-		if (r1 == "" || g1 == "" || b1 == "" || a1 == "" || r2 == "" || g2 == "" || b2 == "" || a2 == "" || r3 == "" || g3 =="" || b3 == "" || a3 == "" || x == "" || y == "" || x2 == "" || y2 == "" || x3 == "" || y3 == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected filled_triangle parameters on line " + itos(get_line_num(prg)));
-		}
-		
-		std::vector<std::string> strings;
-		strings.push_back(r1);
-		strings.push_back(g1);
-		strings.push_back(b1);
-		strings.push_back(a1);
-		strings.push_back(r2);
-		strings.push_back(g2);
-		strings.push_back(b2);
-		strings.push_back(a2);
-		strings.push_back(r3);
-		strings.push_back(g3);
-		strings.push_back(b3);
-		strings.push_back(a3);
-		strings.push_back(x);
-		strings.push_back(y);
-		strings.push_back(x2);
-		strings.push_back(y2);
-		strings.push_back(x3);
-		strings.push_back(y3);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
+	
+	std::vector<std::string> strings;
+	strings.push_back(r);
+	strings.push_back(g);
+	strings.push_back(b);
+	strings.push_back(a);
+	strings.push_back(x);
+	strings.push_back(y);
+	strings.push_back(w);
+	strings.push_back(h);
+	strings.push_back(thickness);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-		SDL_Colour c[3];
-		c[0].r = values[0];
-		c[0].g = values[1];
-		c[0].b = values[2];
-		c[0].a = values[3];
-		c[1].r = values[4];
-		c[1].g = values[5];
-		c[1].b = values[6];
-		c[1].a = values[7];
-		c[2].r = values[8];
-		c[2].g = values[9];
-		c[2].b = values[10];
-		c[2].a = values[11];
+	SDL_Colour c;
+	c.r = values[0];
+	c.g = values[1];
+	c.b = values[2];
+	c.a = values[3];
 
-		util::Point<float> p1, p2, p3;
+	util::Point<float> p;
+	util::Size<float> sz;
 
-		p1.x = values[12];
-		p1.y = values[13];
-		p2.x = values[14];
-		p2.y = values[15];
-		p3.x = values[16];
-		p3.y = values[17];
+	p.x = values[4];
+	p.y = values[5];
+	sz.w = values[6];
+	sz.h = values[7];
 
-		gfx::draw_filled_triangle(c, p1, p2, p3);
+	float thick = values[8];
+
+	gfx::draw_rectangle(c, p, sz, thick);
+
+	return true;
+}
+
+bool primfunc_filled_rectangle(PROGRAM &prg, std::string tok)
+{
+	std::string r1 =  token(prg);
+	std::string g1 =  token(prg);
+	std::string b1 =  token(prg);
+	std::string a1 =  token(prg);
+	std::string r2 =  token(prg);
+	std::string g2 =  token(prg);
+	std::string b2 =  token(prg);
+	std::string a2 =  token(prg);
+	std::string r3 =  token(prg);
+	std::string g3 =  token(prg);
+	std::string b3 =  token(prg);
+	std::string a3 =  token(prg);
+	std::string r4 =  token(prg);
+	std::string g4 =  token(prg);
+	std::string b4 =  token(prg);
+	std::string a4 =  token(prg);
+	std::string x =  token(prg);
+	std::string y =  token(prg);
+	std::string w =  token(prg);
+	std::string h =  token(prg);
+	
+	if (r1 == "" || g1 == "" || b1 == "" || a1 == "" || r2 == "" || g2 == "" || b2 == "" || a2 == "" || r3 == "" || g3 =="" || b3 == "" || a3 == "" || r4 == "" || g4 == "" || b4 == "" || a4 == "" || x == "" || y == "" || w == "" || h == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected filled_rectangle parameters on line " + itos(get_line_num(prg)));
 	}
-	else if (tok == "rectangle") {
-		std::string r =  token(prg);
-		std::string g =  token(prg);
-		std::string b =  token(prg);
-		std::string a =  token(prg);
-		std::string x =  token(prg);
-		std::string y =  token(prg);
-		std::string w =  token(prg);
-		std::string h =  token(prg);
-		std::string thickness =  token(prg);
-		
-		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || w == "" || h == "" || thickness == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected rectangle parameters on line " + itos(get_line_num(prg)));
-		}
-		
-		std::vector<std::string> strings;
-		strings.push_back(r);
-		strings.push_back(g);
-		strings.push_back(b);
-		strings.push_back(a);
-		strings.push_back(x);
-		strings.push_back(y);
-		strings.push_back(w);
-		strings.push_back(h);
-		strings.push_back(thickness);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
+	
+	std::vector<std::string> strings;
+	strings.push_back(r1);
+	strings.push_back(g1);
+	strings.push_back(b1);
+	strings.push_back(a1);
+	strings.push_back(r2);
+	strings.push_back(g2);
+	strings.push_back(b2);
+	strings.push_back(a2);
+	strings.push_back(r3);
+	strings.push_back(g3);
+	strings.push_back(b3);
+	strings.push_back(a3);
+	strings.push_back(r4);
+	strings.push_back(g4);
+	strings.push_back(b4);
+	strings.push_back(a4);
+	strings.push_back(x);
+	strings.push_back(y);
+	strings.push_back(w);
+	strings.push_back(h);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-		SDL_Colour c;
-		c.r = values[0];
-		c.g = values[1];
-		c.b = values[2];
-		c.a = values[3];
+	SDL_Colour c[4];
+	c[0].r = values[0];
+	c[0].g = values[1];
+	c[0].b = values[2];
+	c[0].a = values[3];
+	c[1].r = values[4];
+	c[1].g = values[5];
+	c[1].b = values[6];
+	c[1].a = values[7];
+	c[2].r = values[8];
+	c[2].g = values[9];
+	c[2].b = values[10];
+	c[2].a = values[11];
+	c[3].r = values[12];
+	c[3].g = values[13];
+	c[3].b = values[14];
+	c[3].a = values[15];
 
-		util::Point<float> p;
-		util::Size<float> sz;
+	util::Point<float> p;
 
-		p.x = values[4];
-		p.y = values[5];
-		sz.w = values[6];
-		sz.h = values[7];
+	p.x = values[16];
+	p.y = values[17];
 
-		float thick = values[8];
+	util::Size<float> sz;
 
-		gfx::draw_rectangle(c, p, sz, thick);
+	sz.w = values[18];
+	sz.h = values[19];
+
+	gfx::draw_filled_rectangle(c, p, sz);
+
+	return true;
+}
+
+bool primfunc_ellipse(PROGRAM &prg, std::string tok)
+{
+	std::string r =  token(prg);
+	std::string g =  token(prg);
+	std::string b =  token(prg);
+	std::string a =  token(prg);
+	std::string x =  token(prg);
+	std::string y =  token(prg);
+	std::string rx =  token(prg);
+	std::string ry =  token(prg);
+	std::string thickness =  token(prg);
+	std::string sections =  token(prg);
+	
+	if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || rx == "" || ry == "" || thickness == "" || sections == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected ellipse parameters on line " + itos(get_line_num(prg)));
 	}
-	else if (tok == "filled_rectangle") {
-		std::string r1 =  token(prg);
-		std::string g1 =  token(prg);
-		std::string b1 =  token(prg);
-		std::string a1 =  token(prg);
-		std::string r2 =  token(prg);
-		std::string g2 =  token(prg);
-		std::string b2 =  token(prg);
-		std::string a2 =  token(prg);
-		std::string r3 =  token(prg);
-		std::string g3 =  token(prg);
-		std::string b3 =  token(prg);
-		std::string a3 =  token(prg);
-		std::string r4 =  token(prg);
-		std::string g4 =  token(prg);
-		std::string b4 =  token(prg);
-		std::string a4 =  token(prg);
-		std::string x =  token(prg);
-		std::string y =  token(prg);
-		std::string w =  token(prg);
-		std::string h =  token(prg);
-		
-		if (r1 == "" || g1 == "" || b1 == "" || a1 == "" || r2 == "" || g2 == "" || b2 == "" || a2 == "" || r3 == "" || g3 =="" || b3 == "" || a3 == "" || r4 == "" || g4 == "" || b4 == "" || a4 == "" || x == "" || y == "" || w == "" || h == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected filled_rectangle parameters on line " + itos(get_line_num(prg)));
-		}
-		
-		std::vector<std::string> strings;
-		strings.push_back(r1);
-		strings.push_back(g1);
-		strings.push_back(b1);
-		strings.push_back(a1);
-		strings.push_back(r2);
-		strings.push_back(g2);
-		strings.push_back(b2);
-		strings.push_back(a2);
-		strings.push_back(r3);
-		strings.push_back(g3);
-		strings.push_back(b3);
-		strings.push_back(a3);
-		strings.push_back(r4);
-		strings.push_back(g4);
-		strings.push_back(b4);
-		strings.push_back(a4);
-		strings.push_back(x);
-		strings.push_back(y);
-		strings.push_back(w);
-		strings.push_back(h);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
+	
+	std::vector<std::string> strings;
+	strings.push_back(r);
+	strings.push_back(g);
+	strings.push_back(b);
+	strings.push_back(a);
+	strings.push_back(x);
+	strings.push_back(y);
+	strings.push_back(rx);
+	strings.push_back(ry);
+	strings.push_back(thickness);
+	strings.push_back(sections);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-		SDL_Colour c[4];
-		c[0].r = values[0];
-		c[0].g = values[1];
-		c[0].b = values[2];
-		c[0].a = values[3];
-		c[1].r = values[4];
-		c[1].g = values[5];
-		c[1].b = values[6];
-		c[1].a = values[7];
-		c[2].r = values[8];
-		c[2].g = values[9];
-		c[2].b = values[10];
-		c[2].a = values[11];
-		c[3].r = values[12];
-		c[3].g = values[13];
-		c[3].b = values[14];
-		c[3].a = values[15];
+	SDL_Colour c;
+	c.r = values[0];
+	c.g = values[1];
+	c.b = values[2];
+	c.a = values[3];
 
-		util::Point<float> p;
+	util::Point<float> p;
 
-		p.x = values[16];
-		p.y = values[17];
+	p.x = values[4];
+	p.y = values[5];
 
-		util::Size<float> sz;
+	float _rx = values[6];
+	float _ry = values[7];
+	float thick = values[8];
+	float _sections = values[9];
 
-		sz.w = values[18];
-		sz.h = values[19];
+	gfx::draw_ellipse(c, p, _rx, _ry, thick, _sections);
 
-		gfx::draw_filled_rectangle(c, p, sz);
+	return true;
+}
+
+bool primfunc_filled_ellipse(PROGRAM &prg, std::string tok)
+{
+	std::string r =  token(prg);
+	std::string g =  token(prg);
+	std::string b =  token(prg);
+	std::string a =  token(prg);
+	std::string x =  token(prg);
+	std::string y =  token(prg);
+	std::string rx =  token(prg);
+	std::string ry =  token(prg);
+	std::string sections =  token(prg);
+	
+	if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || rx == "" || ry == "" || sections == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected filled_ellipse parameters on line " + itos(get_line_num(prg)));
 	}
-	else if (tok == "ellipse") {
-		std::string r =  token(prg);
-		std::string g =  token(prg);
-		std::string b =  token(prg);
-		std::string a =  token(prg);
-		std::string x =  token(prg);
-		std::string y =  token(prg);
-		std::string rx =  token(prg);
-		std::string ry =  token(prg);
-		std::string thickness =  token(prg);
-		std::string sections =  token(prg);
-		
-		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || rx == "" || ry == "" || thickness == "" || sections == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected ellipse parameters on line " + itos(get_line_num(prg)));
-		}
-		
-		std::vector<std::string> strings;
-		strings.push_back(r);
-		strings.push_back(g);
-		strings.push_back(b);
-		strings.push_back(a);
-		strings.push_back(x);
-		strings.push_back(y);
-		strings.push_back(rx);
-		strings.push_back(ry);
-		strings.push_back(thickness);
-		strings.push_back(sections);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
+	
+	std::vector<std::string> strings;
+	strings.push_back(r);
+	strings.push_back(g);
+	strings.push_back(b);
+	strings.push_back(a);
+	strings.push_back(x);
+	strings.push_back(y);
+	strings.push_back(rx);
+	strings.push_back(ry);
+	strings.push_back(sections);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-		SDL_Colour c;
-		c.r = values[0];
-		c.g = values[1];
-		c.b = values[2];
-		c.a = values[3];
+	SDL_Colour c;
+	c.r = values[0];
+	c.g = values[1];
+	c.b = values[2];
+	c.a = values[3];
 
-		util::Point<float> p;
+	util::Point<float> p;
 
-		p.x = values[4];
-		p.y = values[5];
+	p.x = values[4];
+	p.y = values[5];
 
-		float _rx = values[6];
-		float _ry = values[7];
-		float thick = values[8];
-		float _sections = values[9];
+	float _rx = values[6];
+	float _ry = values[7];
+	float _sections = values[8];
 
-		gfx::draw_ellipse(c, p, _rx, _ry, thick, _sections);
+	gfx::draw_filled_ellipse(c, p, _rx, _ry, _sections);
+
+	return true;
+}
+
+bool primfunc_circle(PROGRAM &prg, std::string tok)
+{
+	std::string r =  token(prg);
+	std::string g =  token(prg);
+	std::string b =  token(prg);
+	std::string a =  token(prg);
+	std::string x =  token(prg);
+	std::string y =  token(prg);
+	std::string radius =  token(prg);
+	std::string thickness =  token(prg);
+	std::string sections =  token(prg);
+	
+	if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || radius == "" || thickness == "" || sections == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected circle parameters on line " + itos(get_line_num(prg)));
 	}
-	else if (tok == "filled_ellipse") {
-		std::string r =  token(prg);
-		std::string g =  token(prg);
-		std::string b =  token(prg);
-		std::string a =  token(prg);
-		std::string x =  token(prg);
-		std::string y =  token(prg);
-		std::string rx =  token(prg);
-		std::string ry =  token(prg);
-		std::string sections =  token(prg);
-		
-		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || rx == "" || ry == "" || sections == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected filled_ellipse parameters on line " + itos(get_line_num(prg)));
-		}
-		
-		std::vector<std::string> strings;
-		strings.push_back(r);
-		strings.push_back(g);
-		strings.push_back(b);
-		strings.push_back(a);
-		strings.push_back(x);
-		strings.push_back(y);
-		strings.push_back(rx);
-		strings.push_back(ry);
-		strings.push_back(sections);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
+	
+	std::vector<std::string> strings;
+	strings.push_back(r);
+	strings.push_back(g);
+	strings.push_back(b);
+	strings.push_back(a);
+	strings.push_back(x);
+	strings.push_back(y);
+	strings.push_back(radius);
+	strings.push_back(thickness);
+	strings.push_back(sections);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-		SDL_Colour c;
-		c.r = values[0];
-		c.g = values[1];
-		c.b = values[2];
-		c.a = values[3];
+	SDL_Colour c;
+	c.r = values[0];
+	c.g = values[1];
+	c.b = values[2];
+	c.a = values[3];
 
-		util::Point<float> p;
+	util::Point<float> p;
 
-		p.x = values[4];
-		p.y = values[5];
+	p.x = values[4];
+	p.y = values[5];
+	float _r = values[6];
+	float thick = values[7];
+	int _sections = values[8];
 
-		float _rx = values[6];
-		float _ry = values[7];
-		float _sections = values[8];
+	gfx::draw_circle(c, p, _r, thick, _sections);
 
-		gfx::draw_filled_ellipse(c, p, _rx, _ry, _sections);
+	return true;
+}
+
+bool primfunc_filled_circle(PROGRAM &prg, std::string tok)
+{
+	std::string r =  token(prg);
+	std::string g =  token(prg);
+	std::string b =  token(prg);
+	std::string a =  token(prg);
+	std::string x =  token(prg);
+	std::string y =  token(prg);
+	std::string radius =  token(prg);
+	std::string sections =  token(prg);
+	
+	if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || radius == "" || sections == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected filled_circle parameters on line " + itos(get_line_num(prg)));
 	}
-	else if (tok == "circle") {
-		std::string r =  token(prg);
-		std::string g =  token(prg);
-		std::string b =  token(prg);
-		std::string a =  token(prg);
-		std::string x =  token(prg);
-		std::string y =  token(prg);
-		std::string radius =  token(prg);
-		std::string thickness =  token(prg);
-		std::string sections =  token(prg);
-		
-		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || radius == "" || thickness == "" || sections == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected circle parameters on line " + itos(get_line_num(prg)));
-		}
-		
-		std::vector<std::string> strings;
-		strings.push_back(r);
-		strings.push_back(g);
-		strings.push_back(b);
-		strings.push_back(a);
-		strings.push_back(x);
-		strings.push_back(y);
-		strings.push_back(radius);
-		strings.push_back(thickness);
-		strings.push_back(sections);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
+	
+	std::vector<std::string> strings;
+	strings.push_back(r);
+	strings.push_back(g);
+	strings.push_back(b);
+	strings.push_back(a);
+	strings.push_back(x);
+	strings.push_back(y);
+	strings.push_back(radius);
+	strings.push_back(sections);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-		SDL_Colour c;
-		c.r = values[0];
-		c.g = values[1];
-		c.b = values[2];
-		c.a = values[3];
+	SDL_Colour c;
+	c.r = values[0];
+	c.g = values[1];
+	c.b = values[2];
+	c.a = values[3];
 
-		util::Point<float> p;
+	util::Point<float> p;
 
-		p.x = values[4];
-		p.y = values[5];
-		float _r = values[6];
-		float thick = values[7];
-		int _sections = values[8];
+	p.x = values[4];
+	p.y = values[5];
+	float _r = values[6];
+	int _sections = values[7];
 
-		gfx::draw_circle(c, p, _r, thick, _sections);
-	}
-	else if (tok == "filled_circle") {
-		std::string r =  token(prg);
-		std::string g =  token(prg);
-		std::string b =  token(prg);
-		std::string a =  token(prg);
-		std::string x =  token(prg);
-		std::string y =  token(prg);
-		std::string radius =  token(prg);
-		std::string sections =  token(prg);
-		
-		if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || radius == "" || sections == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected filled_circle parameters on line " + itos(get_line_num(prg)));
-		}
-		
-		std::vector<std::string> strings;
-		strings.push_back(r);
-		strings.push_back(g);
-		strings.push_back(b);
-		strings.push_back(a);
-		strings.push_back(x);
-		strings.push_back(y);
-		strings.push_back(radius);
-		strings.push_back(sections);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		SDL_Colour c;
-		c.r = values[0];
-		c.g = values[1];
-		c.b = values[2];
-		c.a = values[3];
-
-		util::Point<float> p;
-
-		p.x = values[4];
-		p.y = values[5];
-		float _r = values[6];
-		int _sections = values[7];
-
-		gfx::draw_filled_circle(c, p, _r, _sections);
-	}
-	else {
-		return false;
-	}
+	gfx::draw_filled_circle(c, p, _r, _sections);
 
 	return true;
 }
@@ -3655,17 +3681,17 @@ void booboo_init()
 	library_map["pow"] = mathfunc_pow;
 	library_map["sqrt"] = mathfunc_sqrt;
 	library_map["rand"] = mathfunc_rand;
-	library_map["clear"] = interpret_gfx;
-	library_map["start_primitives"] = interpret_primitives;
-	library_map["end_primitives"] = interpret_primitives;
-	library_map["line"] = interpret_primitives;
-	library_map["filled_triangle"] = interpret_primitives;
-	library_map["rectangle"] = interpret_primitives;
-	library_map["filled_rectangle"] = interpret_primitives;
-	library_map["ellipse"] = interpret_primitives;
-	library_map["filled_ellipse"] = interpret_primitives;
-	library_map["circle"] = interpret_primitives;
-	library_map["filled_circle"] = interpret_primitives;
+	library_map["clear"] = gfxfunc_clear;
+	library_map["start_primitives"] = primfunc_start_primitives;
+	library_map["end_primitives"] = primfunc_end_primitives;
+	library_map["line"] = primfunc_line;
+	library_map["filled_triangle"] = primfunc_filled_triangle;
+	library_map["rectangle"] = primfunc_rectangle;
+	library_map["filled_rectangle"] = primfunc_filled_rectangle;
+	library_map["ellipse"] = primfunc_ellipse;
+	library_map["filled_ellipse"] = primfunc_filled_ellipse;
+	library_map["circle"] = primfunc_circle;
+	library_map["filled_circle"] = primfunc_filled_circle;
 	library_map["mml_create"] = interpret_mml;
 	library_map["mml_load"] = interpret_mml;
 	library_map["mml_play"] = interpret_mml;
