@@ -3356,284 +3356,307 @@ bool vectorfunc_erase(PROGRAM &prg, std::string tok)
 	v.erase(v.begin() + int(values[1]));
 }
 
-bool interpret_cfg(PROGRAM &prg, std::string tok)
+bool cfgfunc_load(PROGRAM &prg, std::string tok)
 {
-	if (tok == "cfg_load") {
-		cfg_numbers.clear();
-		cfg_strings.clear();
+	cfg_numbers.clear();
+	cfg_strings.clear();
 
-		std::string found = token(prg);
-		std::string cfg_name = token(prg);
+	std::string found = token(prg);
+	std::string cfg_name = token(prg);
 
-		if (found == "" || cfg_name == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_load parameters on line " + itos(get_line_num(prg)));
-		}
+	if (found == "" || cfg_name == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_load parameters on line " + itos(get_line_num(prg)));
+	}
 
-		std::string cfg_names;
+	std::string cfg_names;
 
-		if (cfg_name[0] == '"') {
-			cfg_names = remove_quotes(unescape(cfg_name));
-		}
-		else  {
-			VARIABLE &v1 = find_variable(prg, cfg_name);
-			if (v1.type == VARIABLE::STRING) {
-				cfg_names = v1.s;
-			}
-			else {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-
-		bool found_cfg = load_cfg(cfg_names);
-		
-		VARIABLE &v1 = find_variable(prg, found);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = found_cfg;
+	if (cfg_name[0] == '"') {
+		cfg_names = remove_quotes(unescape(cfg_name));
+	}
+	else  {
+		VARIABLE &v1 = find_variable(prg, cfg_name);
+		if (v1.type == VARIABLE::STRING) {
+			cfg_names = v1.s;
 		}
 		else {
 			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
-	else if (tok == "cfg_save") {
-		std::string cfg_name = token(prg);
 
-		if (cfg_name == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_save parameters on line " + itos(get_line_num(prg)));
-		}
+	bool found_cfg = load_cfg(cfg_names);
+	
+	VARIABLE &v1 = find_variable(prg, found);
 
-		std::string cfg_names;
-
-		if (cfg_name[0] == '"') {
-			cfg_names = remove_quotes(unescape(cfg_name));
-		}
-		else  {
-			VARIABLE &v1 = find_variable(prg, cfg_name);
-			if (v1.type == VARIABLE::STRING) {
-				cfg_names = v1.s;
-			}
-			else {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-
-		save_cfg(cfg_names);
-	}
-	else if (tok == "cfg_get_number") {
-		std::string dest = token(prg);
-		std::string name = token(prg);
-
-		if (dest == "" || name == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_get_number parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::string names;
-
-		if (name[0] == '"') {
-			names = remove_quotes(unescape(name));
-		}
-		else  {
-			VARIABLE &v1 = find_variable(prg, name);
-			if (v1.type == VARIABLE::STRING) {
-				names = v1.s;
-			}
-			else {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (v1.type != VARIABLE::NUMBER) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-		}
-
-		v1.n = cfg_numbers[names];
-	}
-	else if (tok == "cfg_get_string") {
-		std::string dest = token(prg);
-		std::string name = token(prg);
-
-		if (dest == "" || name == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_get_string parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::string names;
-
-		if (name[0] == '"') {
-			names = remove_quotes(unescape(name));
-		}
-		else  {
-			VARIABLE &v1 = find_variable(prg, name);
-			if (v1.type == VARIABLE::STRING) {
-				names = v1.s;
-			}
-			else {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (v1.type != VARIABLE::STRING) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-		}
-
-		v1.s = cfg_strings[names];
-	}
-	else if (tok == "cfg_set_number") {
-		std::string name = token(prg);
-		std::string value = token(prg);
-
-		if (value == "" || name == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_set_number parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::string names;
-
-		if (name[0] == '"') {
-			names = remove_quotes(unescape(name));
-		}
-		else  {
-			VARIABLE &v1 = find_variable(prg, name);
-			if (v1.type == VARIABLE::STRING) {
-				names = v1.s;
-			}
-			else {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-
-		std::vector<std::string> strings;
-		strings.push_back(value);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		cfg_numbers[names] = values[0];
-	}
-	else if (tok == "cfg_set_string") {
-		std::string name = token(prg);
-		std::string value = token(prg);
-
-		if (value == "" || name == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_set_string parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::string names;
-
-		if (name[0] == '"') {
-			names = remove_quotes(unescape(name));
-		}
-		else  {
-			VARIABLE &v1 = find_variable(prg, name);
-			if (v1.type == VARIABLE::STRING) {
-				names = v1.s;
-			}
-			else {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-
-		std::string values;
-
-		if (value[0] == '"') {
-			values = remove_quotes(unescape(value));
-		}
-		else  {
-			VARIABLE &v1 = find_variable(prg, value);
-			if (v1.type == VARIABLE::STRING) {
-				values = v1.s;
-			}
-			else {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-
-		cfg_strings[names] = values;
-	}
-	else if (tok == "cfg_number_exists") {
-		std::string dest = token(prg);
-		std::string name = token(prg);
-
-		if (dest == "" || name == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_number_exists parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::string names;
-
-		if (name[0] == '"') {
-			names = remove_quotes(unescape(name));
-		}
-		else  {
-			VARIABLE &v1 = find_variable(prg, name);
-			if (v1.type == VARIABLE::STRING) {
-				names = v1.s;
-			}
-			else {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-
-		int found_n;
-
-		if (cfg_numbers.find(names) == cfg_numbers.end()) {
-			found_n = 0;
-		}
-		else {
-			found_n = 1;
-		}
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = found_n;
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-		}
-	}
-	else if (tok == "cfg_string_exists") {
-		std::string dest = token(prg);
-		std::string name = token(prg);
-
-		if (dest == "" || name == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_string_exists parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::string names;
-
-		if (name[0] == '"') {
-			names = remove_quotes(unescape(name));
-		}
-		else  {
-			VARIABLE &v1 = find_variable(prg, name);
-			if (v1.type == VARIABLE::STRING) {
-				names = v1.s;
-			}
-			else {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-
-		int found_n;
-
-		if (cfg_strings.find(names) == cfg_strings.end()) {
-			found_n = 0;
-		}
-		else {
-			found_n = 1;
-		}
-
-		VARIABLE &v1 = find_variable(prg, dest);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = found_n;
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-		}
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = found_cfg;
 	}
 	else {
-		return false;
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+	}
+
+	return true;
+}
+
+bool cfgfunc_save(PROGRAM &prg, std::string tok)
+{
+	std::string cfg_name = token(prg);
+
+	if (cfg_name == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_save parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::string cfg_names;
+
+	if (cfg_name[0] == '"') {
+		cfg_names = remove_quotes(unescape(cfg_name));
+	}
+	else  {
+		VARIABLE &v1 = find_variable(prg, cfg_name);
+		if (v1.type == VARIABLE::STRING) {
+			cfg_names = v1.s;
+		}
+		else {
+			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+
+	save_cfg(cfg_names);
+
+	return true;
+}
+
+bool cfgfunc_get_number(PROGRAM &prg, std::string tok)
+{
+	std::string dest = token(prg);
+	std::string name = token(prg);
+
+	if (dest == "" || name == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_get_number parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::string names;
+
+	if (name[0] == '"') {
+		names = remove_quotes(unescape(name));
+	}
+	else  {
+		VARIABLE &v1 = find_variable(prg, name);
+		if (v1.type == VARIABLE::STRING) {
+			names = v1.s;
+		}
+		else {
+			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (v1.type != VARIABLE::NUMBER) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+	}
+
+	v1.n = cfg_numbers[names];
+
+	return true;
+}
+
+bool cfgfunc_get_string(PROGRAM &prg, std::string tok)
+{
+	std::string dest = token(prg);
+	std::string name = token(prg);
+
+	if (dest == "" || name == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_get_string parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::string names;
+
+	if (name[0] == '"') {
+		names = remove_quotes(unescape(name));
+	}
+	else  {
+		VARIABLE &v1 = find_variable(prg, name);
+		if (v1.type == VARIABLE::STRING) {
+			names = v1.s;
+		}
+		else {
+			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (v1.type != VARIABLE::STRING) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+	}
+
+	v1.s = cfg_strings[names];
+
+	return true;
+}
+
+bool cfgfunc_set_number(PROGRAM &prg, std::string tok)
+{
+	std::string name = token(prg);
+	std::string value = token(prg);
+
+	if (value == "" || name == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_set_number parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::string names;
+
+	if (name[0] == '"') {
+		names = remove_quotes(unescape(name));
+	}
+	else  {
+		VARIABLE &v1 = find_variable(prg, name);
+		if (v1.type == VARIABLE::STRING) {
+			names = v1.s;
+		}
+		else {
+			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(value);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	cfg_numbers[names] = values[0];
+
+	return true;
+}
+
+bool cfgfunc_set_string(PROGRAM &prg, std::string tok)
+{
+	std::string name = token(prg);
+	std::string value = token(prg);
+
+	if (value == "" || name == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_set_string parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::string names;
+
+	if (name[0] == '"') {
+		names = remove_quotes(unescape(name));
+	}
+	else  {
+		VARIABLE &v1 = find_variable(prg, name);
+		if (v1.type == VARIABLE::STRING) {
+			names = v1.s;
+		}
+		else {
+			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+
+	std::string values;
+
+	if (value[0] == '"') {
+		values = remove_quotes(unescape(value));
+	}
+	else  {
+		VARIABLE &v1 = find_variable(prg, value);
+		if (v1.type == VARIABLE::STRING) {
+			values = v1.s;
+		}
+		else {
+			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+
+	cfg_strings[names] = values;
+
+	return true;
+}
+
+bool cfgfunc_number_exists(PROGRAM &prg, std::string tok)
+{
+	std::string dest = token(prg);
+	std::string name = token(prg);
+
+	if (dest == "" || name == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_number_exists parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::string names;
+
+	if (name[0] == '"') {
+		names = remove_quotes(unescape(name));
+	}
+	else  {
+		VARIABLE &v1 = find_variable(prg, name);
+		if (v1.type == VARIABLE::STRING) {
+			names = v1.s;
+		}
+		else {
+			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+
+	int found_n;
+
+	if (cfg_numbers.find(names) == cfg_numbers.end()) {
+		found_n = 0;
+	}
+	else {
+		found_n = 1;
+	}
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = found_n;
+	}
+	else {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+	}
+
+	return true;
+}
+
+bool cfgfunc_string_exists(PROGRAM &prg, std::string tok)
+{
+	std::string dest = token(prg);
+	std::string name = token(prg);
+
+	if (dest == "" || name == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_string_exists parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::string names;
+
+	if (name[0] == '"') {
+		names = remove_quotes(unescape(name));
+	}
+	else  {
+		VARIABLE &v1 = find_variable(prg, name);
+		if (v1.type == VARIABLE::STRING) {
+			names = v1.s;
+		}
+		else {
+			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+
+	int found_n;
+
+	if (cfg_strings.find(names) == cfg_strings.end()) {
+		found_n = 0;
+	}
+	else {
+		found_n = 1;
+	}
+
+	VARIABLE &v1 = find_variable(prg, dest);
+
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = found_n;
+	}
+	else {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -3760,14 +3783,14 @@ void booboo_init()
 	library_map["vector_insert"] = vectorfunc_insert;
 	library_map["vector_get"] = vectorfunc_get;
 	library_map["vector_erase"] = vectorfunc_erase;
-	library_map["cfg_load"] = interpret_cfg;
-	library_map["cfg_save"] = interpret_cfg;
-	library_map["cfg_get_number"] = interpret_cfg;
-	library_map["cfg_get_string"] = interpret_cfg;
-	library_map["cfg_set_number"] = interpret_cfg;
-	library_map["cfg_set_string"] = interpret_cfg;
-	library_map["cfg_number_exists"] = interpret_cfg;
-	library_map["cfg_string_exists"] = interpret_cfg;
+	library_map["cfg_load"] = cfgfunc_load;
+	library_map["cfg_save"] = cfgfunc_save;
+	library_map["cfg_get_number"] = cfgfunc_get_number;
+	library_map["cfg_get_string"] = cfgfunc_get_string;
+	library_map["cfg_set_number"] = cfgfunc_set_number;
+	library_map["cfg_set_string"] = cfgfunc_set_string;
+	library_map["cfg_number_exists"] = cfgfunc_number_exists;
+	library_map["cfg_string_exists"] = cfgfunc_string_exists;
 }
 
 void booboo_shutdown()
