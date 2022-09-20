@@ -544,9 +544,6 @@ again:
 	catch (util::Error e) {
 		gui::fatalerror("ERROR", e.error_message.c_str(), gui::OK, true);
 	}
-	catch (EXCEPTION e) {
-		gui::fatalerror("ERROR", e.error.c_str(), gui::OK, true);
-	}
 
 	return 0;
 }

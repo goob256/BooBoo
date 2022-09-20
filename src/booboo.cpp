@@ -209,7 +209,7 @@ static VARIABLE &find_variable(PROGRAM &prg, std::string name)
 	it = prg.variables.find(name);
 
 	if (it == prg.variables.end()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Unknown variable \"" + name + "\" on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Unknown variable \"" + name + "\" on line " + itos(get_line_num(prg)));
 	}
 
 	return (*it).second;
@@ -233,7 +233,7 @@ static std::vector<double> variable_names_to_numbers(PROGRAM &prg, std::vector<s
 				values.push_back(atof(v1.s.c_str()));
 			}
 			else {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 			}
 		}
 	}
@@ -359,20 +359,10 @@ static std::string token(PROGRAM &prg, bool add_lines = false)
 		return "";
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Parse error on line " + itos(prg.line+prg.start_line) + " (pc=" + itos(prg.p) + ", tok=\"" + tok + "\")");
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Parse error on line " + itos(prg.line+prg.start_line) + " (pc=" + itos(prg.p) + ", tok=\"" + tok + "\")");
 	}
 
 	return tok;
-}
-
-EXCEPTION::EXCEPTION(std::string error) :
-	error(error)
-{
-}
-
-PARSE_EXCEPTION::PARSE_EXCEPTION(std::string error) :
-	EXCEPTION(error)
-{
 }
 
 std::vector<LABEL> process_labels(PROGRAM prg)
@@ -415,11 +405,11 @@ std::vector<LABEL> process_labels(PROGRAM prg)
 			std::string name = token(prg);
 
 			if (name == "") {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected label parameters on line " + itos(get_line_num(prg)));
+				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected label parameters on line " + itos(get_line_num(prg)));
 			}
 
 			if (name[0] != '_' && isalpha(name[0]) == false) {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid label name on line " + itos(get_line_num(prg)));
+				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid label name on line " + itos(get_line_num(prg)));
 			}
 
 			LABEL l;
@@ -467,11 +457,11 @@ bool process_includes(PROGRAM &prg)
 			std::string name = token(prg);
 
 			if (name == "") {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected include parameters on line " + itos(get_line_num(prg)));
+				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected include parameters on line " + itos(get_line_num(prg)));
 			}
 
 			if (name[0] != '"') {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid include name on line " + itos(get_line_num(prg)));
+				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid include name on line " + itos(get_line_num(prg)));
 			}
 
 			name = remove_quotes(unescape(name));
@@ -550,7 +540,7 @@ void process_functions(PROGRAM &prg)
 			int save = get_line_num(prg);
 
 			if (name == "") {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected function parameters on line " + itos(get_line_num(prg)));
+				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected function parameters on line " + itos(get_line_num(prg)));
 			}
 
 			PROGRAM p;
@@ -571,13 +561,13 @@ void process_functions(PROGRAM &prg)
 					}
 				}
 				if (tok2[0] != '_' && !isalpha(tok2[0])) {
-					throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid variable name " + tok2 + " on line " + itos(get_line_num(prg)));
+					throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid variable name " + tok2 + " on line " + itos(get_line_num(prg)));
 				}
 				p.parameters.push_back(tok2);
 			}
 			
 			if (tok2 != "start") {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Function not terminated on line " + itos(save));
+				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Function not terminated on line " + itos(save));
 			}
 
 			int save_p = prg.p;
@@ -600,7 +590,7 @@ void process_functions(PROGRAM &prg)
 			}
 
 			if (tok2 != "end") {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Function not terminated on line " + itos(save));
+				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Function not terminated on line " + itos(save));
 			}
 
 			p.name = name;
@@ -641,7 +631,7 @@ static void set_string_or_number(PROGRAM &prg, std::string name, std::string val
 			val = atof(v2.s.c_str());
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -649,7 +639,7 @@ static void set_string_or_number(PROGRAM &prg, std::string name, std::string val
 		v1.n = val;
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 }
 
@@ -667,7 +657,7 @@ static void set_string_or_number(PROGRAM &prg, std::string name, double value)
 		v1.s = buf;
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 }
 
@@ -682,7 +672,7 @@ void call_function(PROGRAM &prg, std::string function_name, std::string result_n
 				std::string param = token(prg);
 				
 				if (param == "") {
-					throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected call parameters on line " + itos(get_line_num(prg)));
+					throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected call parameters on line " + itos(get_line_num(prg)));
 				}
 				
 				VARIABLE var;
@@ -786,7 +776,7 @@ bool interpret_breakers(PROGRAM &prg, std::string tok)
 		std::string name = token(prg);
 
 		if (name == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected reset parameters on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected reset parameters on line " + itos(get_line_num(prg)));
 		}
 
 		std::string names;
@@ -800,7 +790,7 @@ bool interpret_breakers(PROGRAM &prg, std::string tok)
 				names = v1.s;
 			}
 			else {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 			}
 		}
 
@@ -810,7 +800,7 @@ bool interpret_breakers(PROGRAM &prg, std::string tok)
 		std::string value = token(prg);
 
 		if (value == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected return parameters on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected return parameters on line " + itos(get_line_num(prg)));
 		}
 		
 		if (value[0] == '-' || isdigit(value[0])) {
@@ -843,7 +833,7 @@ bool corefunc_var(PROGRAM &prg, std::string tok)
 	std::string name =  token(prg);
 
 	if (type == "" || name == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected var parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected var parameters on line " + itos(get_line_num(prg)));
 	}
 
 	var.name = name;
@@ -862,7 +852,7 @@ bool corefunc_var(PROGRAM &prg, std::string tok)
 		prg.vectors[var.n] = vec;
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 
 	std::map<std::string, VARIABLE> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
@@ -884,7 +874,7 @@ bool corefunc_set(PROGRAM &prg, std::string tok)
 	std::string src =  token(prg);
 
 	if (dest == "" || src == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected = parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected = parameters on line " + itos(get_line_num(prg)));
 	}
 
 	VARIABLE &v1 = find_variable(prg, dest);
@@ -897,7 +887,7 @@ bool corefunc_set(PROGRAM &prg, std::string tok)
 			v1.s = src;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 	else if (src[0] == '"') {
@@ -908,7 +898,7 @@ bool corefunc_set(PROGRAM &prg, std::string tok)
 			v1.s = remove_quotes(unescape(src));
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 	else {
@@ -927,7 +917,7 @@ bool corefunc_set(PROGRAM &prg, std::string tok)
 			prg.vectors[(int)v1.n] = prg.vectors[(int)v2.n];
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -940,7 +930,7 @@ bool corefunc_add(PROGRAM &prg, std::string tok)
 	std::string src =  token(prg);
 
 	if (dest == "" || src == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected + parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected + parameters on line " + itos(get_line_num(prg)));
 	}
 	
 	VARIABLE &v1 = find_variable(prg, dest);
@@ -953,7 +943,7 @@ bool corefunc_add(PROGRAM &prg, std::string tok)
 			v1.s += src;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 	else if (src[0] == '"') {
@@ -964,7 +954,7 @@ bool corefunc_add(PROGRAM &prg, std::string tok)
 			v1.s += remove_quotes(unescape(src));
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 	else {
@@ -980,7 +970,7 @@ bool corefunc_add(PROGRAM &prg, std::string tok)
 			v1.s += v2.s;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -993,7 +983,7 @@ bool corefunc_subtract(PROGRAM &prg, std::string tok)
 	std::string src =  token(prg);
 
 	if (dest == "" || src == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected - parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected - parameters on line " + itos(get_line_num(prg)));
 	}
 
 	VARIABLE &v1 = find_variable(prg, dest);
@@ -1003,7 +993,7 @@ bool corefunc_subtract(PROGRAM &prg, std::string tok)
 			v1.n -= atof(src.c_str());
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 	else if (src[0] == '"') {
@@ -1011,7 +1001,7 @@ bool corefunc_subtract(PROGRAM &prg, std::string tok)
 			v1.n -= atof(remove_quotes(src).c_str());
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 	else {
@@ -1021,7 +1011,7 @@ bool corefunc_subtract(PROGRAM &prg, std::string tok)
 			v1.n -= v2.n;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -1034,7 +1024,7 @@ bool corefunc_multiply(PROGRAM &prg, std::string tok)
 	std::string src =  token(prg);
 
 	if (dest == "" || src == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected * parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected * parameters on line " + itos(get_line_num(prg)));
 	}
 
 	VARIABLE &v1 = find_variable(prg, dest);
@@ -1044,7 +1034,7 @@ bool corefunc_multiply(PROGRAM &prg, std::string tok)
 			v1.n *= atof(src.c_str());
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 	else if (src[0] == '"') {
@@ -1052,7 +1042,7 @@ bool corefunc_multiply(PROGRAM &prg, std::string tok)
 			v1.n *= atof(remove_quotes(src).c_str());
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 	else {
@@ -1062,7 +1052,7 @@ bool corefunc_multiply(PROGRAM &prg, std::string tok)
 			v1.n *= v2.n;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -1075,7 +1065,7 @@ bool corefunc_divide(PROGRAM &prg, std::string tok)
 	std::string src =  token(prg);
 
 	if (dest == "" || src == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected / parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected / parameters on line " + itos(get_line_num(prg)));
 	}
 
 	VARIABLE &v1 = find_variable(prg, dest);
@@ -1085,7 +1075,7 @@ bool corefunc_divide(PROGRAM &prg, std::string tok)
 			v1.n /= atof(src.c_str());
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 	else if (src[0] == '"') {
@@ -1093,7 +1083,7 @@ bool corefunc_divide(PROGRAM &prg, std::string tok)
 			v1.n /= atof(remove_quotes(src).c_str());
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 	else {
@@ -1103,7 +1093,7 @@ bool corefunc_divide(PROGRAM &prg, std::string tok)
 			v1.n /= v2.n;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -1116,7 +1106,7 @@ bool corefunc_intmod(PROGRAM &prg, std::string tok)
 	std::string src =  token(prg);
 
 	if (dest == "" || src == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected %% parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected %% parameters on line " + itos(get_line_num(prg)));
 	}
 
 	VARIABLE &v1 = find_variable(prg, dest);
@@ -1126,7 +1116,7 @@ bool corefunc_intmod(PROGRAM &prg, std::string tok)
 			v1.n = (int)v1.n % (int)atof(src.c_str());
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 	else if (src[0] == '"') {
@@ -1134,7 +1124,7 @@ bool corefunc_intmod(PROGRAM &prg, std::string tok)
 			v1.n = (int)v1.n % (int)atof(remove_quotes(src).c_str());
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 	else {
@@ -1144,7 +1134,7 @@ bool corefunc_intmod(PROGRAM &prg, std::string tok)
 			v1.n = (int)v1.n % (int)v2.n;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -1157,7 +1147,7 @@ bool corefunc_fmod(PROGRAM &prg, std::string tok)
 	std::string src = token(prg);
 
 	if (dest == "" || src == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected fmod parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected fmod parameters on line " + itos(get_line_num(prg)));
 	}
 
 	VARIABLE &v1 = find_variable(prg, dest);
@@ -1167,7 +1157,7 @@ bool corefunc_fmod(PROGRAM &prg, std::string tok)
 			v1.n = fmod(v1.n, atof(src.c_str()));
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 	else if (src[0] == '"') {
@@ -1175,7 +1165,7 @@ bool corefunc_fmod(PROGRAM &prg, std::string tok)
 			v1.n = fmod(v1.n, atof(remove_quotes(src).c_str()));
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 	else {
@@ -1185,7 +1175,7 @@ bool corefunc_fmod(PROGRAM &prg, std::string tok)
 			v1.n = fmod(v1.n, v2.n);
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -1197,7 +1187,7 @@ bool corefunc_neg(PROGRAM &prg, std::string tok)
 	std::string name = token(prg);
 	
 	if (name == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected neg parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected neg parameters on line " + itos(get_line_num(prg)));
 	}
 
 	VARIABLE &v1 = find_variable(prg, name);
@@ -1206,7 +1196,7 @@ bool corefunc_neg(PROGRAM &prg, std::string tok)
 		v1.n = -v1.n;
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -1217,11 +1207,11 @@ bool corefunc_label(PROGRAM &prg, std::string tok)
 	std::string name = token(prg);
 
 	if (name == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected label paramters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected label paramters on line " + itos(get_line_num(prg)));
 	}
 
 	if (name[0] != '_' && isalpha(name[0]) == false) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid label name on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid label name on line " + itos(get_line_num(prg)));
 	}
 
 	LABEL l;
@@ -1240,7 +1230,7 @@ bool corefunc_goto(PROGRAM &prg, std::string tok)
 	std::string name = token(prg);
 
 	if (name == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected goto paramters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected goto paramters on line " + itos(get_line_num(prg)));
 	}
 
 	for (size_t i = 0; i < prg.labels.size(); i++) {
@@ -1259,7 +1249,7 @@ bool corefunc_compare(PROGRAM &prg, std::string tok)
 	std::string b = token(prg);
 
 	if (a == "" || b == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected ? parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected ? parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -1285,7 +1275,7 @@ bool corefunc_je(PROGRAM &prg, std::string tok)
 	std::string label = token(prg);
 
 	if (label == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected je parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected je parameters on line " + itos(get_line_num(prg)));
 	}
 
 	if (prg.compare_flag == 0) {
@@ -1305,7 +1295,7 @@ bool corefunc_jne(PROGRAM &prg, std::string tok)
 	std::string label = token(prg);
 
 	if (label == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected jne parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected jne parameters on line " + itos(get_line_num(prg)));
 	}
 
 	if (prg.compare_flag != 0) {
@@ -1325,7 +1315,7 @@ bool corefunc_jl(PROGRAM &prg, std::string tok)
 	std::string label = token(prg);
 
 	if (label == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected jl parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected jl parameters on line " + itos(get_line_num(prg)));
 	}
 
 	if (prg.compare_flag < 0) {
@@ -1345,7 +1335,7 @@ bool corefunc_jle(PROGRAM &prg, std::string tok)
 	std::string label = token(prg);
 
 	if (label == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected jle parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected jle parameters on line " + itos(get_line_num(prg)));
 	}
 
 	if (prg.compare_flag <= 0) {
@@ -1365,7 +1355,7 @@ bool corefunc_jg(PROGRAM &prg, std::string tok)
 	std::string label = token(prg);
 
 	if (label == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected jg parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected jg parameters on line " + itos(get_line_num(prg)));
 	}
 
 	if (prg.compare_flag > 0) {
@@ -1385,7 +1375,7 @@ bool corefunc_jge(PROGRAM &prg, std::string tok)
 	std::string label = token(prg);
 
 	if (label == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected jge parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected jge parameters on line " + itos(get_line_num(prg)));
 	}
 
 	if (prg.compare_flag >= 0) {
@@ -1407,14 +1397,14 @@ bool corefunc_call(PROGRAM &prg, std::string tok)
 	std::string result_name;
 
 	if (tok2 == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected call parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected call parameters on line " + itos(get_line_num(prg)));
 	}
 
 	if (tok2 == "=") {
 		result_name = token(prg);
 		function_name = token(prg);
 		if (result_name == "" || function_name == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected call parameters on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected call parameters on line " + itos(get_line_num(prg)));
 		}
 
 		// check for errors
@@ -1436,7 +1426,7 @@ bool corefunc_function(PROGRAM &prg, std::string tok)
 	int save = get_line_num(prg);
 
 	if (name == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected function parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected function parameters on line " + itos(get_line_num(prg)));
 	}
 
 	PROGRAM p;
@@ -1457,13 +1447,13 @@ bool corefunc_function(PROGRAM &prg, std::string tok)
 			}
 		}
 		if (tok2[0] != '_' && !isalpha(tok2[0])) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid variable name " + tok2 + " on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid variable name " + tok2 + " on line " + itos(get_line_num(prg)));
 		}
 		p.parameters.push_back(tok2);
 	}
 	
 	if (tok2 != "start") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Function not terminated on line " + itos(save));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Function not terminated on line " + itos(save));
 	}
 
 	int save_p = prg.p;
@@ -1486,7 +1476,7 @@ bool corefunc_function(PROGRAM &prg, std::string tok)
 	}
 
 	if (tok2 != "end") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Function not terminated on line " + itos(save));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Function not terminated on line " + itos(save));
 	}
 
 	p.name = name;
@@ -1518,7 +1508,7 @@ bool corefunc_inspect(PROGRAM &prg, std::string tok)
 	std::string name = token(prg);
 	
 	if (name == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected inspect parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected inspect parameters on line " + itos(get_line_num(prg)));
 	}
 
 	VARIABLE &v1 = find_variable(prg, name);
@@ -1553,7 +1543,7 @@ bool corefunc_string_format(PROGRAM &prg, std::string tok)
 	std::string fmt = token(prg);
 	
 	if (dest == "" || fmt == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected string_format parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected string_format parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::string fmts;
@@ -1568,7 +1558,7 @@ bool corefunc_string_format(PROGRAM &prg, std::string tok)
 			fmts = v1.s;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -1601,7 +1591,7 @@ bool corefunc_string_format(PROGRAM &prg, std::string tok)
 		std::string param = token(prg);
 
 		if (param == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected string_format parameters on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected string_format parameters on line " + itos(get_line_num(prg)));
 		}
 
 		std::string val;
@@ -1653,7 +1643,7 @@ bool mathfunc_sin(PROGRAM &prg, std::string tok)
 	float v;
 	
 	if (dest == "" || vs == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected sin parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected sin parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -1666,7 +1656,7 @@ bool mathfunc_sin(PROGRAM &prg, std::string tok)
 		v1.n = sin(values[0]);
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -1679,7 +1669,7 @@ bool mathfunc_cos(PROGRAM &prg, std::string tok)
 	float v;
 	
 	if (dest == "" || vs == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cos paramters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cos paramters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -1692,7 +1682,7 @@ bool mathfunc_cos(PROGRAM &prg, std::string tok)
 		v1.n = cos(values[0]);
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -1706,7 +1696,7 @@ bool mathfunc_atan2(PROGRAM &prg, std::string tok)
 	float v;
 	
 	if (dest == "" || vs1 == "" || vs2 == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected atan2 parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected atan2 parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -1720,7 +1710,7 @@ bool mathfunc_atan2(PROGRAM &prg, std::string tok)
 		v1.n = atan2(values[0], values[1]);
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -1733,7 +1723,7 @@ bool mathfunc_abs(PROGRAM &prg, std::string tok)
 	float v;
 	
 	if (dest == "" || vs == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected abs parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected abs parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -1746,7 +1736,7 @@ bool mathfunc_abs(PROGRAM &prg, std::string tok)
 		v1.n = abs(values[0]);
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -1760,7 +1750,7 @@ bool mathfunc_pow(PROGRAM &prg, std::string tok)
 	float v;
 	
 	if (dest == "" || vs1 == "" || vs2 == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected pow parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected pow parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -1774,7 +1764,7 @@ bool mathfunc_pow(PROGRAM &prg, std::string tok)
 		v1.n = pow(values[0], values[1]);
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -1787,7 +1777,7 @@ bool mathfunc_sqrt(PROGRAM &prg, std::string tok)
 	float v;
 	
 	if (dest == "" || vs1 == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected sqrt parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected sqrt parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -1800,7 +1790,7 @@ bool mathfunc_sqrt(PROGRAM &prg, std::string tok)
 		v1.n = sqrt(values[0]);
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -1813,7 +1803,7 @@ bool mathfunc_rand(PROGRAM &prg, std::string tok)
 	std::string max_incl = token(prg);
 
 	if (dest == "" || min_incl == "" || max_incl == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected rand parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected rand parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -1830,7 +1820,7 @@ bool mathfunc_rand(PROGRAM &prg, std::string tok)
 		v1.s = itos(util::rand(values[0], values[1]));
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -1843,7 +1833,7 @@ bool gfxfunc_clear(PROGRAM &prg, std::string tok)
 	std::string b =  token(prg);
 	
 	if (r == "" || g == "" || b == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected clear parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected clear parameters on line " + itos(get_line_num(prg)));
 	}
 	
 	std::vector<std::string> strings;
@@ -1890,7 +1880,7 @@ bool primfunc_line(PROGRAM &prg, std::string tok)
 	std::string thickness = token(prg);
 	
 	if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || x2 == "" || y2 == "" || thickness == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected line parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected line parameters on line " + itos(get_line_num(prg)));
 	}
 	
 	std::vector<std::string> strings;
@@ -1947,7 +1937,7 @@ bool primfunc_filled_triangle(PROGRAM &prg, std::string tok)
 	std::string y3 =  token(prg);
 	
 	if (r1 == "" || g1 == "" || b1 == "" || a1 == "" || r2 == "" || g2 == "" || b2 == "" || a2 == "" || r3 == "" || g3 =="" || b3 == "" || a3 == "" || x == "" || y == "" || x2 == "" || y2 == "" || x3 == "" || y3 == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected filled_triangle parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected filled_triangle parameters on line " + itos(get_line_num(prg)));
 	}
 	
 	std::vector<std::string> strings;
@@ -2012,7 +2002,7 @@ bool primfunc_rectangle(PROGRAM &prg, std::string tok)
 	std::string thickness =  token(prg);
 	
 	if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || w == "" || h == "" || thickness == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected rectangle parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected rectangle parameters on line " + itos(get_line_num(prg)));
 	}
 	
 	std::vector<std::string> strings;
@@ -2072,7 +2062,7 @@ bool primfunc_filled_rectangle(PROGRAM &prg, std::string tok)
 	std::string h =  token(prg);
 	
 	if (r1 == "" || g1 == "" || b1 == "" || a1 == "" || r2 == "" || g2 == "" || b2 == "" || a2 == "" || r3 == "" || g3 =="" || b3 == "" || a3 == "" || r4 == "" || g4 == "" || b4 == "" || a4 == "" || x == "" || y == "" || w == "" || h == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected filled_rectangle parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected filled_rectangle parameters on line " + itos(get_line_num(prg)));
 	}
 	
 	std::vector<std::string> strings;
@@ -2145,7 +2135,7 @@ bool primfunc_ellipse(PROGRAM &prg, std::string tok)
 	std::string sections =  token(prg);
 	
 	if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || rx == "" || ry == "" || thickness == "" || sections == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected ellipse parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected ellipse parameters on line " + itos(get_line_num(prg)));
 	}
 	
 	std::vector<std::string> strings;
@@ -2195,7 +2185,7 @@ bool primfunc_filled_ellipse(PROGRAM &prg, std::string tok)
 	std::string sections =  token(prg);
 	
 	if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || rx == "" || ry == "" || sections == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected filled_ellipse parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected filled_ellipse parameters on line " + itos(get_line_num(prg)));
 	}
 	
 	std::vector<std::string> strings;
@@ -2243,7 +2233,7 @@ bool primfunc_circle(PROGRAM &prg, std::string tok)
 	std::string sections =  token(prg);
 	
 	if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || radius == "" || thickness == "" || sections == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected circle parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected circle parameters on line " + itos(get_line_num(prg)));
 	}
 	
 	std::vector<std::string> strings;
@@ -2289,7 +2279,7 @@ bool primfunc_filled_circle(PROGRAM &prg, std::string tok)
 	std::string sections =  token(prg);
 	
 	if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || radius == "" || sections == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected filled_circle parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected filled_circle parameters on line " + itos(get_line_num(prg)));
 	}
 	
 	std::vector<std::string> strings;
@@ -2327,7 +2317,7 @@ bool mmlfunc_create(PROGRAM &prg, std::string tok)
 	std::string str = token(prg);
 
 	if (var == "" || str == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected mml_create parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected mml_create parameters on line " + itos(get_line_num(prg)));
 	}
 
 	VARIABLE &v1 = find_variable(prg, var);
@@ -2339,7 +2329,7 @@ bool mmlfunc_create(PROGRAM &prg, std::string tok)
 		v1.s = itos(prg.mml_id);
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 
 	std::string strs;
@@ -2353,7 +2343,7 @@ bool mmlfunc_create(PROGRAM &prg, std::string tok)
 			strs = v1.s;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -2373,7 +2363,7 @@ bool mmlfunc_load(PROGRAM &prg, std::string tok)
 	std::string name = token(prg);
 
 	if (var == "" || name == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected mml_load parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected mml_load parameters on line " + itos(get_line_num(prg)));
 	}
 
 	VARIABLE &v1 = find_variable(prg, var);
@@ -2385,7 +2375,7 @@ bool mmlfunc_load(PROGRAM &prg, std::string tok)
 		v1.s = itos(prg.mml_id);
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 
 	audio::MML *mml = new audio::MML(remove_quotes(unescape(name)));
@@ -2402,7 +2392,7 @@ bool mmlfunc_play(PROGRAM &prg, std::string tok)
 	std::string loop = token(prg);
 
 	if (id == "" || volume == "" || loop == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected mml_play parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected mml_play parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -2412,7 +2402,7 @@ bool mmlfunc_play(PROGRAM &prg, std::string tok)
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
 	if (values[0] < 0 || values[0] >= prg.mmls.size()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid MML on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid MML on line " + itos(get_line_num(prg)));
 	}
 
 	audio::MML *mml = prg.mmls[values[0]];
@@ -2427,7 +2417,7 @@ bool mmlfunc_stop(PROGRAM &prg, std::string tok)
 	std::string id = token(prg);
 
 	if (id == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected mml_stop parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected mml_stop parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -2435,7 +2425,7 @@ bool mmlfunc_stop(PROGRAM &prg, std::string tok)
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
 	if (values[0] < 0 || values[0] >= prg.mmls.size()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid MML on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid MML on line " + itos(get_line_num(prg)));
 	}
 
 	audio::MML *mml = prg.mmls[values[0]];
@@ -2451,7 +2441,7 @@ bool imagefunc_load(PROGRAM &prg, std::string tok)
 	std::string name = token(prg);
 
 	if (var == "" || name == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_load parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_load parameters on line " + itos(get_line_num(prg)));
 	}
 
 	VARIABLE &v1 = find_variable(prg, var);
@@ -2463,7 +2453,7 @@ bool imagefunc_load(PROGRAM &prg, std::string tok)
 		v1.s = itos(prg.image_id);
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 
 	gfx::Image *img = new gfx::Image(remove_quotes(unescape(name)));
@@ -2486,7 +2476,7 @@ bool imagefunc_draw(PROGRAM &prg, std::string tok)
 	std::string flip_v = token(prg);
 
 	if (id == "" || r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || flip_h == "" || flip_v == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_draw parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_draw parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -2502,7 +2492,7 @@ bool imagefunc_draw(PROGRAM &prg, std::string tok)
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 	
 	if (values[0] < 0 || values[0] >= prg.images.size()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + itos(get_line_num(prg)));
 	}
 
 	gfx::Image *img = prg.images[values[0]];
@@ -2545,7 +2535,7 @@ bool imagefunc_stretch_region(PROGRAM &prg, std::string tok)
 	std::string flip_v = token(prg);
 
 	if (id == "" || r == "" || g == "" || b == "" || a == "" || sx == "" || sy == "" || sw == "" || sh == "" || dx == "" || dy == "" || dw == "" || dh == "" || flip_h == "" || flip_v == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_stretch_region parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_stretch_region parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -2567,7 +2557,7 @@ bool imagefunc_stretch_region(PROGRAM &prg, std::string tok)
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 	
 	if (values[0] < 0 || values[0] >= prg.images.size()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + itos(get_line_num(prg)));
 	}
 
 	gfx::Image *img = prg.images[values[0]];
@@ -2609,7 +2599,7 @@ bool imagefunc_draw_rotated_scaled(PROGRAM &prg, std::string tok)
 	std::string flip_v = token(prg);
 
 	if (id == "" || r == "" || g == "" || b == "" || a == "" || cx == "" || cy == "" || x == "" || y == "" || angle == "" || scale_x == "" || scale_y == "" || flip_h == "" || flip_v == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_draw_rotated_scaled parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_draw_rotated_scaled parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -2630,7 +2620,7 @@ bool imagefunc_draw_rotated_scaled(PROGRAM &prg, std::string tok)
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 	
 	if (values[0] < 0 || values[0] >= prg.images.size()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + itos(get_line_num(prg)));
 	}
 
 	gfx::Image *img = prg.images[values[0]];
@@ -2659,7 +2649,7 @@ bool imagefunc_start(PROGRAM &prg, std::string tok)
 	std::string img = token(prg);
 
 	if (img == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_start parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_start parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -2667,7 +2657,7 @@ bool imagefunc_start(PROGRAM &prg, std::string tok)
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
 	if (prg.images.find(values[0]) == prg.images.end()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Unknown image \"" + img + "\" on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Unknown image \"" + img + "\" on line " + itos(get_line_num(prg)));
 	}
 
 	gfx::Image *image = prg.images[values[0]];
@@ -2682,7 +2672,7 @@ bool imagefunc_end(PROGRAM &prg, std::string tok)
 	std::string img = token(prg);
 
 	if (img == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_end parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_end parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -2690,7 +2680,7 @@ bool imagefunc_end(PROGRAM &prg, std::string tok)
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
 	if (prg.images.find(values[0]) == prg.images.end()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Unknown image \"" + img + "\" on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Unknown image \"" + img + "\" on line " + itos(get_line_num(prg)));
 	}
 
 	gfx::Image *image = prg.images[values[0]];
@@ -2707,7 +2697,7 @@ bool imagefunc_size(PROGRAM &prg, std::string tok)
 	std::string dest2 = token(prg);
 
 	if (id == "" || dest1 == "" || dest2 == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected image_size parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_size parameters on line " + itos(get_line_num(prg)));
 	}
 	
 	std::vector<std::string> strings;
@@ -2715,7 +2705,7 @@ bool imagefunc_size(PROGRAM &prg, std::string tok)
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 	
 	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
 	}
 
 	gfx::Image *img = prg.images[values[0]];
@@ -2727,13 +2717,13 @@ bool imagefunc_size(PROGRAM &prg, std::string tok)
 		v1.n = img->size.w;
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 	if (v2.type == VARIABLE::NUMBER) {
 		v2.n = img->size.h;
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -2747,7 +2737,7 @@ bool fontfunc_load(PROGRAM &prg, std::string tok)
 	std::string smooth = token(prg);
 
 	if (var == "" || name == "" || size == "" || smooth == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected font_load parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected font_load parameters on line " + itos(get_line_num(prg)));
 	}
 
 	VARIABLE &v1 = find_variable(prg, var);
@@ -2759,7 +2749,7 @@ bool fontfunc_load(PROGRAM &prg, std::string tok)
 		v1.s = itos(prg.font_id);
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -2787,7 +2777,7 @@ bool fontfunc_draw(PROGRAM &prg, std::string tok)
 	std::string y = token(prg);
 
 	if (id == "" || r == "" || g == "" || b == "" || a == "" || text == "" || x == "" || y == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected font_draw parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected font_draw parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -2801,7 +2791,7 @@ bool fontfunc_draw(PROGRAM &prg, std::string tok)
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
 	if (values[0] < 0 || values[0] >= prg.fonts.size()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid Font on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid Font on line " + itos(get_line_num(prg)));
 	}
 
 	gfx::TTF *font = prg.fonts[values[0]];
@@ -2828,7 +2818,7 @@ bool fontfunc_draw(PROGRAM &prg, std::string tok)
 			txt = v1.s;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Unknown variable \"" + text + "\" on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Unknown variable \"" + text + "\" on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -2844,7 +2834,7 @@ bool fontfunc_width(PROGRAM &prg, std::string tok)
 	std::string text = token(prg);
 	
 	if (id == "" || dest == "" || text == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected font_width parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected font_width parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -2867,7 +2857,7 @@ bool fontfunc_width(PROGRAM &prg, std::string tok)
 			txt = v1.s;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Unknown variable \"" + dest + "\" on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Unknown variable \"" + dest + "\" on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -2881,7 +2871,7 @@ bool fontfunc_width(PROGRAM &prg, std::string tok)
 		v1.n = w;
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -2893,7 +2883,7 @@ bool fontfunc_height(PROGRAM &prg, std::string tok)
 	std::string dest = token(prg);
 	
 	if (id == "" || dest == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected font_height parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected font_height parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -2910,7 +2900,7 @@ bool fontfunc_height(PROGRAM &prg, std::string tok)
 		v1.n = h;
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -2941,7 +2931,7 @@ bool joyfunc_poll(PROGRAM &prg, std::string tok)
 	std::string start = token(prg);
 
 	if (num == "" || x1 == "" || y1 == "" || x2 == "" || y2 == "" || x3 == "" || y3 == "" || l == "" || r == "" || u == "" || d == "" || a == "" || b == "" || x == "" || y == "" || lb == "" || rb == "" || ls == "" || rs == "" || back == "" || start == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected joystick_poll parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected joystick_poll parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<std::string> strings;
@@ -3104,7 +3094,7 @@ bool joyfunc_count(PROGRAM &prg, std::string tok)
 	std::string dest = token(prg);
 	
 	if (dest == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected joystick_count parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected joystick_count parameters on line " + itos(get_line_num(prg)));
 	}
 
 	VARIABLE &v1 = find_variable(prg, dest);
@@ -3113,7 +3103,7 @@ bool joyfunc_count(PROGRAM &prg, std::string tok)
 		v1.n = input::get_num_joysticks();
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -3125,7 +3115,7 @@ bool vectorfunc_add(PROGRAM &prg, std::string tok)
 	std::string value = token(prg);
 
 	if (id == "" || value == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected vector_add parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected vector_add parameters on line " + itos(get_line_num(prg)));
 	}
 	
 	std::vector<std::string> strings;
@@ -3133,11 +3123,11 @@ bool vectorfunc_add(PROGRAM &prg, std::string tok)
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
 	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
 	}
 	/*
 	if (values[0] < 0 || values[0] >= prg.vectors.size()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
 	}
 	*/
 
@@ -3172,7 +3162,7 @@ bool vectorfunc_size(PROGRAM &prg, std::string tok)
 	std::string dest = token(prg);
 
 	if (id == "" || dest == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected vector_size parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected vector_size parameters on line " + itos(get_line_num(prg)));
 	}
 	
 	std::vector<std::string> strings;
@@ -3180,7 +3170,7 @@ bool vectorfunc_size(PROGRAM &prg, std::string tok)
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 	
 	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<VARIABLE> &v = prg.vectors[values[0]];
@@ -3191,7 +3181,7 @@ bool vectorfunc_size(PROGRAM &prg, std::string tok)
 		v1.n = v.size();
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -3204,7 +3194,7 @@ bool vectorfunc_set(PROGRAM &prg, std::string tok)
 	std::string value = token(prg);
 
 	if (id == "" || index == "" || value == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected vector_set parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected vector_set parameters on line " + itos(get_line_num(prg)));
 	}
 	
 	std::vector<std::string> strings;
@@ -3213,13 +3203,13 @@ bool vectorfunc_set(PROGRAM &prg, std::string tok)
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 	
 	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<VARIABLE> &v = prg.vectors[values[0]];
 
 	if (values[1] < 0 || values[1] >= v.size()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid index on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + itos(get_line_num(prg)));
 	}
 
 	VARIABLE var;
@@ -3252,7 +3242,7 @@ bool vectorfunc_insert(PROGRAM &prg, std::string tok)
 	std::string value = token(prg);
 
 	if (id == "" || index == "" || value == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected vector_insert parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected vector_insert parameters on line " + itos(get_line_num(prg)));
 	}
 	
 	std::vector<std::string> strings;
@@ -3261,13 +3251,13 @@ bool vectorfunc_insert(PROGRAM &prg, std::string tok)
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 	
 	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<VARIABLE> &v = prg.vectors[values[0]];
 
 	if (values[1] < 0 || values[1] > v.size()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid index on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + itos(get_line_num(prg)));
 	}
 
 	VARIABLE var;
@@ -3300,7 +3290,7 @@ bool vectorfunc_get(PROGRAM &prg, std::string tok)
 	std::string index = token(prg);
 
 	if (id == "" || dest == "" || index == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected vector_get parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected vector_get parameters on line " + itos(get_line_num(prg)));
 	}
 	
 	std::vector<std::string> strings;
@@ -3309,13 +3299,13 @@ bool vectorfunc_get(PROGRAM &prg, std::string tok)
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
 	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<VARIABLE> &v = prg.vectors[values[0]];
 
 	if (values[1] < 0 || values[1] >= v.size()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid index on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + itos(get_line_num(prg)));
 	}
 
 	VARIABLE &v1 = find_variable(prg, dest);
@@ -3335,7 +3325,7 @@ bool vectorfunc_erase(PROGRAM &prg, std::string tok)
 	std::string index = token(prg);
 
 	if (id == "" || index == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected vector_erase parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected vector_erase parameters on line " + itos(get_line_num(prg)));
 	}
 	
 	std::vector<std::string> strings;
@@ -3344,13 +3334,13 @@ bool vectorfunc_erase(PROGRAM &prg, std::string tok)
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
 	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + itos(get_line_num(prg)));
 	}
 
 	std::vector<VARIABLE> &v = prg.vectors[values[0]];
 
 	if (values[1] < 0 || values[1] >= v.size()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid index on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + itos(get_line_num(prg)));
 	}
 
 	v.erase(v.begin() + int(values[1]));
@@ -3365,7 +3355,7 @@ bool cfgfunc_load(PROGRAM &prg, std::string tok)
 	std::string cfg_name = token(prg);
 
 	if (found == "" || cfg_name == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_load parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_load parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::string cfg_names;
@@ -3379,7 +3369,7 @@ bool cfgfunc_load(PROGRAM &prg, std::string tok)
 			cfg_names = v1.s;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -3391,7 +3381,7 @@ bool cfgfunc_load(PROGRAM &prg, std::string tok)
 		v1.n = found_cfg;
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -3402,7 +3392,7 @@ bool cfgfunc_save(PROGRAM &prg, std::string tok)
 	std::string cfg_name = token(prg);
 
 	if (cfg_name == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_save parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_save parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::string cfg_names;
@@ -3416,7 +3406,7 @@ bool cfgfunc_save(PROGRAM &prg, std::string tok)
 			cfg_names = v1.s;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -3431,7 +3421,7 @@ bool cfgfunc_get_number(PROGRAM &prg, std::string tok)
 	std::string name = token(prg);
 
 	if (dest == "" || name == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_get_number parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_get_number parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::string names;
@@ -3445,14 +3435,14 @@ bool cfgfunc_get_number(PROGRAM &prg, std::string tok)
 			names = v1.s;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 
 	VARIABLE &v1 = find_variable(prg, dest);
 
 	if (v1.type != VARIABLE::NUMBER) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 
 	v1.n = cfg_numbers[names];
@@ -3466,7 +3456,7 @@ bool cfgfunc_get_string(PROGRAM &prg, std::string tok)
 	std::string name = token(prg);
 
 	if (dest == "" || name == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_get_string parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_get_string parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::string names;
@@ -3480,14 +3470,14 @@ bool cfgfunc_get_string(PROGRAM &prg, std::string tok)
 			names = v1.s;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 
 	VARIABLE &v1 = find_variable(prg, dest);
 
 	if (v1.type != VARIABLE::STRING) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 
 	v1.s = cfg_strings[names];
@@ -3501,7 +3491,7 @@ bool cfgfunc_set_number(PROGRAM &prg, std::string tok)
 	std::string value = token(prg);
 
 	if (value == "" || name == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_set_number parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_set_number parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::string names;
@@ -3515,7 +3505,7 @@ bool cfgfunc_set_number(PROGRAM &prg, std::string tok)
 			names = v1.s;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -3534,7 +3524,7 @@ bool cfgfunc_set_string(PROGRAM &prg, std::string tok)
 	std::string value = token(prg);
 
 	if (value == "" || name == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_set_string parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_set_string parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::string names;
@@ -3548,7 +3538,7 @@ bool cfgfunc_set_string(PROGRAM &prg, std::string tok)
 			names = v1.s;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -3563,7 +3553,7 @@ bool cfgfunc_set_string(PROGRAM &prg, std::string tok)
 			values = v1.s;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -3578,7 +3568,7 @@ bool cfgfunc_number_exists(PROGRAM &prg, std::string tok)
 	std::string name = token(prg);
 
 	if (dest == "" || name == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_number_exists parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_number_exists parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::string names;
@@ -3592,7 +3582,7 @@ bool cfgfunc_number_exists(PROGRAM &prg, std::string tok)
 			names = v1.s;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -3611,7 +3601,7 @@ bool cfgfunc_number_exists(PROGRAM &prg, std::string tok)
 		v1.n = found_n;
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -3623,7 +3613,7 @@ bool cfgfunc_string_exists(PROGRAM &prg, std::string tok)
 	std::string name = token(prg);
 
 	if (dest == "" || name == "") {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected cfg_string_exists parameters on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_string_exists parameters on line " + itos(get_line_num(prg)));
 	}
 
 	std::string names;
@@ -3637,7 +3627,7 @@ bool cfgfunc_string_exists(PROGRAM &prg, std::string tok)
 			names = v1.s;
 		}
 		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 		}
 	}
 
@@ -3656,7 +3646,7 @@ bool cfgfunc_string_exists(PROGRAM &prg, std::string tok)
 		v1.n = found_n;
 	}
 	else {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
 
 	return true;
@@ -3676,7 +3666,7 @@ bool interpret(PROGRAM &prg)
 
 	std::map<std::string, library_func>::iterator it = library_map.find(tok);
 	if (it == library_map.end()) {
-		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid token \"" + tok + "\" on line " + itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid token \"" + tok + "\" on line " + itos(get_line_num(prg)));
 	}
 	else {
 		library_func func = (*it).second;
