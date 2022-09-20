@@ -2321,119 +2321,126 @@ bool primfunc_filled_circle(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-bool interpret_mml(PROGRAM &prg, std::string tok)
+bool mmlfunc_create(PROGRAM &prg, std::string tok)
 {
-	if (tok == "mml_create") {
-		std::string var = token(prg);
-		std::string str = token(prg);
+	std::string var = token(prg);
+	std::string str = token(prg);
 
-		if (var == "" || str == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected mml_create parameters on line " + itos(get_line_num(prg)));
-		}
-
-		VARIABLE &v1 = find_variable(prg, var);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = prg.mml_id;
-		}
-		else if (v1.type == VARIABLE::STRING) {
-			v1.s = itos(prg.mml_id);
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-		}
-
-		std::string strs;
-
-		if (str[0] == '"') {
-			strs = remove_quotes(unescape(str));
-		}
-		else {
-			VARIABLE &v1 = find_variable(prg, str);
-			if (v1.type == VARIABLE::STRING) {
-				strs = v1.s;
-			}
-			else {
-				throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-			}
-		}
-
-		Uint8 *bytes = (Uint8 *)strs.c_str();
-		SDL_RWops *file = SDL_RWFromMem(bytes, strs.length());
-		audio::MML *mml = new audio::MML(file);
-		//SDL_RWclose(file);
-
-		prg.mmls[prg.mml_id++] = mml;
+	if (var == "" || str == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected mml_create parameters on line " + itos(get_line_num(prg)));
 	}
-	else if (tok == "mml_load") {
-		std::string var = token(prg);
-		std::string name = token(prg);
 
-		if (var == "" || name == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected mml_load parameters on line " + itos(get_line_num(prg)));
-		}
+	VARIABLE &v1 = find_variable(prg, var);
 
-		VARIABLE &v1 = find_variable(prg, var);
-
-		if (v1.type == VARIABLE::NUMBER) {
-			v1.n = prg.mml_id;
-		}
-		else if (v1.type == VARIABLE::STRING) {
-			v1.s = itos(prg.mml_id);
-		}
-		else {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
-		}
-
-		audio::MML *mml = new audio::MML(remove_quotes(unescape(name)));
-
-		prg.mmls[prg.mml_id++] = mml;
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = prg.mml_id;
 	}
-	else if (tok == "mml_play") {
-		std::string id = token(prg);
-		std::string volume = token(prg);
-		std::string loop = token(prg);
-
-		if (id == "" || volume == "" || loop == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected mml_play parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<std::string> strings;
-		strings.push_back(id);
-		strings.push_back(volume);
-		strings.push_back(loop);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		if (values[0] < 0 || values[0] >= prg.mmls.size()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid MML on line " + itos(get_line_num(prg)));
-		}
-
-		audio::MML *mml = prg.mmls[values[0]];
-
-		mml->play(values[1], values[2] == 0 ? false : true);
-	}
-	else if (tok == "mml_stop") {
-		std::string id = token(prg);
-
-		if (id == "") {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected mml_stop parameters on line " + itos(get_line_num(prg)));
-		}
-
-		std::vector<std::string> strings;
-		strings.push_back(id);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-		if (values[0] < 0 || values[0] >= prg.mmls.size()) {
-			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid MML on line " + itos(get_line_num(prg)));
-		}
-
-		audio::MML *mml = prg.mmls[values[0]];
-
-		mml->stop();
+	else if (v1.type == VARIABLE::STRING) {
+		v1.s = itos(prg.mml_id);
 	}
 	else {
-		return false;
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
 	}
+
+	std::string strs;
+
+	if (str[0] == '"') {
+		strs = remove_quotes(unescape(str));
+	}
+	else {
+		VARIABLE &v1 = find_variable(prg, str);
+		if (v1.type == VARIABLE::STRING) {
+			strs = v1.s;
+		}
+		else {
+			throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+		}
+	}
+
+	Uint8 *bytes = (Uint8 *)strs.c_str();
+	SDL_RWops *file = SDL_RWFromMem(bytes, strs.length());
+	audio::MML *mml = new audio::MML(file);
+	//SDL_RWclose(file);
+
+	prg.mmls[prg.mml_id++] = mml;
+
+	return true;
+}
+
+bool mmlfunc_load(PROGRAM &prg, std::string tok)
+{
+	std::string var = token(prg);
+	std::string name = token(prg);
+
+	if (var == "" || name == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected mml_load parameters on line " + itos(get_line_num(prg)));
+	}
+
+	VARIABLE &v1 = find_variable(prg, var);
+
+	if (v1.type == VARIABLE::NUMBER) {
+		v1.n = prg.mml_id;
+	}
+	else if (v1.type == VARIABLE::STRING) {
+		v1.s = itos(prg.mml_id);
+	}
+	else {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid type on line " + itos(get_line_num(prg)));
+	}
+
+	audio::MML *mml = new audio::MML(remove_quotes(unescape(name)));
+
+	prg.mmls[prg.mml_id++] = mml;
+
+	return true;
+}
+
+bool mmlfunc_play(PROGRAM &prg, std::string tok)
+{
+	std::string id = token(prg);
+	std::string volume = token(prg);
+	std::string loop = token(prg);
+
+	if (id == "" || volume == "" || loop == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected mml_play parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(id);
+	strings.push_back(volume);
+	strings.push_back(loop);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	if (values[0] < 0 || values[0] >= prg.mmls.size()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid MML on line " + itos(get_line_num(prg)));
+	}
+
+	audio::MML *mml = prg.mmls[values[0]];
+
+	mml->play(values[1], values[2] == 0 ? false : true);
+
+	return true;
+}
+
+bool mmlfunc_stop(PROGRAM &prg, std::string tok)
+{
+	std::string id = token(prg);
+
+	if (id == "") {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Expected mml_stop parameters on line " + itos(get_line_num(prg)));
+	}
+
+	std::vector<std::string> strings;
+	strings.push_back(id);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+	if (values[0] < 0 || values[0] >= prg.mmls.size()) {
+		throw PARSE_EXCEPTION(std::string(__FUNCTION__) + ": " + "Invalid MML on line " + itos(get_line_num(prg)));
+	}
+
+	audio::MML *mml = prg.mmls[values[0]];
+
+	mml->stop();
 
 	return true;
 }
@@ -3692,10 +3699,10 @@ void booboo_init()
 	library_map["filled_ellipse"] = primfunc_filled_ellipse;
 	library_map["circle"] = primfunc_circle;
 	library_map["filled_circle"] = primfunc_filled_circle;
-	library_map["mml_create"] = interpret_mml;
-	library_map["mml_load"] = interpret_mml;
-	library_map["mml_play"] = interpret_mml;
-	library_map["mml_stop"] = interpret_mml;
+	library_map["mml_create"] = mmlfunc_create;
+	library_map["mml_load"] = mmlfunc_load;
+	library_map["mml_play"] = mmlfunc_play;
+	library_map["mml_stop"] = mmlfunc_stop;
 	library_map["image_load"] = interpret_image;
 	library_map["image_draw"] = interpret_image;
 	library_map["image_stretch_region"] = interpret_image;
