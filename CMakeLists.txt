@@ -26,6 +26,7 @@ endif()
 
 set(SOURCES
 	src/booboo.cpp
+	src/library.cpp
 	src/main.cpp
 )
 
