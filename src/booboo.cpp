@@ -8,7 +8,6 @@
 static std::map< std::string, double > cfg_numbers;
 static std::map< std::string, std::string > cfg_strings;
 
-typedef bool (*library_func)(PROGRAM &prg, std::string tok);
 std::map<std::string, library_func> library_map;
 std::map<std::string, library_func> core_map;
 
@@ -3783,6 +3782,11 @@ void booboo_init()
 	library_map["cfg_set_string"] = cfgfunc_set_string;
 	library_map["cfg_number_exists"] = cfgfunc_number_exists;
 	library_map["cfg_string_exists"] = cfgfunc_string_exists;
+}
+
+void add_syntax(std::string name, library_func processing)
+{
+	library_map[name] = processing;
 }
 
 void booboo_shutdown()

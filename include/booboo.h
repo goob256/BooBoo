@@ -70,6 +70,9 @@ struct PROGRAM {
 	std::vector<int> line_numbers;
 };
 
+typedef bool (*library_func)(PROGRAM &prg, std::string tok);
+
+
 bool interpret(PROGRAM &prg);
 std::vector<LABEL> process_labels(PROGRAM prg);
 void destroy_program(PROGRAM &prg, bool destroy_vectors);
@@ -78,5 +81,6 @@ void process_functions(PROGRAM &prg);
 void call_function(PROGRAM &prg, std::string function_name, std::string result_name);
 void booboo_init();
 void booboo_shutdown();
+void add_syntax(library_func func);
 
 #endif // BOOBOO_H
