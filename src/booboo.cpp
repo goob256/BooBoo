@@ -3344,6 +3344,8 @@ bool vectorfunc_erase(PROGRAM &prg, std::string tok)
 	}
 
 	v.erase(v.begin() + int(values[1]));
+
+	return true;
 }
 
 bool cfgfunc_load(PROGRAM &prg, std::string tok)
