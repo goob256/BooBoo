@@ -2,7 +2,6 @@
 
 #include "booboo.h"
 
-bool load_from_filesystem;
 bool load_from_filesystem_set;
 
 static bool quit;

@@ -1,7 +1,6 @@
 #include <shim4/shim4.h>
 
 #include "booboo.h"
-#include "main.h"
 
 static std::map< std::string, double > cfg_numbers;
 static std::map< std::string, std::string > cfg_strings;

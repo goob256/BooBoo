@@ -74,6 +74,7 @@ struct PROGRAM {
 typedef bool (*library_func)(PROGRAM &prg, std::string tok);
 
 extern std::string reset_game_name;
+extern bool load_from_filesystem;
 
 void booboo_init();
 void booboo_shutdown();

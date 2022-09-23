@@ -3,10 +3,10 @@
 #include <shim4/shim4.h>
 
 #include "booboo.h"
-#include "main.h"
 
 std::map<std::string, library_func> library_map;
 std::string reset_game_name;
+bool load_from_filesystem;
 
 void skip_whitespace(PROGRAM &prg, bool add_lines)
 {
