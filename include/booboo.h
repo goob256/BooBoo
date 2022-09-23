@@ -73,6 +73,8 @@ struct PROGRAM {
 
 typedef bool (*library_func)(PROGRAM &prg, std::string tok);
 
+extern std::string reset_game_name;
+
 void booboo_init();
 void booboo_shutdown();
 bool interpret(PROGRAM &prg);

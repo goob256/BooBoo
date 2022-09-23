@@ -6,6 +6,7 @@
 #include "main.h"
 
 std::map<std::string, library_func> library_map;
+std::string reset_game_name;
 
 void skip_whitespace(PROGRAM &prg, bool add_lines)
 {

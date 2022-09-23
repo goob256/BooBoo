@@ -4,7 +4,6 @@
 
 bool load_from_filesystem;
 bool load_from_filesystem_set;
-std::string reset_game_name;
 
 static bool quit;
 
