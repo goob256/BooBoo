@@ -5,19 +5,6 @@
 #include <vector>
 #include <map>
 
-class EXCEPTION {
-public:
-	EXCEPTION(std::string error);
-
-	std::string error;
-};
-
-class PARSE_EXCEPTION : public EXCEPTION
-{
-public:
-	PARSE_EXCEPTION(std::string error);
-};
-
 struct VARIABLE
 {
 	enum VARIABLE_TYPE {
