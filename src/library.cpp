@@ -2930,7 +2930,7 @@ static bool cfgfunc_string_exists(Program &prg, std::string tok)
 
 namespace booboo {
 
-void booboo_init()
+void start()
 {
 	add_syntax("var", corefunc_var);
 	add_syntax("=", corefunc_set);

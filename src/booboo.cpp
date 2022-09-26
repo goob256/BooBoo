@@ -757,7 +757,7 @@ void add_syntax(std::string name, library_func processing)
 	library_map[name] = processing;
 }
 
-void booboo_shutdown()
+void end()
 {
 	library_map.clear();
 }

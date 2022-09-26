@@ -67,12 +67,15 @@ typedef bool (*library_func)(Program &prg, std::string tok);
 extern std::string reset_game_name;
 extern bool load_from_filesystem;
 
-void booboo_init();
-void booboo_shutdown();
+// These are the main functions
+void start();
+void end();
 Program create_program(std::string code);
 bool interpret(Program &prg);
 void destroy_program(Program &prg);
 void call_function(Program &prg, std::string function_name, std::string result_name);
+
+// These are for adding syntax
 void add_syntax(std::string name, library_func func);
 std::string token(Program &prg, bool add_lines = false);
 int get_line_num(Program &prg);

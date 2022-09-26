@@ -2,13 +2,11 @@
 
 #include "booboo/booboo.h"
 
-using namespace booboo;
-
 bool load_from_filesystem_set;
 
 static bool quit;
 
-Program prg;
+booboo::Program prg;
 
 int orig_argc;
 char **orig_argv;
@@ -146,7 +144,7 @@ void draw_all()
 
 	gfx::set_cull_mode(gfx::NO_FACE);
 
-	call_function(prg, "draw", "");
+	booboo::call_function(prg, "draw", "");
 
 	gfx::draw_guis();
 	gfx::draw_notifications();
@@ -248,9 +246,9 @@ static void loop()
 			TGUI_Event *event = shim::handle_event(&sdl_event);
 			handle_event(event);
 
-			call_function(prg, "logic", "");
+			booboo::call_function(prg, "logic", "");
 
-			if (reset_game_name != "") {
+			if (booboo::reset_game_name != "") {
 				quit = true;
 			}
 
@@ -447,22 +445,22 @@ int main(int argc, char **argv)
 again:
 	quit = false;
 
-	if (reset_game_name != "") {
-		if (load_from_filesystem) {
-			fn = reset_game_name;
+	if (booboo::reset_game_name != "") {
+		if (booboo::load_from_filesystem) {
+			fn = booboo::reset_game_name;
 		}
 		else {
-			fn = std::string("code/") + reset_game_name;
+			fn = std::string("code/") + booboo::reset_game_name;
 		}
-		reset_game_name = "";
+		booboo::reset_game_name = "";
 	}
 
-	booboo_init();
+	booboo::start();
 
 	std::string code;
 
 	if (load_from_filesystem_set) {
-		if (load_from_filesystem) {
+		if (booboo::load_from_filesystem) {
 			try {
 				code = util::load_text_from_filesystem(fn);
 			}
@@ -483,7 +481,7 @@ again:
 		if (fn != "") {
 			try {
 				code = util::load_text_from_filesystem(fn);
-				load_from_filesystem = true;
+				booboo::load_from_filesystem = true;
 			}
 			catch (util::Error e) {
 				gui::fatalerror("ERROR", "Program is missing or corrupt!", gui::OK, true);
@@ -492,12 +490,12 @@ again:
 		else {
 			try {
 				code = util::load_text_from_filesystem("main.boo");
-				load_from_filesystem = true;
+				booboo::load_from_filesystem = true;
 			}
 			catch (util::Error e) {
 				try {
 					code = util::load_text("code/main.boo");
-					load_from_filesystem = false;
+					booboo::load_from_filesystem = false;
 				}
 				catch (util::Error e) {
 					gui::fatalerror("ERROR", "Program is missing or corrupt!", gui::OK, true);
@@ -508,27 +506,27 @@ again:
 	
 	load_from_filesystem_set = true;
 
-	prg = create_program(code);
+	prg = booboo::create_program(code);
 
-	while (interpret(prg)) {
+	while (booboo::interpret(prg)) {
 	}
 	
-	if (reset_game_name == "") {
+	if (booboo::reset_game_name == "") {
 		go();
 	}
 
-	call_function(prg, "shutdown", "");
+	booboo::call_function(prg, "shutdown", "");
 
-	destroy_program(prg);
+	booboo::destroy_program(prg);
 
-	if (reset_game_name != "") {
+	if (booboo::reset_game_name != "") {
 		fn = "";
 		goto again;
 	}
 
 	end();
 
-	booboo_shutdown();
+	booboo::end();
 
 	}
 	catch (util::Error e) {
