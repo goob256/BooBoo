@@ -85,8 +85,8 @@ call
 	with result: call = dest myfunc param1 param2 param3
 
 function
-	define a function. after function comes the function name, followed by variables, then start, then the function body, and finally end
-	e.g. function start x return x end
+	define a function. after function comes the function name, followed by variables, then {, then the function body, and finally }
+	e.g. function twice x { return x * 2 }
 
 ;
 	comment
