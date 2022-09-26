@@ -13,12 +13,14 @@ struct Variable
 		NUMBER,
 		STRING,
 		VECTOR,
+		USER
 	} type;
 
 	std::string name;
 
 	double n;
 	std::string s;
+	void *u;
 
 	std::string function;
 };
