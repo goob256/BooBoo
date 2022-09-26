@@ -12,7 +12,7 @@ var number was_pressed
 = was_pressed 0
 
 function logic
-start
+{
 	include "poll_joystick.inc"
 
 	? joy_a 1
@@ -37,10 +37,10 @@ start
 	+ radius 25
 :really_finish
 	include "slideshow_logic.inc"
-end
+}
 
 function draw
-start
+{
 	clear 0 0 0
 	circle 0 255 0 255 320 180 radius 1 -1
-end
+}

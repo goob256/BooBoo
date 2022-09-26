@@ -47,7 +47,7 @@ var vector board
 call = board start_board
 
 function set_board board x y value
-start
+{
 	var number index
 	= index y
 	* index width
@@ -62,10 +62,10 @@ start
 	vector_set board index value
 
 :skip
-end
+}
 
 function get_board board x y
-start
+{
 	var number index
 	= index y
 	* index width
@@ -83,10 +83,10 @@ start
 
 :skip
 	return 0
-end
+}
 
 function start_board
-start
+{
 	var vector board
 
 	var number count
@@ -146,10 +146,10 @@ start
 	jl place_robot
 
 	return board
-end
+}
 
 function draw
-start
+{
 	var number x
 	var number y
 
@@ -235,10 +235,10 @@ start
 	+ y 1
 	? y height
 	jl loop_y1
-end
+}
 
 function move_robots
-start
+{
 	var number i
 	var number size
 	vector_size board size
@@ -399,10 +399,10 @@ start
 	jl top
 
 :finish
-end
+}
 
 function move_player l r u d
-start
+{
 	var number index
 	= index player_y
 	* index width
@@ -484,10 +484,10 @@ start
 	vector_set board index 1
 
 :really_done
-end
+}
 
 function joystick_input
-start
+{
 :do_input
 	include "poll_joystick.inc"
 
@@ -556,10 +556,10 @@ start
 	= old_r bak_r
 	= old_u bak_u
 	= old_d bak_d
-end
+}
 
 function cpu_input
-start
+{
 	; make vectors of the positions to the four cardinal directions of the player
 
 	var number bak_x
@@ -739,10 +739,10 @@ start
 	call move_player l r u d
 	
 :finish
-end
+}
 
 function logic
-start
+{
 	+ tick 1
 
 	var number sz
@@ -809,4 +809,4 @@ start
 
 :finish
 	include "slideshow_logic.inc"
-end
+}

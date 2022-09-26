@@ -3,7 +3,7 @@ var string reset_game_name
 include "slideshow_start.inc"
 
 function draw_at r g b x radius
-start
+{
 	var number f
 	= f x
 	/ f 640
@@ -13,10 +13,10 @@ start
 	* f 90
 	+ f 180
 	filled_circle r g b 255 x f radius -1
-end
+}
 
 function draw
-start
+{
 	clear 0 0 0
 
 	var number xx
@@ -37,13 +37,13 @@ start
 	call draw_at 128 255 128 tmp 32
 
 	end_primitives
-end
+}
 
 function logic
-start
+{
 	+ x 5
 	include "slideshow_logic.inc"
-end
+}
 
 var number x
 = x 0

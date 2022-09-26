@@ -48,7 +48,7 @@ var number moving
 = moving 0
 
 function draw
-start
+{
 	clear 50 60 57
 
 	var number img
@@ -77,10 +77,10 @@ start
 	+ sy s
 
 	image_draw_rotated_scaled img 255 255 255 255 32 32 x y angle sx sy 0 0
-end
+}
 
 function logic
-start
+{
 	= moving 0
 
 	include "poll_joystick.inc"
@@ -159,14 +159,14 @@ start
 :finish
 
 	include "slideshow_logic.inc"
-end
+}
 
-function shutdown
-start
+function end
+{
 	cfg_set_number "x" x
 	cfg_set_number "y" y
 	cfg_set_number "angle" angle
 	cfg_set_number "scale" scale
 
 	cfg_save cfg_name
-end
+}

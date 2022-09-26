@@ -16,13 +16,13 @@ cfg_set_number "ticks" ticks
 :done_cfg
 
 function logic
-start
+{
 	+ ticks 1
 	include "slideshow_logic.inc"
-end
+}
 
 function draw
-start
+{
 	clear 255 255 255
 
 	var number ninety
@@ -175,10 +175,10 @@ start
 	+ y 180
 
 	line 255 0 0 255 x y 320 180 2 ; extend second hand back
-end
+}
 
-function shutdown
-start
+function end
+{
 	cfg_set_number "ticks" ticks
 	cfg_save "com.b1stable.clock"
-end
+}

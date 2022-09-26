@@ -30,7 +30,7 @@ var number loops
 = loops 0
 
 function draw
-start
+{
 	clear 255 255 255
 
 	var number l
@@ -66,10 +66,10 @@ start
 	jl draw_line
 
 :no_draw
-end
+}
 
 function logic
-start
+{
 	+ loops 1
 	include "slideshow_logic.inc"
-end
+}

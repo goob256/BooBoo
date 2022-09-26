@@ -16,13 +16,13 @@ var number y
 = y 0
 
 function logic
-start
+{
 	+ y 2.5
 	include "slideshow_logic.inc"
-end
+}
 
 function draw
-start
+{
 	image_draw guy 255 255 255 255 0 0 0 0
 
 	var number yy
@@ -31,9 +31,9 @@ start
 	- yy 100
 
 	image_draw glasses 255 255 255 255 180 yy 0 0
-end
+}
 
-function shutdown
-start
+function end
+{
 	mml_stop music
-end
+}

@@ -13,7 +13,7 @@ var number font
 font_load font "DejaVuSans.ttf" 128 1
 
 function logic
-start
+{
 	include "poll_joystick.inc"
 
 	? joy_x 0
@@ -26,10 +26,10 @@ start
 
 :done_logic
 	include "slideshow_logic.inc"
-end
+}
 
 function draw
-start
+{
 	clear 255 0 0
 
 	var string secret
@@ -59,9 +59,9 @@ start
 	- y fh
 
 	font_draw font 0 0 0 255 secret x y
-end
+}
 
-function shutdown
-start
+function end
+{
 	mml_stop music
-end
+}

@@ -8,13 +8,13 @@ var number score2
 = score2 0
 
 function rand_speed
-start
+{
 	var number f
 	rand f 0 1000
 	/ f 1000.0
 	* f 5.0
 	return f
-end
+}
 
 var number next_cpu1_speed_update
 rand next_cpu1_speed_update 0 100
@@ -68,7 +68,7 @@ mml_load wall_sfx "sfx/wall.mml"
 mml_load point_sfx "sfx/point.mml"
 
 function reset_ball
-start
+{
 	= ball_x 320
 	= ball_y 180
 	= prev_ball_x 320
@@ -92,10 +92,10 @@ start
 :up
 	= ball_vy -2.5
 :done_vert
-end
+}
 
 function logic
-start
+{
 	var number nj
 	joystick_count nj
 
@@ -358,10 +358,10 @@ start
 
 :slideshow
 	include "slideshow_logic.inc"
-end
+}
 
 function draw
-start
+{
 	clear 0 0 0
 
 	var number y
@@ -422,14 +422,14 @@ start
 
 	font_draw font 255 255 255 255 text1 x1 y
 	font_draw font 255 255 255 255 text2 x2 y
-end
+}
 
-function shutdown
-start
+function end
+{
 	cfg_set_number "score1" score1
 	cfg_set_number "score2" score2
 
 	cfg_save "com.b1stable.pong"
-end
+}
 
 call reset_ball

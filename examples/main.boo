@@ -25,7 +25,7 @@ var number delay
 = delay 0
 
 function draw_menu
-start
+{
 	var number y
 	= y 10
 
@@ -74,17 +74,17 @@ start
 
 :skip
 	font_draw font 255 255 0 255 "ENABLE SLIDESHOW" 40 y
-end
+}
 
 function draw
-start
+{
 	clear 0 0 0
 
 	call draw_menu
-end
+}
 
 function logic
-start
+{
 	? delay 0
 	je do_joy
 	- delay 1
@@ -149,11 +149,11 @@ start
 	goto finish
 
 :finish
-end
+}
 
-function shutdown
-start
+function end
+{
 	cfg_set_number "enabled" __do_slideshow__
 	cfg_set_number "delay" __slideshow_delay__
 	cfg_save "com.b1stable.slideshow"
-end
+}
