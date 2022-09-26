@@ -515,7 +515,7 @@ again:
 		go();
 	}
 
-	booboo::call_function(prg, "shutdown", "");
+	booboo::call_function(prg, "end", "");
 
 	booboo::destroy_program(prg);
 

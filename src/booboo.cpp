@@ -228,6 +228,14 @@ std::string token(Program &prg, bool add_lines)
 		prg.p++;
 		return "?";
 	}
+	else if (prg.code[prg.p] == '{') {
+		prg.p++;
+		return "{";
+	}
+	else if (prg.code[prg.p] == '}') {
+		prg.p++;
+		return "}";
+	}
 	else if (isdigit(prg.code[prg.p])) {
 		while (prg.p < prg.code.length() && (isdigit(prg.code[prg.p]) || prg.code[prg.p] == '.')) {
 			s[0] = prg.code[prg.p];
@@ -308,7 +316,7 @@ std::vector<Label> process_labels(Program prg)
 						prg.p++;
 					}
 				}
-				else if (tok == "end") {
+				else if (tok == "}") {
 					break;
 				}
 			}
@@ -460,7 +468,7 @@ void process_functions(Program &prg)
 			std::string tok2;
 
 			while ((tok2 = token(prg)) != "") {
-				if (tok2 == "start") {
+				if (tok2 == "{") {
 					break;
 				}
 				else if (tok2 == ";") {
@@ -472,13 +480,10 @@ void process_functions(Program &prg)
 						prg.p++;
 					}
 				}
-				if (tok2[0] != '_' && !isalpha(tok2[0])) {
-					throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid variable name " + tok2 + " on line " + util::itos(get_line_num(prg)));
-				}
 				p.parameters.push_back(tok2);
 			}
 			
-			if (tok2 != "start") {
+			if (tok2 != "{") {
 				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Function not terminated on line " + util::itos(save));
 			}
 
@@ -486,7 +491,7 @@ void process_functions(Program &prg)
 			int end_p = prg.p;
 
 			while ((tok2 = token(prg)) != "") {
-				if (tok2 == "end") {
+				if (tok2 == "}") {
 					break;
 				}
 				else if (tok2 == ";") {
@@ -501,7 +506,7 @@ void process_functions(Program &prg)
 				end_p = prg.p;
 			}
 
-			if (tok2 != "end") {
+			if (tok2 != "}") {
 				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Function not terminated on line " + util::itos(save));
 			}
 

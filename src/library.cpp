@@ -696,7 +696,7 @@ static bool corefunc_function(Program &prg, std::string tok)
 	std::string tok2;
 
 	while ((tok2 = token(prg)) != "") {
-		if (tok2 == "start") {
+		if (tok2 == "{") {
 			break;
 		}
 		else if (tok2 == ";") {
@@ -708,13 +708,10 @@ static bool corefunc_function(Program &prg, std::string tok)
 				prg.p++;
 			}
 		}
-		if (tok2[0] != '_' && !isalpha(tok2[0])) {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid variable name " + tok2 + " on line " + util::itos(get_line_num(prg)));
-		}
 		p.parameters.push_back(tok2);
 	}
 	
-	if (tok2 != "start") {
+	if (tok2 != "{") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Function not terminated on line " + util::itos(save));
 	}
 
@@ -722,7 +719,7 @@ static bool corefunc_function(Program &prg, std::string tok)
 	int end_p = prg.p;
 
 	while ((tok2 = token(prg)) != "") {
-		if (tok2 == "end") {
+		if (tok2 == "}") {
 			break;
 		}
 		else if (tok2 == ";") {
@@ -737,7 +734,7 @@ static bool corefunc_function(Program &prg, std::string tok)
 		end_p = prg.p;
 	}
 
-	if (tok2 != "end") {
+	if (tok2 != "}") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Function not terminated on line " + util::itos(save));
 	}
 
