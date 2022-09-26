@@ -1,6 +1,6 @@
 #include <shim4/shim4.h>
 
-#include "booboo.h"
+#include "booboo/booboo.h"
 
 using namespace booboo;
 
@@ -459,15 +459,12 @@ again:
 
 	booboo_init();
 
-	prg.name = "main";
-	prg.mml_id = 0;
-	prg.image_id = 0;
-	prg.font_id = 0;
-	prg.vector_id = 0;
+	std::string code;
+
 	if (load_from_filesystem_set) {
 		if (load_from_filesystem) {
 			try {
-				prg.code = util::load_text_from_filesystem(fn);
+				code = util::load_text_from_filesystem(fn);
 			}
 			catch (util::Error e) {
 				gui::fatalerror("ERROR", "Program is missing or corrupt!", gui::OK, true);
@@ -475,7 +472,7 @@ again:
 		}
 		else {
 			try {
-				prg.code = util::load_text(fn);
+				code = util::load_text(fn);
 			}
 			catch (util::Error e) {
 				gui::fatalerror("ERROR", "Program is missing or corrupt!", gui::OK, true);
@@ -485,7 +482,7 @@ again:
 	else {
 		if (fn != "") {
 			try {
-				prg.code = util::load_text_from_filesystem(fn);
+				code = util::load_text_from_filesystem(fn);
 				load_from_filesystem = true;
 			}
 			catch (util::Error e) {
@@ -494,12 +491,12 @@ again:
 		}
 		else {
 			try {
-				prg.code = util::load_text_from_filesystem("main.boo");
+				code = util::load_text_from_filesystem("main.boo");
 				load_from_filesystem = true;
 			}
 			catch (util::Error e) {
 				try {
-					prg.code = util::load_text("code/main.boo");
+					code = util::load_text("code/main.boo");
 					load_from_filesystem = false;
 				}
 				catch (util::Error e) {
@@ -508,17 +505,10 @@ again:
 			}
 		}
 	}
-	load_from_filesystem_set = true;
-	prg.line = 1;
-	prg.line_numbers.clear();
-	prg.start_line = 0;
-	prg.p = 0;
-	prg.prev_tok_p = 0;
-	prg.prev_tok_line = 1;
 	
-	while(process_includes(prg));
-	prg.labels = process_labels(prg);
-	process_functions(prg);
+	load_from_filesystem_set = true;
+
+	prg = create_program(code);
 
 	while (interpret(prg)) {
 	}

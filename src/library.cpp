@@ -1,6 +1,7 @@
 #include <shim4/shim4.h>
 
-#include "booboo.h"
+#include "booboo/booboo.h"
+#include "booboo/internal/booboo.h"
 
 using namespace booboo;
 

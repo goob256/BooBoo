@@ -69,6 +69,7 @@ extern bool load_from_filesystem;
 
 void booboo_init();
 void booboo_shutdown();
+Program create_program(std::string code);
 bool interpret(Program &prg);
 void destroy_program(Program &prg, bool destroy_vectors);
 void call_function(Program &prg, std::string function_name, std::string result_name);
@@ -81,10 +82,6 @@ void set_string_or_number(Program &prg, std::string name, std::string value);
 void skip_whitespace(Program &prg, bool add_lines = false);
 std::string remove_quotes(std::string s);
 std::string unescape(std::string s);
-
-std::vector<Label> process_labels(Program prg);
-bool process_includes(Program &prg);
-void process_functions(Program &prg);
 
 } // end namespace booboo
 

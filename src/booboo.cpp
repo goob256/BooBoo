@@ -2,7 +2,7 @@
 
 #include <shim4/shim4.h>
 
-#include "booboo.h"
+#include "booboo/booboo.h"
 
 namespace booboo {
 
@@ -763,6 +763,30 @@ void add_syntax(std::string name, library_func processing)
 void booboo_shutdown()
 {
 	library_map.clear();
+}
+
+Program create_program(std::string code)
+{
+	Program prg;
+
+	prg.code = code;
+	prg.name = "main";
+	prg.mml_id = 0;
+	prg.image_id = 0;
+	prg.font_id = 0;
+	prg.vector_id = 0;
+	prg.line = 1;
+	prg.line_numbers.clear();
+	prg.start_line = 0;
+	prg.p = 0;
+	prg.prev_tok_p = 0;
+	prg.prev_tok_line = 1;
+	
+	while(process_includes(prg));
+	prg.labels = process_labels(prg);
+	process_functions(prg);
+
+	return prg;
 }
 
 } // end namespace booboo
