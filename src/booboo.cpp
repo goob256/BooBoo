@@ -727,7 +727,7 @@ bool interpret(Program &prg)
 	return true;
 }
 
-void destroy_program(Program &prg, bool destroy_vectors)
+void destroy_program(Program &prg)
 {
 	for (std::map<int, audio::MML *>::iterator it =  prg.mmls.begin(); it != prg.mmls.end(); it++) {
 		audio::MML *mml = (*it).second;
@@ -745,10 +745,7 @@ void destroy_program(Program &prg, bool destroy_vectors)
 	prg.mmls.clear();
 	prg.images.clear();
 	prg.fonts.clear();
-
-	if (destroy_vectors) {
-		prg.vectors.clear();
-	}
+	prg.vectors.clear();
 
 	prg.variables.clear();
 	prg.functions.clear();

@@ -71,7 +71,7 @@ void booboo_init();
 void booboo_shutdown();
 Program create_program(std::string code);
 bool interpret(Program &prg);
-void destroy_program(Program &prg, bool destroy_vectors);
+void destroy_program(Program &prg);
 void call_function(Program &prg, std::string function_name, std::string result_name);
 void add_syntax(std::string name, library_func func);
 std::string token(Program &prg, bool add_lines = false);

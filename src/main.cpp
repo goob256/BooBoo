@@ -519,7 +519,7 @@ again:
 
 	call_function(prg, "shutdown", "");
 
-	destroy_program(prg, true);
+	destroy_program(prg);
 
 	if (reset_game_name != "") {
 		fn = "";
