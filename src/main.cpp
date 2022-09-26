@@ -14,18 +14,6 @@ char **orig_argv;
 std::string extra_args;
 std::string extra_args_orig;
 
-static void found_device()
-{
-}
-
-static void lost_device()
-{
-}
-
-static void joystick_disconnected()
-{
-}
-
 bool start()
 {
 	// This is basically 16:9 only, with a tiny bit of leeway
@@ -122,8 +110,8 @@ bool start()
 
 	TGUI::set_focus_sloppiness(0);
 
-	gfx::register_lost_device_callbacks(lost_device, found_device);
-	shim::joystick_disconnect_callback = joystick_disconnected;
+	//gfx::register_lost_device_callbacks(lost_device, found_device);
+	//shim::joystick_disconnect_callback = joystick_disconnected;
 
 	return true;
 }
