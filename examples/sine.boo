@@ -39,7 +39,7 @@ function draw
 	end_primitives
 }
 
-function logic
+function run
 {
 	+ x 5
 	include "slideshow_logic.inc"

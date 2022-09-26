@@ -1,8 +1,8 @@
 There are 3 functions taking/returning no parameters called from the app:
 
 draw - called at refresh rate
-logic - called 60 times per second
-shutdown - called when the program is exiting
+run - called 60 times per second
+end - called when the program is exiting
 
 The screen is 640x360.
 

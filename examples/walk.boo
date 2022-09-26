@@ -79,7 +79,7 @@ function draw
 	image_draw_rotated_scaled img 255 255 255 255 32 32 x y angle sx sy 0 0
 }
 
-function logic
+function run
 {
 	= moving 0
 

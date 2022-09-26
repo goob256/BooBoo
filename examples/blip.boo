@@ -11,7 +11,7 @@ mml_create blip "@PO0 = { 0 100 100 100 0 }\n@VAS0 = { 0 }\nA o5 @TYPE3 @PO0 @VA
 var number was_pressed
 = was_pressed 0
 
-function logic
+function run
 {
 	include "poll_joystick.inc"
 

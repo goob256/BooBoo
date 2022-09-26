@@ -246,7 +246,7 @@ static void loop()
 			TGUI_Event *event = shim::handle_event(&sdl_event);
 			handle_event(event);
 
-			booboo::call_function(prg, "logic", "");
+			booboo::call_function(prg, "run", "");
 
 			if (booboo::reset_game_name != "") {
 				quit = true;

@@ -741,7 +741,7 @@ function cpu_input
 :finish
 }
 
-function logic
+function run
 {
 	+ tick 1
 

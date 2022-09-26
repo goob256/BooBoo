@@ -12,7 +12,7 @@ var number hidden
 var number font
 font_load font "DejaVuSans.ttf" 128 1
 
-function logic
+function run
 {
 	include "poll_joystick.inc"
 

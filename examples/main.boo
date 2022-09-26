@@ -83,7 +83,7 @@ function draw
 	call draw_menu
 }
 
-function logic
+function run
 {
 	? delay 0
 	je do_joy

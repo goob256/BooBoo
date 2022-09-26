@@ -15,7 +15,7 @@ goto done_cfg
 cfg_set_number "ticks" ticks
 :done_cfg
 
-function logic
+function run
 {
 	+ ticks 1
 	include "slideshow_logic.inc"

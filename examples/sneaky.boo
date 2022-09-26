@@ -68,7 +68,7 @@ function draw
 :no_draw
 }
 
-function logic
+function run
 {
 	+ loops 1
 	include "slideshow_logic.inc"

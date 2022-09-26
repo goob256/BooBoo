@@ -15,7 +15,7 @@ image_load glasses "misc/glasses.png"
 var number y
 = y 0
 
-function logic
+function run
 {
 	+ y 2.5
 	include "slideshow_logic.inc"

@@ -94,7 +94,7 @@ function reset_ball
 :done_vert
 }
 
-function logic
+function run
 {
 	var number nj
 	joystick_count nj
