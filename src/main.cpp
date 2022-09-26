@@ -496,6 +496,7 @@ again:
 
 	prg = booboo::create_program(code);
 
+	// This does one token at a time, and we want it to finish the main body so it's a loop
 	while (booboo::interpret(prg)) {
 	}
 	
