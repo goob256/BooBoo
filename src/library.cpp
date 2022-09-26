@@ -2,6 +2,8 @@
 
 #include "booboo.h"
 
+using namespace booboo;
+
 static std::map< std::string, double > cfg_numbers;
 static std::map< std::string, std::string > cfg_strings;
 
@@ -84,9 +86,9 @@ static void save_cfg(std::string cfg_name)
 	fclose(f);
 }
 
-static bool corefunc_var(PROGRAM &prg, std::string tok)
+static bool corefunc_var(Program &prg, std::string tok)
 {
-	VARIABLE var;
+	Variable var;
 
 	std::string type = token(prg);
 	std::string name =  token(prg);
@@ -99,23 +101,23 @@ static bool corefunc_var(PROGRAM &prg, std::string tok)
 	var.function = prg.name;
 
 	if (type == "number") {
-		var.type = VARIABLE::NUMBER;
+		var.type = Variable::NUMBER;
 	}
 	else if (type == "string") {
-		var.type = VARIABLE::STRING;
+		var.type = Variable::STRING;
 	}
 	else if (type == "vector") {
-		var.type = VARIABLE::VECTOR;
+		var.type = Variable::VECTOR;
 		var.n = prg.vector_id++;
-		std::vector<VARIABLE> vec;
+		std::vector<Variable> vec;
 		prg.vectors[var.n] = vec;
 	}
 	else {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
-	std::map<std::string, VARIABLE> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
-	std::map<std::string, VARIABLE>::iterator it3;
+	std::map<std::string, Variable> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
+	std::map<std::string, Variable>::iterator it3;
 	if ((it3 = prg.variables.find(var.name)) != prg.variables.end()) {
 		if ((*it3).second.function != prg.name) {
 			variables_backup[var.name] = prg.variables[var.name];
@@ -127,7 +129,7 @@ static bool corefunc_var(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_set(PROGRAM &prg, std::string tok)
+static bool corefunc_set(Program &prg, std::string tok)
 {
 	std::string dest =  token(prg);
 	std::string src =  token(prg);
@@ -136,13 +138,13 @@ static bool corefunc_set(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected = parameters on line " + util::itos(get_line_num(prg)));
 	}
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
 	if (src[0] == '-' || isdigit(src[0])) {
-		if (v1.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER) {
 			v1.n = atof(src.c_str());
 		}
-		else if (v1.type == VARIABLE::STRING) {
+		else if (v1.type == Variable::STRING) {
 			v1.s = src;
 		}
 		else {
@@ -150,10 +152,10 @@ static bool corefunc_set(PROGRAM &prg, std::string tok)
 		}
 	}
 	else if (src[0] == '"') {
-		if (v1.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER) {
 			v1.n = atof(remove_quotes(src).c_str());
 		}
-		else if (v1.type == VARIABLE::STRING) {
+		else if (v1.type == Variable::STRING) {
 			v1.s = remove_quotes(unescape(src));
 		}
 		else {
@@ -161,18 +163,18 @@ static bool corefunc_set(PROGRAM &prg, std::string tok)
 		}
 	}
 	else {
-		VARIABLE &v2 = find_variable(prg, src);
+		Variable &v2 = find_variable(prg, src);
 
-		if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER && v2.type == Variable::NUMBER) {
 			v1.n = v2.n;
 		}
-		else if (v1.type == VARIABLE::STRING && v2.type == VARIABLE::NUMBER) {
+		else if (v1.type == Variable::STRING && v2.type == Variable::NUMBER) {
 			v1.s = util::itos(v2.n);
 		}
-		else if (v1.type == VARIABLE::STRING && v2.type == VARIABLE::STRING) {
+		else if (v1.type == Variable::STRING && v2.type == Variable::STRING) {
 			v1.s = v2.s;
 		}
-		else if (v1.type == VARIABLE::VECTOR && v2.type == VARIABLE::VECTOR) {
+		else if (v1.type == Variable::VECTOR && v2.type == Variable::VECTOR) {
 			prg.vectors[(int)v1.n] = prg.vectors[(int)v2.n];
 		}
 		else {
@@ -183,7 +185,7 @@ static bool corefunc_set(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_add(PROGRAM &prg, std::string tok)
+static bool corefunc_add(Program &prg, std::string tok)
 {
 	std::string dest =  token(prg);
 	std::string src =  token(prg);
@@ -192,13 +194,13 @@ static bool corefunc_add(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected + parameters on line " + util::itos(get_line_num(prg)));
 	}
 	
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
 	if (src[0] == '-' || isdigit(src[0])) {
-		if (v1.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER) {
 			v1.n += atof(src.c_str());
 		}
-		else if (v1.type == VARIABLE::STRING) {
+		else if (v1.type == Variable::STRING) {
 			v1.s += src;
 		}
 		else {
@@ -206,10 +208,10 @@ static bool corefunc_add(PROGRAM &prg, std::string tok)
 		}
 	}
 	else if (src[0] == '"') {
-		if (v1.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER) {
 			v1.n += atof(remove_quotes(src).c_str());
 		}
-		else if (v1.type == VARIABLE::STRING) {
+		else if (v1.type == Variable::STRING) {
 			v1.s += remove_quotes(unescape(src));
 		}
 		else {
@@ -217,15 +219,15 @@ static bool corefunc_add(PROGRAM &prg, std::string tok)
 		}
 	}
 	else {
-		VARIABLE &v2 = find_variable(prg, src);
+		Variable &v2 = find_variable(prg, src);
 
-		if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER && v2.type == Variable::NUMBER) {
 			v1.n += v2.n;
 		}
-		else if (v1.type == VARIABLE::STRING && v2.type == VARIABLE::NUMBER) {
+		else if (v1.type == Variable::STRING && v2.type == Variable::NUMBER) {
 			v1.s += util::itos(v2.n);
 		}
-		else if (v1.type == VARIABLE::STRING && v2.type == VARIABLE::STRING) {
+		else if (v1.type == Variable::STRING && v2.type == Variable::STRING) {
 			v1.s += v2.s;
 		}
 		else {
@@ -236,7 +238,7 @@ static bool corefunc_add(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_subtract(PROGRAM &prg, std::string tok)
+static bool corefunc_subtract(Program &prg, std::string tok)
 {
 	std::string dest =  token(prg);
 	std::string src =  token(prg);
@@ -245,10 +247,10 @@ static bool corefunc_subtract(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected - parameters on line " + util::itos(get_line_num(prg)));
 	}
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
 	if (src[0] == '-' || isdigit(src[0])) {
-		if (v1.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER) {
 			v1.n -= atof(src.c_str());
 		}
 		else {
@@ -256,7 +258,7 @@ static bool corefunc_subtract(PROGRAM &prg, std::string tok)
 		}
 	}
 	else if (src[0] == '"') {
-		if (v1.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER) {
 			v1.n -= atof(remove_quotes(src).c_str());
 		}
 		else {
@@ -264,9 +266,9 @@ static bool corefunc_subtract(PROGRAM &prg, std::string tok)
 		}
 	}
 	else {
-		VARIABLE &v2 = find_variable(prg, src);
+		Variable &v2 = find_variable(prg, src);
 
-		if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER && v2.type == Variable::NUMBER) {
 			v1.n -= v2.n;
 		}
 		else {
@@ -277,7 +279,7 @@ static bool corefunc_subtract(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_multiply(PROGRAM &prg, std::string tok)
+static bool corefunc_multiply(Program &prg, std::string tok)
 {
 	std::string dest =  token(prg);
 	std::string src =  token(prg);
@@ -286,10 +288,10 @@ static bool corefunc_multiply(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected * parameters on line " + util::itos(get_line_num(prg)));
 	}
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
 	if (src[0] == '-' || isdigit(src[0])) {
-		if (v1.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER) {
 			v1.n *= atof(src.c_str());
 		}
 		else {
@@ -297,7 +299,7 @@ static bool corefunc_multiply(PROGRAM &prg, std::string tok)
 		}
 	}
 	else if (src[0] == '"') {
-		if (v1.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER) {
 			v1.n *= atof(remove_quotes(src).c_str());
 		}
 		else {
@@ -305,9 +307,9 @@ static bool corefunc_multiply(PROGRAM &prg, std::string tok)
 		}
 	}
 	else {
-		VARIABLE &v2 = find_variable(prg, src);
+		Variable &v2 = find_variable(prg, src);
 
-		if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER && v2.type == Variable::NUMBER) {
 			v1.n *= v2.n;
 		}
 		else {
@@ -318,7 +320,7 @@ static bool corefunc_multiply(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_divide(PROGRAM &prg, std::string tok)
+static bool corefunc_divide(Program &prg, std::string tok)
 {
 	std::string dest =  token(prg);
 	std::string src =  token(prg);
@@ -327,10 +329,10 @@ static bool corefunc_divide(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected / parameters on line " + util::itos(get_line_num(prg)));
 	}
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
 	if (src[0] == '-' || isdigit(src[0])) {
-		if (v1.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER) {
 			v1.n /= atof(src.c_str());
 		}
 		else {
@@ -338,7 +340,7 @@ static bool corefunc_divide(PROGRAM &prg, std::string tok)
 		}
 	}
 	else if (src[0] == '"') {
-		if (v1.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER) {
 			v1.n /= atof(remove_quotes(src).c_str());
 		}
 		else {
@@ -346,9 +348,9 @@ static bool corefunc_divide(PROGRAM &prg, std::string tok)
 		}
 	}
 	else {
-		VARIABLE &v2 = find_variable(prg, src);
+		Variable &v2 = find_variable(prg, src);
 
-		if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER && v2.type == Variable::NUMBER) {
 			v1.n /= v2.n;
 		}
 		else {
@@ -359,7 +361,7 @@ static bool corefunc_divide(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_intmod(PROGRAM &prg, std::string tok)
+static bool corefunc_intmod(Program &prg, std::string tok)
 {
 	std::string dest =  token(prg);
 	std::string src =  token(prg);
@@ -368,10 +370,10 @@ static bool corefunc_intmod(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected %% parameters on line " + util::itos(get_line_num(prg)));
 	}
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
 	if (src[0] == '-' || isdigit(src[0])) {
-		if (v1.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER) {
 			v1.n = (int)v1.n % (int)atof(src.c_str());
 		}
 		else {
@@ -379,7 +381,7 @@ static bool corefunc_intmod(PROGRAM &prg, std::string tok)
 		}
 	}
 	else if (src[0] == '"') {
-		if (v1.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER) {
 			v1.n = (int)v1.n % (int)atof(remove_quotes(src).c_str());
 		}
 		else {
@@ -387,9 +389,9 @@ static bool corefunc_intmod(PROGRAM &prg, std::string tok)
 		}
 	}
 	else {
-		VARIABLE &v2 = find_variable(prg, src);
+		Variable &v2 = find_variable(prg, src);
 
-		if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER && v2.type == Variable::NUMBER) {
 			v1.n = (int)v1.n % (int)v2.n;
 		}
 		else {
@@ -400,7 +402,7 @@ static bool corefunc_intmod(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_fmod(PROGRAM &prg, std::string tok)
+static bool corefunc_fmod(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string src = token(prg);
@@ -409,10 +411,10 @@ static bool corefunc_fmod(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected fmod parameters on line " + util::itos(get_line_num(prg)));
 	}
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
 	if (src[0] == '-' || isdigit(src[0])) {
-		if (v1.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER) {
 			v1.n = fmod(v1.n, atof(src.c_str()));
 		}
 		else {
@@ -420,7 +422,7 @@ static bool corefunc_fmod(PROGRAM &prg, std::string tok)
 		}
 	}
 	else if (src[0] == '"') {
-		if (v1.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER) {
 			v1.n = fmod(v1.n, atof(remove_quotes(src).c_str()));
 		}
 		else {
@@ -428,9 +430,9 @@ static bool corefunc_fmod(PROGRAM &prg, std::string tok)
 		}
 	}
 	else {
-		VARIABLE &v2 = find_variable(prg, src);
+		Variable &v2 = find_variable(prg, src);
 
-		if (v1.type == VARIABLE::NUMBER && v2.type == VARIABLE::NUMBER) {
+		if (v1.type == Variable::NUMBER && v2.type == Variable::NUMBER) {
 			v1.n = fmod(v1.n, v2.n);
 		}
 		else {
@@ -441,7 +443,7 @@ static bool corefunc_fmod(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_neg(PROGRAM &prg, std::string tok)
+static bool corefunc_neg(Program &prg, std::string tok)
 {
 	std::string name = token(prg);
 	
@@ -449,9 +451,9 @@ static bool corefunc_neg(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected neg parameters on line " + util::itos(get_line_num(prg)));
 	}
 
-	VARIABLE &v1 = find_variable(prg, name);
+	Variable &v1 = find_variable(prg, name);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = -v1.n;
 	}
 	else {
@@ -461,7 +463,7 @@ static bool corefunc_neg(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_label(PROGRAM &prg, std::string tok)
+static bool corefunc_label(Program &prg, std::string tok)
 {
 	std::string name = token(prg);
 
@@ -473,7 +475,7 @@ static bool corefunc_label(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid label name on line " + util::itos(get_line_num(prg)));
 	}
 
-	LABEL l;
+	Label l;
 	l.name = name;
 	l.p = prg.p;
 	l.line = prg.line;
@@ -484,7 +486,7 @@ static bool corefunc_label(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_goto(PROGRAM &prg, std::string tok)
+static bool corefunc_goto(Program &prg, std::string tok)
 {
 	std::string name = token(prg);
 
@@ -502,7 +504,7 @@ static bool corefunc_goto(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_compare(PROGRAM &prg, std::string tok)
+static bool corefunc_compare(Program &prg, std::string tok)
 {
 	std::string a = token(prg);
 	std::string b = token(prg);
@@ -529,7 +531,7 @@ static bool corefunc_compare(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_je(PROGRAM &prg, std::string tok)
+static bool corefunc_je(Program &prg, std::string tok)
 {
 	std::string label = token(prg);
 
@@ -549,7 +551,7 @@ static bool corefunc_je(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_jne(PROGRAM &prg, std::string tok)
+static bool corefunc_jne(Program &prg, std::string tok)
 {
 	std::string label = token(prg);
 
@@ -569,7 +571,7 @@ static bool corefunc_jne(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_jl(PROGRAM &prg, std::string tok)
+static bool corefunc_jl(Program &prg, std::string tok)
 {
 	std::string label = token(prg);
 
@@ -589,7 +591,7 @@ static bool corefunc_jl(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_jle(PROGRAM &prg, std::string tok)
+static bool corefunc_jle(Program &prg, std::string tok)
 {
 	std::string label = token(prg);
 
@@ -609,7 +611,7 @@ static bool corefunc_jle(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_jg(PROGRAM &prg, std::string tok)
+static bool corefunc_jg(Program &prg, std::string tok)
 {
 	std::string label = token(prg);
 
@@ -629,7 +631,7 @@ static bool corefunc_jg(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_jge(PROGRAM &prg, std::string tok)
+static bool corefunc_jge(Program &prg, std::string tok)
 {
 	std::string label = token(prg);
 
@@ -649,7 +651,7 @@ static bool corefunc_jge(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_call(PROGRAM &prg, std::string tok)
+static bool corefunc_call(Program &prg, std::string tok)
 {
 	std::string tok2 = token(prg);
 	std::string function_name;
@@ -678,7 +680,7 @@ static bool corefunc_call(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_function(PROGRAM &prg, std::string tok)
+static bool corefunc_function(Program &prg, std::string tok)
 {
 	int start_line = prg.line;
 	std::string name = token(prg);
@@ -688,7 +690,7 @@ static bool corefunc_function(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected function parameters on line " + util::itos(get_line_num(prg)));
 	}
 
-	PROGRAM p;
+	Program p;
 	
 	std::string tok2;
 
@@ -749,7 +751,7 @@ static bool corefunc_function(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_comment(PROGRAM &prg, std::string tok)
+static bool corefunc_comment(Program &prg, std::string tok)
 {
 	while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
 		prg.p++;
@@ -762,7 +764,7 @@ static bool corefunc_comment(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_inspect(PROGRAM &prg, std::string tok)
+static bool corefunc_inspect(Program &prg, std::string tok)
 {
 	std::string name = token(prg);
 	
@@ -770,7 +772,7 @@ static bool corefunc_inspect(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected inspect parameters on line " + util::itos(get_line_num(prg)));
 	}
 
-	VARIABLE &v1 = find_variable(prg, name);
+	Variable &v1 = find_variable(prg, name);
 
 	char buf[1000];
 
@@ -781,10 +783,10 @@ static bool corefunc_inspect(PROGRAM &prg, std::string tok)
 		std::string s = remove_quotes(unescape(name));
 		snprintf(buf, 1000, "%s", s.c_str());
 	}
-	else if (v1.type == VARIABLE::NUMBER) {
+	else if (v1.type == Variable::NUMBER) {
 		snprintf(buf, 1000, "%g", v1.n);
 	}
-	else if (v1.type == VARIABLE::STRING) {
+	else if (v1.type == Variable::STRING) {
 		snprintf(buf, 1000, "\"%s\"", v1.s.c_str());
 	}
 	else {
@@ -796,7 +798,7 @@ static bool corefunc_inspect(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_string_format(PROGRAM &prg, std::string tok)
+static bool corefunc_string_format(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string fmt = token(prg);
@@ -811,9 +813,9 @@ static bool corefunc_string_format(PROGRAM &prg, std::string tok)
 		fmts = remove_quotes(unescape(fmt));
 	}
 	else {
-		VARIABLE &v1 = find_variable(prg, fmt);
+		Variable &v1 = find_variable(prg, fmt);
 
-		if (v1.type == VARIABLE::STRING) {
+		if (v1.type == Variable::STRING) {
 			fmts = v1.s;
 		}
 		else {
@@ -862,16 +864,16 @@ static bool corefunc_string_format(PROGRAM &prg, std::string tok)
 			val = remove_quotes(unescape(param));
 		}
 		else {
-			VARIABLE &v1 = find_variable(prg, param);
-			if (v1.type == VARIABLE::NUMBER) {
+			Variable &v1 = find_variable(prg, param);
+			if (v1.type == Variable::NUMBER) {
 				char buf[1000];
 				snprintf(buf, 1000, "%g", v1.n);
 				val = buf;
 			}
-			else if (v1.type == VARIABLE::STRING) {
+			else if (v1.type == Variable::STRING) {
 				val = v1.s;
 			}
-			else if (v1.type == VARIABLE::VECTOR) {
+			else if (v1.type == Variable::VECTOR) {
 				val = "-vector-";
 			}
 			else {
@@ -888,14 +890,14 @@ static bool corefunc_string_format(PROGRAM &prg, std::string tok)
 		result += fmts.substr(c);
 	}
 
-	VARIABLE &v1 = find_variable(prg, dest);
-	v1.type = VARIABLE::STRING;
+	Variable &v1 = find_variable(prg, dest);
+	v1.type = Variable::STRING;
 	v1.s = result;
 
 	return true;
 }
 
-static bool mathfunc_sin(PROGRAM &prg, std::string tok)
+static bool mathfunc_sin(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string vs = token(prg);
@@ -909,9 +911,9 @@ static bool mathfunc_sin(PROGRAM &prg, std::string tok)
 	strings.push_back(vs);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = sin(values[0]);
 	}
 	else {
@@ -921,7 +923,7 @@ static bool mathfunc_sin(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool mathfunc_cos(PROGRAM &prg, std::string tok)
+static bool mathfunc_cos(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string vs = token(prg);
@@ -935,9 +937,9 @@ static bool mathfunc_cos(PROGRAM &prg, std::string tok)
 	strings.push_back(vs);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = cos(values[0]);
 	}
 	else {
@@ -947,7 +949,7 @@ static bool mathfunc_cos(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool mathfunc_atan2(PROGRAM &prg, std::string tok)
+static bool mathfunc_atan2(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string vs1 = token(prg);
@@ -963,9 +965,9 @@ static bool mathfunc_atan2(PROGRAM &prg, std::string tok)
 	strings.push_back(vs2);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = atan2(values[0], values[1]);
 	}
 	else {
@@ -975,7 +977,7 @@ static bool mathfunc_atan2(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool mathfunc_abs(PROGRAM &prg, std::string tok)
+static bool mathfunc_abs(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string vs = token(prg);
@@ -989,9 +991,9 @@ static bool mathfunc_abs(PROGRAM &prg, std::string tok)
 	strings.push_back(vs);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = abs(values[0]);
 	}
 	else {
@@ -1001,7 +1003,7 @@ static bool mathfunc_abs(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool mathfunc_pow(PROGRAM &prg, std::string tok)
+static bool mathfunc_pow(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string vs1 = token(prg);
@@ -1017,9 +1019,9 @@ static bool mathfunc_pow(PROGRAM &prg, std::string tok)
 	strings.push_back(vs2);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = pow(values[0], values[1]);
 	}
 	else {
@@ -1029,7 +1031,7 @@ static bool mathfunc_pow(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool mathfunc_sqrt(PROGRAM &prg, std::string tok)
+static bool mathfunc_sqrt(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string vs1 = token(prg);
@@ -1043,9 +1045,9 @@ static bool mathfunc_sqrt(PROGRAM &prg, std::string tok)
 	strings.push_back(vs1);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = sqrt(values[0]);
 	}
 	else {
@@ -1055,7 +1057,7 @@ static bool mathfunc_sqrt(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool mathfunc_rand(PROGRAM &prg, std::string tok)
+static bool mathfunc_rand(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string min_incl = token(prg);
@@ -1070,12 +1072,12 @@ static bool mathfunc_rand(PROGRAM &prg, std::string tok)
 	strings.push_back(max_incl);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = util::rand(values[0], values[1]);
 	}
-	else if (v1.type == VARIABLE::STRING) {
+	else if (v1.type == Variable::STRING) {
 		v1.s = util::itos(util::rand(values[0], values[1]));
 	}
 	else {
@@ -1085,7 +1087,7 @@ static bool mathfunc_rand(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool gfxfunc_clear(PROGRAM &prg, std::string tok)
+static bool gfxfunc_clear(Program &prg, std::string tok)
 {
 	std::string r =  token(prg);
 	std::string g =  token(prg);
@@ -1112,21 +1114,21 @@ static bool gfxfunc_clear(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool primfunc_start_primitives(PROGRAM &prg, std::string tok)
+static bool primfunc_start_primitives(Program &prg, std::string tok)
 {
 	gfx::draw_primitives_start();
 
 	return true;
 }
 
-static bool primfunc_end_primitives(PROGRAM &prg, std::string tok)
+static bool primfunc_end_primitives(Program &prg, std::string tok)
 {
 	gfx::draw_primitives_end();
 
 	return true;
 }
 
-static bool primfunc_line(PROGRAM &prg, std::string tok)
+static bool primfunc_line(Program &prg, std::string tok)
 {
 	std::string r =  token(prg);
 	std::string g =  token(prg);
@@ -1174,7 +1176,7 @@ static bool primfunc_line(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool primfunc_filled_triangle(PROGRAM &prg, std::string tok)
+static bool primfunc_filled_triangle(Program &prg, std::string tok)
 {
 	std::string r1 =  token(prg);
 	std::string g1 =  token(prg);
@@ -1248,7 +1250,7 @@ static bool primfunc_filled_triangle(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool primfunc_rectangle(PROGRAM &prg, std::string tok)
+static bool primfunc_rectangle(Program &prg, std::string tok)
 {
 	std::string r =  token(prg);
 	std::string g =  token(prg);
@@ -1297,7 +1299,7 @@ static bool primfunc_rectangle(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool primfunc_filled_rectangle(PROGRAM &prg, std::string tok)
+static bool primfunc_filled_rectangle(Program &prg, std::string tok)
 {
 	std::string r1 =  token(prg);
 	std::string g1 =  token(prg);
@@ -1380,7 +1382,7 @@ static bool primfunc_filled_rectangle(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool primfunc_ellipse(PROGRAM &prg, std::string tok)
+static bool primfunc_ellipse(Program &prg, std::string tok)
 {
 	std::string r =  token(prg);
 	std::string g =  token(prg);
@@ -1431,7 +1433,7 @@ static bool primfunc_ellipse(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool primfunc_filled_ellipse(PROGRAM &prg, std::string tok)
+static bool primfunc_filled_ellipse(Program &prg, std::string tok)
 {
 	std::string r =  token(prg);
 	std::string g =  token(prg);
@@ -1479,7 +1481,7 @@ static bool primfunc_filled_ellipse(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool primfunc_circle(PROGRAM &prg, std::string tok)
+static bool primfunc_circle(Program &prg, std::string tok)
 {
 	std::string r =  token(prg);
 	std::string g =  token(prg);
@@ -1526,7 +1528,7 @@ static bool primfunc_circle(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool primfunc_filled_circle(PROGRAM &prg, std::string tok)
+static bool primfunc_filled_circle(Program &prg, std::string tok)
 {
 	std::string r =  token(prg);
 	std::string g =  token(prg);
@@ -1570,7 +1572,7 @@ static bool primfunc_filled_circle(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool mmlfunc_create(PROGRAM &prg, std::string tok)
+static bool mmlfunc_create(Program &prg, std::string tok)
 {
 	std::string var = token(prg);
 	std::string str = token(prg);
@@ -1579,12 +1581,12 @@ static bool mmlfunc_create(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected mml_create parameters on line " + util::itos(get_line_num(prg)));
 	}
 
-	VARIABLE &v1 = find_variable(prg, var);
+	Variable &v1 = find_variable(prg, var);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = prg.mml_id;
 	}
-	else if (v1.type == VARIABLE::STRING) {
+	else if (v1.type == Variable::STRING) {
 		v1.s = util::itos(prg.mml_id);
 	}
 	else {
@@ -1597,8 +1599,8 @@ static bool mmlfunc_create(PROGRAM &prg, std::string tok)
 		strs = remove_quotes(unescape(str));
 	}
 	else {
-		VARIABLE &v1 = find_variable(prg, str);
-		if (v1.type == VARIABLE::STRING) {
+		Variable &v1 = find_variable(prg, str);
+		if (v1.type == Variable::STRING) {
 			strs = v1.s;
 		}
 		else {
@@ -1616,7 +1618,7 @@ static bool mmlfunc_create(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool mmlfunc_load(PROGRAM &prg, std::string tok)
+static bool mmlfunc_load(Program &prg, std::string tok)
 {
 	std::string var = token(prg);
 	std::string name = token(prg);
@@ -1625,12 +1627,12 @@ static bool mmlfunc_load(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected mml_load parameters on line " + util::itos(get_line_num(prg)));
 	}
 
-	VARIABLE &v1 = find_variable(prg, var);
+	Variable &v1 = find_variable(prg, var);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = prg.mml_id;
 	}
-	else if (v1.type == VARIABLE::STRING) {
+	else if (v1.type == Variable::STRING) {
 		v1.s = util::itos(prg.mml_id);
 	}
 	else {
@@ -1644,7 +1646,7 @@ static bool mmlfunc_load(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool mmlfunc_play(PROGRAM &prg, std::string tok)
+static bool mmlfunc_play(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string volume = token(prg);
@@ -1671,7 +1673,7 @@ static bool mmlfunc_play(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool mmlfunc_stop(PROGRAM &prg, std::string tok)
+static bool mmlfunc_stop(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 
@@ -1694,7 +1696,7 @@ static bool mmlfunc_stop(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool imagefunc_load(PROGRAM &prg, std::string tok)
+static bool imagefunc_load(Program &prg, std::string tok)
 {
 	std::string var = token(prg);
 	std::string name = token(prg);
@@ -1703,12 +1705,12 @@ static bool imagefunc_load(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_load parameters on line " + util::itos(get_line_num(prg)));
 	}
 
-	VARIABLE &v1 = find_variable(prg, var);
+	Variable &v1 = find_variable(prg, var);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = prg.image_id;
 	}
-	else if (v1.type == VARIABLE::STRING) {
+	else if (v1.type == Variable::STRING) {
 		v1.s = util::itos(prg.image_id);
 	}
 	else {
@@ -1722,7 +1724,7 @@ static bool imagefunc_load(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool imagefunc_draw(PROGRAM &prg, std::string tok)
+static bool imagefunc_draw(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string r = token(prg);
@@ -1775,7 +1777,7 @@ static bool imagefunc_draw(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool imagefunc_stretch_region(PROGRAM &prg, std::string tok)
+static bool imagefunc_stretch_region(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string r = token(prg);
@@ -1840,7 +1842,7 @@ static bool imagefunc_stretch_region(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool imagefunc_draw_rotated_scaled(PROGRAM &prg, std::string tok)
+static bool imagefunc_draw_rotated_scaled(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string r = token(prg);
@@ -1903,7 +1905,7 @@ static bool imagefunc_draw_rotated_scaled(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool imagefunc_start(PROGRAM &prg, std::string tok)
+static bool imagefunc_start(Program &prg, std::string tok)
 {
 	std::string img = token(prg);
 
@@ -1926,7 +1928,7 @@ static bool imagefunc_start(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool imagefunc_end(PROGRAM &prg, std::string tok)
+static bool imagefunc_end(Program &prg, std::string tok)
 {
 	std::string img = token(prg);
 
@@ -1949,7 +1951,7 @@ static bool imagefunc_end(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool imagefunc_size(PROGRAM &prg, std::string tok)
+static bool imagefunc_size(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string dest1 = token(prg);
@@ -1969,16 +1971,16 @@ static bool imagefunc_size(PROGRAM &prg, std::string tok)
 
 	gfx::Image *img = prg.images[values[0]];
 
-	VARIABLE &v1 = find_variable(prg, dest1);
-	VARIABLE &v2 = find_variable(prg, dest2);
+	Variable &v1 = find_variable(prg, dest1);
+	Variable &v2 = find_variable(prg, dest2);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = img->size.w;
 	}
 	else {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
-	if (v2.type == VARIABLE::NUMBER) {
+	if (v2.type == Variable::NUMBER) {
 		v2.n = img->size.h;
 	}
 	else {
@@ -1988,7 +1990,7 @@ static bool imagefunc_size(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool fontfunc_load(PROGRAM &prg, std::string tok)
+static bool fontfunc_load(Program &prg, std::string tok)
 {
 	std::string var = token(prg);
 	std::string name = token(prg);
@@ -1999,12 +2001,12 @@ static bool fontfunc_load(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected font_load parameters on line " + util::itos(get_line_num(prg)));
 	}
 
-	VARIABLE &v1 = find_variable(prg, var);
+	Variable &v1 = find_variable(prg, var);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = prg.font_id;
 	}
-	else if (v1.type == VARIABLE::STRING) {
+	else if (v1.type == Variable::STRING) {
 		v1.s = util::itos(prg.font_id);
 	}
 	else {
@@ -2024,7 +2026,7 @@ static bool fontfunc_load(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool fontfunc_draw(PROGRAM &prg, std::string tok)
+static bool fontfunc_draw(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string r = token(prg);
@@ -2067,13 +2069,13 @@ static bool fontfunc_draw(PROGRAM &prg, std::string tok)
 		txt = remove_quotes(unescape(text));
 	}
 	else {
-		VARIABLE &v1 = find_variable(prg, text);
-		if (v1.type == VARIABLE::NUMBER) {
+		Variable &v1 = find_variable(prg, text);
+		if (v1.type == Variable::NUMBER) {
 			char buf[1000];
 			snprintf(buf, 1000, "%g", v1.n);
 			txt = buf;
 		}
-		else if (v1.type == VARIABLE::STRING) {
+		else if (v1.type == Variable::STRING) {
 			txt = v1.s;
 		}
 		else {
@@ -2086,7 +2088,7 @@ static bool fontfunc_draw(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool fontfunc_width(PROGRAM &prg, std::string tok)
+static bool fontfunc_width(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string dest = token(prg);
@@ -2106,13 +2108,13 @@ static bool fontfunc_width(PROGRAM &prg, std::string tok)
 		txt = remove_quotes(unescape(text));
 	}
 	else {
-		VARIABLE &v1 = find_variable(prg, text);
-		if (v1.type == VARIABLE::NUMBER) {
+		Variable &v1 = find_variable(prg, text);
+		if (v1.type == Variable::NUMBER) {
 			char buf[1000];
 			snprintf(buf, 1000, "%g", v1.n);
 			txt = buf;
 		}
-		else if (v1.type == VARIABLE::STRING) {
+		else if (v1.type == Variable::STRING) {
 			txt = v1.s;
 		}
 		else {
@@ -2124,9 +2126,9 @@ static bool fontfunc_width(PROGRAM &prg, std::string tok)
 
 	int w = font->get_text_width(txt);
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = w;
 	}
 	else {
@@ -2136,7 +2138,7 @@ static bool fontfunc_width(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool fontfunc_height(PROGRAM &prg, std::string tok)
+static bool fontfunc_height(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string dest = token(prg);
@@ -2153,9 +2155,9 @@ static bool fontfunc_height(PROGRAM &prg, std::string tok)
 
 	int h = font->get_height();
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = h;
 	}
 	else {
@@ -2165,11 +2167,11 @@ static bool fontfunc_height(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-void set_string_or_number(PROGRAM &prg, std::string name, double value)
+void set_string_or_number(Program &prg, std::string name, double value)
 {
-	VARIABLE &v1 = find_variable(prg, name);
+	Variable &v1 = find_variable(prg, name);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = value;
 	}
 	else {
@@ -2177,7 +2179,7 @@ void set_string_or_number(PROGRAM &prg, std::string name, double value)
 	}
 }
 
-static bool joyfunc_poll(PROGRAM &prg, std::string tok)
+static bool joyfunc_poll(Program &prg, std::string tok)
 {
 	std::string num = token(prg);
 	std::string x1 = token(prg);
@@ -2360,7 +2362,7 @@ static bool joyfunc_poll(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool joyfunc_count(PROGRAM &prg, std::string tok)
+static bool joyfunc_count(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	
@@ -2368,9 +2370,9 @@ static bool joyfunc_count(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected joystick_count parameters on line " + util::itos(get_line_num(prg)));
 	}
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = input::get_num_joysticks();
 	}
 	else {
@@ -2380,7 +2382,7 @@ static bool joyfunc_count(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool vectorfunc_add(PROGRAM &prg, std::string tok)
+static bool vectorfunc_add(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string value = token(prg);
@@ -2402,18 +2404,18 @@ static bool vectorfunc_add(PROGRAM &prg, std::string tok)
 	}
 	*/
 
-	std::vector<VARIABLE> &v = prg.vectors[values[0]];
+	std::vector<Variable> &v = prg.vectors[values[0]];
 
-	VARIABLE var;
+	Variable var;
 
 	if (value[0] == '"') {
-		var.type = VARIABLE::STRING;
+		var.type = Variable::STRING;
 		var.function = prg.name;
 		var.name = "-constant-";
 		var.s = remove_quotes(unescape(value));
 	}
 	else if (value[0] == '-' || isdigit(value[0])) {
-		var.type = VARIABLE::NUMBER;
+		var.type = Variable::NUMBER;
 		var.function = prg.name;
 		var.name = "-constant-";
 		var.n = atof(value.c_str());
@@ -2427,7 +2429,7 @@ static bool vectorfunc_add(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool vectorfunc_size(PROGRAM &prg, std::string tok)
+static bool vectorfunc_size(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string dest = token(prg);
@@ -2444,11 +2446,11 @@ static bool vectorfunc_size(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + util::itos(get_line_num(prg)));
 	}
 
-	std::vector<VARIABLE> &v = prg.vectors[values[0]];
+	std::vector<Variable> &v = prg.vectors[values[0]];
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = v.size();
 	}
 	else {
@@ -2458,7 +2460,7 @@ static bool vectorfunc_size(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool vectorfunc_set(PROGRAM &prg, std::string tok)
+static bool vectorfunc_set(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string index = token(prg);
@@ -2477,22 +2479,22 @@ static bool vectorfunc_set(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + util::itos(get_line_num(prg)));
 	}
 
-	std::vector<VARIABLE> &v = prg.vectors[values[0]];
+	std::vector<Variable> &v = prg.vectors[values[0]];
 
 	if (values[1] < 0 || values[1] >= v.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + util::itos(get_line_num(prg)));
 	}
 
-	VARIABLE var;
+	Variable var;
 
 	if (value[0] == '"') {
-		var.type = VARIABLE::STRING;
+		var.type = Variable::STRING;
 		var.function = prg.name;
 		var.name = "-constant-";
 		var.s = remove_quotes(unescape(value));
 	}
 	else if (value[0] == '-' || isdigit(value[0])) {
-		var.type = VARIABLE::NUMBER;
+		var.type = Variable::NUMBER;
 		var.function = prg.name;
 		var.name = "-constant-";
 		var.n = atof(value.c_str());
@@ -2506,7 +2508,7 @@ static bool vectorfunc_set(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool vectorfunc_insert(PROGRAM &prg, std::string tok)
+static bool vectorfunc_insert(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string index = token(prg);
@@ -2525,22 +2527,22 @@ static bool vectorfunc_insert(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + util::itos(get_line_num(prg)));
 	}
 
-	std::vector<VARIABLE> &v = prg.vectors[values[0]];
+	std::vector<Variable> &v = prg.vectors[values[0]];
 
 	if (values[1] < 0 || values[1] > v.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + util::itos(get_line_num(prg)));
 	}
 
-	VARIABLE var;
+	Variable var;
 
 	if (value[0] == '"') {
-		var.type = VARIABLE::STRING;
+		var.type = Variable::STRING;
 		var.function = prg.name;
 		var.name = "-constant-";
 		var.s = remove_quotes(unescape(value));
 	}
 	else if (value[0] == '-' || isdigit(value[0])) {
-		var.type = VARIABLE::NUMBER;
+		var.type = Variable::NUMBER;
 		var.function = prg.name;
 		var.name = "-constant-";
 		var.n = atof(value.c_str());
@@ -2554,7 +2556,7 @@ static bool vectorfunc_insert(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool vectorfunc_get(PROGRAM &prg, std::string tok)
+static bool vectorfunc_get(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string dest = token(prg);
@@ -2573,13 +2575,13 @@ static bool vectorfunc_get(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + util::itos(get_line_num(prg)));
 	}
 
-	std::vector<VARIABLE> &v = prg.vectors[values[0]];
+	std::vector<Variable> &v = prg.vectors[values[0]];
 
 	if (values[1] < 0 || values[1] >= v.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + util::itos(get_line_num(prg)));
 	}
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
 	std::string bak = v1.name;
 	std::string bak2 = v1.function;
@@ -2590,7 +2592,7 @@ static bool vectorfunc_get(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool vectorfunc_erase(PROGRAM &prg, std::string tok)
+static bool vectorfunc_erase(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string index = token(prg);
@@ -2608,7 +2610,7 @@ static bool vectorfunc_erase(PROGRAM &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + util::itos(get_line_num(prg)));
 	}
 
-	std::vector<VARIABLE> &v = prg.vectors[values[0]];
+	std::vector<Variable> &v = prg.vectors[values[0]];
 
 	if (values[1] < 0 || values[1] >= v.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + util::itos(get_line_num(prg)));
@@ -2619,7 +2621,7 @@ static bool vectorfunc_erase(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool cfgfunc_load(PROGRAM &prg, std::string tok)
+static bool cfgfunc_load(Program &prg, std::string tok)
 {
 	cfg_numbers.clear();
 	cfg_strings.clear();
@@ -2637,8 +2639,8 @@ static bool cfgfunc_load(PROGRAM &prg, std::string tok)
 		cfg_names = remove_quotes(unescape(cfg_name));
 	}
 	else  {
-		VARIABLE &v1 = find_variable(prg, cfg_name);
-		if (v1.type == VARIABLE::STRING) {
+		Variable &v1 = find_variable(prg, cfg_name);
+		if (v1.type == Variable::STRING) {
 			cfg_names = v1.s;
 		}
 		else {
@@ -2648,9 +2650,9 @@ static bool cfgfunc_load(PROGRAM &prg, std::string tok)
 
 	bool found_cfg = load_cfg(cfg_names);
 	
-	VARIABLE &v1 = find_variable(prg, found);
+	Variable &v1 = find_variable(prg, found);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = found_cfg;
 	}
 	else {
@@ -2660,7 +2662,7 @@ static bool cfgfunc_load(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool cfgfunc_save(PROGRAM &prg, std::string tok)
+static bool cfgfunc_save(Program &prg, std::string tok)
 {
 	std::string cfg_name = token(prg);
 
@@ -2674,8 +2676,8 @@ static bool cfgfunc_save(PROGRAM &prg, std::string tok)
 		cfg_names = remove_quotes(unescape(cfg_name));
 	}
 	else  {
-		VARIABLE &v1 = find_variable(prg, cfg_name);
-		if (v1.type == VARIABLE::STRING) {
+		Variable &v1 = find_variable(prg, cfg_name);
+		if (v1.type == Variable::STRING) {
 			cfg_names = v1.s;
 		}
 		else {
@@ -2688,7 +2690,7 @@ static bool cfgfunc_save(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool cfgfunc_get_number(PROGRAM &prg, std::string tok)
+static bool cfgfunc_get_number(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string name = token(prg);
@@ -2703,8 +2705,8 @@ static bool cfgfunc_get_number(PROGRAM &prg, std::string tok)
 		names = remove_quotes(unescape(name));
 	}
 	else  {
-		VARIABLE &v1 = find_variable(prg, name);
-		if (v1.type == VARIABLE::STRING) {
+		Variable &v1 = find_variable(prg, name);
+		if (v1.type == Variable::STRING) {
 			names = v1.s;
 		}
 		else {
@@ -2712,9 +2714,9 @@ static bool cfgfunc_get_number(PROGRAM &prg, std::string tok)
 		}
 	}
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
-	if (v1.type != VARIABLE::NUMBER) {
+	if (v1.type != Variable::NUMBER) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -2723,7 +2725,7 @@ static bool cfgfunc_get_number(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool cfgfunc_get_string(PROGRAM &prg, std::string tok)
+static bool cfgfunc_get_string(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string name = token(prg);
@@ -2738,8 +2740,8 @@ static bool cfgfunc_get_string(PROGRAM &prg, std::string tok)
 		names = remove_quotes(unescape(name));
 	}
 	else  {
-		VARIABLE &v1 = find_variable(prg, name);
-		if (v1.type == VARIABLE::STRING) {
+		Variable &v1 = find_variable(prg, name);
+		if (v1.type == Variable::STRING) {
 			names = v1.s;
 		}
 		else {
@@ -2747,9 +2749,9 @@ static bool cfgfunc_get_string(PROGRAM &prg, std::string tok)
 		}
 	}
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
-	if (v1.type != VARIABLE::STRING) {
+	if (v1.type != Variable::STRING) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -2758,7 +2760,7 @@ static bool cfgfunc_get_string(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool cfgfunc_set_number(PROGRAM &prg, std::string tok)
+static bool cfgfunc_set_number(Program &prg, std::string tok)
 {
 	std::string name = token(prg);
 	std::string value = token(prg);
@@ -2773,8 +2775,8 @@ static bool cfgfunc_set_number(PROGRAM &prg, std::string tok)
 		names = remove_quotes(unescape(name));
 	}
 	else  {
-		VARIABLE &v1 = find_variable(prg, name);
-		if (v1.type == VARIABLE::STRING) {
+		Variable &v1 = find_variable(prg, name);
+		if (v1.type == Variable::STRING) {
 			names = v1.s;
 		}
 		else {
@@ -2791,7 +2793,7 @@ static bool cfgfunc_set_number(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool cfgfunc_set_string(PROGRAM &prg, std::string tok)
+static bool cfgfunc_set_string(Program &prg, std::string tok)
 {
 	std::string name = token(prg);
 	std::string value = token(prg);
@@ -2806,8 +2808,8 @@ static bool cfgfunc_set_string(PROGRAM &prg, std::string tok)
 		names = remove_quotes(unescape(name));
 	}
 	else  {
-		VARIABLE &v1 = find_variable(prg, name);
-		if (v1.type == VARIABLE::STRING) {
+		Variable &v1 = find_variable(prg, name);
+		if (v1.type == Variable::STRING) {
 			names = v1.s;
 		}
 		else {
@@ -2821,8 +2823,8 @@ static bool cfgfunc_set_string(PROGRAM &prg, std::string tok)
 		values = remove_quotes(unescape(value));
 	}
 	else  {
-		VARIABLE &v1 = find_variable(prg, value);
-		if (v1.type == VARIABLE::STRING) {
+		Variable &v1 = find_variable(prg, value);
+		if (v1.type == Variable::STRING) {
 			values = v1.s;
 		}
 		else {
@@ -2835,7 +2837,7 @@ static bool cfgfunc_set_string(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool cfgfunc_number_exists(PROGRAM &prg, std::string tok)
+static bool cfgfunc_number_exists(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string name = token(prg);
@@ -2850,8 +2852,8 @@ static bool cfgfunc_number_exists(PROGRAM &prg, std::string tok)
 		names = remove_quotes(unescape(name));
 	}
 	else  {
-		VARIABLE &v1 = find_variable(prg, name);
-		if (v1.type == VARIABLE::STRING) {
+		Variable &v1 = find_variable(prg, name);
+		if (v1.type == Variable::STRING) {
 			names = v1.s;
 		}
 		else {
@@ -2868,9 +2870,9 @@ static bool cfgfunc_number_exists(PROGRAM &prg, std::string tok)
 		found_n = 1;
 	}
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = found_n;
 	}
 	else {
@@ -2880,7 +2882,7 @@ static bool cfgfunc_number_exists(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-static bool cfgfunc_string_exists(PROGRAM &prg, std::string tok)
+static bool cfgfunc_string_exists(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string name = token(prg);
@@ -2895,8 +2897,8 @@ static bool cfgfunc_string_exists(PROGRAM &prg, std::string tok)
 		names = remove_quotes(unescape(name));
 	}
 	else  {
-		VARIABLE &v1 = find_variable(prg, name);
-		if (v1.type == VARIABLE::STRING) {
+		Variable &v1 = find_variable(prg, name);
+		if (v1.type == Variable::STRING) {
 			names = v1.s;
 		}
 		else {
@@ -2913,9 +2915,9 @@ static bool cfgfunc_string_exists(PROGRAM &prg, std::string tok)
 		found_n = 1;
 	}
 
-	VARIABLE &v1 = find_variable(prg, dest);
+	Variable &v1 = find_variable(prg, dest);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = found_n;
 	}
 	else {
@@ -2924,6 +2926,8 @@ static bool cfgfunc_string_exists(PROGRAM &prg, std::string tok)
 
 	return true;
 }
+
+namespace booboo {
 
 void booboo_init()
 {
@@ -3000,3 +3004,5 @@ void booboo_init()
 	add_syntax("cfg_number_exists", cfgfunc_number_exists);
 	add_syntax("cfg_string_exists", cfgfunc_string_exists);
 }
+
+} // end namespace booboo

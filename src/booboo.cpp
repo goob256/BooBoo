@@ -4,11 +4,13 @@
 
 #include "booboo.h"
 
+namespace booboo {
+
 std::map<std::string, library_func> library_map;
 std::string reset_game_name;
 bool load_from_filesystem;
 
-void skip_whitespace(PROGRAM &prg, bool add_lines)
+void skip_whitespace(Program &prg, bool add_lines)
 {
 	while (prg.p < prg.code.length() && isspace(prg.code[prg.p])) {
 		if (prg.code[prg.p] == '\n') {
@@ -101,7 +103,7 @@ std::string unescape(std::string s)
 	return ret;
 }
 
-int get_line_num(PROGRAM &prg)
+int get_line_num(Program &prg)
 {
 	int ln = prg.prev_tok_line + prg.start_line;
 
@@ -112,9 +114,9 @@ int get_line_num(PROGRAM &prg)
 	return prg.line_numbers[ln];
 }
 
-VARIABLE &find_variable(PROGRAM &prg, std::string name)
+Variable &find_variable(Program &prg, std::string name)
 {
-	std::map< std::string, VARIABLE >::iterator it;
+	std::map< std::string, Variable >::iterator it;
 
 	it = prg.variables.find(name);
 
@@ -125,7 +127,7 @@ VARIABLE &find_variable(PROGRAM &prg, std::string name)
 	return (*it).second;
 }
 
-std::vector<double> variable_names_to_numbers(PROGRAM &prg, std::vector<std::string> strings)
+std::vector<double> variable_names_to_numbers(Program &prg, std::vector<std::string> strings)
 {
 	std::vector<double> values;
 
@@ -134,12 +136,12 @@ std::vector<double> variable_names_to_numbers(PROGRAM &prg, std::vector<std::str
 			values.push_back(atof(strings[i].c_str()));
 		}
 		else {
-			VARIABLE &v1 = find_variable(prg, strings[i]);
+			Variable &v1 = find_variable(prg, strings[i]);
 
-			if (v1.type == VARIABLE::NUMBER || v1.type == VARIABLE::VECTOR) {
+			if (v1.type == Variable::NUMBER || v1.type == Variable::VECTOR) {
 				values.push_back(v1.n);
 			}
-			else if (v1.type == VARIABLE::STRING) {
+			else if (v1.type == Variable::STRING) {
 				values.push_back(atof(v1.s.c_str()));
 			}
 			else {
@@ -164,7 +166,7 @@ static int count_lines(std::string s)
 	return count;
 }
 
-std::string token(PROGRAM &prg, bool add_lines)
+std::string token(Program &prg, bool add_lines)
 {
 	prg.prev_tok_p = prg.p;
 	prg.prev_tok_line = prg.line;
@@ -275,9 +277,9 @@ std::string token(PROGRAM &prg, bool add_lines)
 	return tok;
 }
 
-std::vector<LABEL> process_labels(PROGRAM prg)
+std::vector<Label> process_labels(Program prg)
 {
-	std::vector<LABEL> labels;
+	std::vector<Label> labels;
 	std::string tok;
 
 	prg.p = 0;
@@ -322,7 +324,7 @@ std::vector<LABEL> process_labels(PROGRAM prg)
 				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid label name on line " + util::itos(get_line_num(prg)));
 			}
 
-			LABEL l;
+			Label l;
 			l.name = name;
 			l.p = prg.p;
 			l.line = prg.line;
@@ -334,7 +336,7 @@ std::vector<LABEL> process_labels(PROGRAM prg)
 	return labels;
 }
 
-bool process_includes(PROGRAM &prg)
+bool process_includes(Program &prg)
 {
 	bool ret = false;
 
@@ -420,7 +422,7 @@ bool process_includes(PROGRAM &prg)
 	return ret;
 }
 
-void process_functions(PROGRAM &prg)
+void process_functions(Program &prg)
 {
 	std::string code;
 
@@ -453,7 +455,7 @@ void process_functions(PROGRAM &prg)
 				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected function parameters on line " + util::itos(get_line_num(prg)));
 			}
 
-			PROGRAM p;
+			Program p;
 			
 			std::string tok2;
 
@@ -519,14 +521,14 @@ void process_functions(PROGRAM &prg)
 	prg.prev_tok_line = 1;
 }
 
-static void set_string_or_number(PROGRAM &prg, std::string name, double value)
+static void set_string_or_number(Program &prg, std::string name, double value)
 {
-	VARIABLE &v1 = find_variable(prg, name);
+	Variable &v1 = find_variable(prg, name);
 
-	if (v1.type == VARIABLE::NUMBER) {
+	if (v1.type == Variable::NUMBER) {
 		v1.n = value;
 	}
-	else if (v1.type == VARIABLE::STRING)
+	else if (v1.type == Variable::STRING)
 	{
 		char buf[1000];
 		snprintf(buf, 1000, "%g", value);
@@ -537,11 +539,11 @@ static void set_string_or_number(PROGRAM &prg, std::string name, double value)
 	}
 }
 
-void call_function(PROGRAM &prg, std::string function_name, std::string result_name)
+void call_function(Program &prg, std::string function_name, std::string result_name)
 {
 	for (size_t i = 0; i < prg.functions.size(); i++) {
 		if (prg.functions[i].name == function_name) {
-			std::map<std::string, VARIABLE> tmp;
+			std::map<std::string, Variable> tmp;
 			prg.variables_backup_stack.push_back(tmp);
 
 			for (size_t j = 0; j < prg.functions[i].parameters.size(); j++) {
@@ -551,23 +553,23 @@ void call_function(PROGRAM &prg, std::string function_name, std::string result_n
 					throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected call parameters on line " + util::itos(get_line_num(prg)));
 				}
 				
-				VARIABLE var;
+				Variable var;
 
 				var.function = function_name;
 
 				if (param[0] == '-' || isdigit(param[0])) {
 					var.name = prg.functions[i].parameters[j];
-					var.type = VARIABLE::NUMBER;
+					var.type = Variable::NUMBER;
 					var.n = atof(param.c_str());
 				}
 				else {
-					VARIABLE &v1 = find_variable(prg, param);
+					Variable &v1 = find_variable(prg, param);
 					var = v1;
 					var.name = prg.functions[i].parameters[j];
 				}
 
-				std::map<std::string, VARIABLE> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
-				std::map<std::string, VARIABLE>::iterator it3;
+				std::map<std::string, Variable> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
+				std::map<std::string, Variable>::iterator it3;
 				if ((it3 = prg.variables.find(var.name)) != prg.variables.end()) {
 					variables_backup[var.name] = prg.variables[var.name];
 				}
@@ -579,8 +581,8 @@ void call_function(PROGRAM &prg, std::string function_name, std::string result_n
 			int p_bak = prg.p;
 			int line_bak = prg.line;
 			int start_line_bak = prg.start_line;
-			std::vector<LABEL> labels_bak = prg.labels;
-			VARIABLE result_bak = prg.result;
+			std::vector<Label> labels_bak = prg.labels;
+			Variable result_bak = prg.result;
 			std::string name_bak = prg.name;
 
 			prg.p = 0;
@@ -606,7 +608,7 @@ void call_function(PROGRAM &prg, std::string function_name, std::string result_n
 			prg.labels = labels_bak;
 			prg.name = name_bak;
 
-			for (std::map<std::string, VARIABLE>::iterator it = prg.variables.begin(); it != prg.variables.end();) {
+			for (std::map<std::string, Variable>::iterator it = prg.variables.begin(); it != prg.variables.end();) {
 				if ((*it).second.function == function_name) {
 					it = prg.variables.erase(it);
 				}
@@ -615,16 +617,16 @@ void call_function(PROGRAM &prg, std::string function_name, std::string result_n
 				}
 			}
 
-			std::map<std::string, VARIABLE> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
-			for (std::map<std::string, VARIABLE>::iterator it = variables_backup.begin(); it != variables_backup.end(); it++) {
+			std::map<std::string, Variable> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
+			for (std::map<std::string, Variable>::iterator it = variables_backup.begin(); it != variables_backup.end(); it++) {
 				prg.variables[(*it).first] = (*it).second;
 			}
 			prg.variables_backup_stack.erase(prg.variables_backup_stack.begin()+(prg.variables_backup_stack.size()-1));
 
 
 			if (result_name != "") {
-				for (std::map<std::string, VARIABLE>::iterator it = prg.variables.begin(); it != prg.variables.end(); it++) {
-					VARIABLE &v = (*it).second;
+				for (std::map<std::string, Variable>::iterator it = prg.variables.begin(); it != prg.variables.end(); it++) {
+					Variable &v = (*it).second;
 					if (result_name == (*it).first) {
 						std::string bak = v.name;
 						std::string bak2 = v.function;
@@ -632,7 +634,7 @@ void call_function(PROGRAM &prg, std::string function_name, std::string result_n
 						v.name = bak;
 						v.function = bak2;
 						/*
-						if (prg.variables[i].type == VARIABLE::VECTOR && prg.result.type == VARIABLE::VECTOR) {
+						if (prg.variables[i].type == Variable::VECTOR && prg.result.type == Variable::VECTOR) {
 							prg.vectors[(int)prg.variables[i].n] = prg.vectors[(int)p.result.n];
 						}
 						*/
@@ -646,7 +648,7 @@ void call_function(PROGRAM &prg, std::string function_name, std::string result_n
 	}
 }
 
-static bool interpret_breakers(PROGRAM &prg, std::string tok)
+static bool interpret_breakers(Program &prg, std::string tok)
 {
 	if (tok == "reset") {
 		std::string name = token(prg);
@@ -661,8 +663,8 @@ static bool interpret_breakers(PROGRAM &prg, std::string tok)
 			names = remove_quotes(unescape(name));
 		}
 		else {
-			VARIABLE &v1 = find_variable(prg, name);
-			if (v1.type == VARIABLE::STRING) {
+			Variable &v1 = find_variable(prg, name);
+			if (v1.type == Variable::STRING) {
 				names = v1.s;
 			}
 			else {
@@ -680,15 +682,15 @@ static bool interpret_breakers(PROGRAM &prg, std::string tok)
 		}
 		
 		if (value[0] == '-' || isdigit(value[0])) {
-			prg.result.type = VARIABLE::NUMBER;
+			prg.result.type = Variable::NUMBER;
 			prg.result.n = atof(value.c_str());
 		}
 		else if (value[0] == '"') {
-			prg.result.type = VARIABLE::STRING;
+			prg.result.type = Variable::STRING;
 			prg.result.s = remove_quotes(unescape(value));
 		}
 		else {
-			VARIABLE &v1 = find_variable(prg, value);
+			Variable &v1 = find_variable(prg, value);
 			prg.result = v1;
 		}
 
@@ -701,7 +703,7 @@ static bool interpret_breakers(PROGRAM &prg, std::string tok)
 	return true;
 }
 
-bool interpret(PROGRAM &prg)
+bool interpret(Program &prg)
 {
 	std::string tok = token(prg);
 
@@ -725,7 +727,7 @@ bool interpret(PROGRAM &prg)
 	return true;
 }
 
-void destroy_program(PROGRAM &prg, bool destroy_vectors)
+void destroy_program(Program &prg, bool destroy_vectors)
 {
 	for (std::map<int, audio::MML *>::iterator it =  prg.mmls.begin(); it != prg.mmls.end(); it++) {
 		audio::MML *mml = (*it).second;
@@ -762,3 +764,5 @@ void booboo_shutdown()
 {
 	library_map.clear();
 }
+
+} // end namespace booboo

@@ -2,11 +2,13 @@
 
 #include "booboo.h"
 
+using namespace booboo;
+
 bool load_from_filesystem_set;
 
 static bool quit;
 
-PROGRAM prg;
+Program prg;
 
 int orig_argc;
 char **orig_argv;

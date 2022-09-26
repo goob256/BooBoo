@@ -5,9 +5,11 @@
 #include <vector>
 #include <map>
 
-struct VARIABLE
+namespace booboo {
+
+struct Variable
 {
-	enum VARIABLE_TYPE {
+	enum Variable_Type {
 		NUMBER,
 		STRING,
 		VECTOR,
@@ -21,13 +23,13 @@ struct VARIABLE
 	std::string function;
 };
 
-struct LABEL {
+struct Label {
 	std::string name;
 	int p;
 	int line;
 };
 
-struct PROGRAM {
+struct Program {
 	std::string name;
 	int compare_flag;
 	
@@ -39,13 +41,13 @@ struct PROGRAM {
 	int prev_tok_p;
 	int prev_tok_line;
 	
-	std::map<std::string, VARIABLE> variables;
-	std::vector< std::map<std::string, VARIABLE> > variables_backup_stack;
-	std::vector<PROGRAM> functions;
-	std::vector<LABEL> labels;
+	std::map<std::string, Variable> variables;
+	std::vector< std::map<std::string, Variable> > variables_backup_stack;
+	std::vector<Program> functions;
+	std::vector<Label> labels;
 
 	std::vector<std::string> parameters;
-	VARIABLE result;
+	Variable result;
 
 	int mml_id;
 	int image_id;
@@ -54,31 +56,34 @@ struct PROGRAM {
 	std::map<int, audio::MML *> mmls;
 	std::map<int, gfx::Image *> images;
 	std::map<int, gfx::TTF *> fonts;
-	std::map< int, std::vector<VARIABLE> > vectors;
+	std::map< int, std::vector<Variable> > vectors;
 	std::vector<int> line_numbers;
 };
 
-typedef bool (*library_func)(PROGRAM &prg, std::string tok);
+typedef bool (*library_func)(Program &prg, std::string tok);
 
 extern std::string reset_game_name;
 extern bool load_from_filesystem;
 
 void booboo_init();
 void booboo_shutdown();
-bool interpret(PROGRAM &prg);
-void destroy_program(PROGRAM &prg, bool destroy_vectors);
-void call_function(PROGRAM &prg, std::string function_name, std::string result_name);
+bool interpret(Program &prg);
+void destroy_program(Program &prg, bool destroy_vectors);
+void call_function(Program &prg, std::string function_name, std::string result_name);
 void add_syntax(std::string name, library_func func);
-std::vector<LABEL> process_labels(PROGRAM prg);
-bool process_includes(PROGRAM &prg);
-void process_functions(PROGRAM &prg);
-std::string token(PROGRAM &prg, bool add_lines = false);
-int get_line_num(PROGRAM &prg);
-VARIABLE &find_variable(PROGRAM &prg, std::string name);
-std::vector<double> variable_names_to_numbers(PROGRAM &prg, std::vector<std::string> strings);
-void set_string_or_number(PROGRAM &prg, std::string name, std::string value);
-void skip_whitespace(PROGRAM &prg, bool add_lines = false);
+std::string token(Program &prg, bool add_lines = false);
+int get_line_num(Program &prg);
+Variable &find_variable(Program &prg, std::string name);
+std::vector<double> variable_names_to_numbers(Program &prg, std::vector<std::string> strings);
+void set_string_or_number(Program &prg, std::string name, std::string value);
+void skip_whitespace(Program &prg, bool add_lines = false);
 std::string remove_quotes(std::string s);
 std::string unescape(std::string s);
+
+std::vector<Label> process_labels(Program prg);
+bool process_includes(Program &prg);
+void process_functions(Program &prg);
+
+} // end namespace booboo
 
 #endif // BOOBOO_H
