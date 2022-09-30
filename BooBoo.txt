@@ -6,6 +6,9 @@ end - called when the program is exiting
 
 The screen is 640x360.
 
+At startup, global code is run. Then the above mentioned callbacks get called
+at intervals or shutdown.
+
 ---
 
 var
