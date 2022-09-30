@@ -47,7 +47,7 @@ echo Invalid target: %TARGET%
 goto done
 
 :tgui6
-cd c:\users\trent\code\booboo\tgui6\build
+cd c:\users\trent\code\tgui6\build
 if %CFG%=="release" goto tgui6_release
 rem copy relwithdebinfo\tgui6.dll ..\..\b
 goto done
@@ -55,7 +55,7 @@ goto done
 rem copy release\tgui6.dll ..\..\b
 goto done
 :shim4
-cd c:\users\trent\code\booboo\shim4\build
+cd c:\users\trent\code\shim4\build
 if %CFG%=="release" goto shim4_release
 rem copy relwithdebinfo\shim4.dll ..\..\b
 goto done

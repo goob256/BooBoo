@@ -52,14 +52,14 @@ echo Invalid target: %TARGET%
 goto done
 
 :tgui6
-cd c:\users\trent\code\booboo\tgui6
+cd c:\users\trent\code\tgui6
 rmdir /s /q build
 mkdir build
 cd build
 c:\users\trent\code\booboo\misc\batch_files\cmake\windows\tgui6.bat %CFG_FLAGS% %STEAMWORKS_FLAGS%
 goto done
 :shim4
-cd c:\users\trent\code\booboo\shim4
+cd c:\users\trent\code\shim4
 rmdir /s /q build
 mkdir build
 cd build

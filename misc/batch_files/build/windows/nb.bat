@@ -56,19 +56,19 @@ goto done
 
 :tgui6
 if "%2"=="r" goto tgui6_release
-cd c:\users\trent\code\booboo\tgui6\build
+cd c:\users\trent\code\tgui6\build
 msbuild /p:configuration=relwithdebinfo tgui6.sln
 goto done
 :tgui6_release
-cd c:\users\trent\code\booboo\tgui6\build
+cd c:\users\trent\code\tgui6\build
 msbuild /p:configuration=release tgui6.sln
 goto done
 :shim4
-cd c:\users\trent\code\booboo\shim4\build
+cd c:\users\trent\code\shim4\build
 msbuild /p:configuration=relwithdebinfo shim4.sln
 goto done
 :shim4_release
-cd c:\users\trent\code\booboo\shim4\build
+cd c:\users\trent\code\shim4\build
 msbuild /p:configuration=release shim4.sln
 goto done
 :game
