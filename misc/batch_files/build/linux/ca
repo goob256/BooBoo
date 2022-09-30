@@ -6,9 +6,9 @@ TTH_FLAGS=""
 PI=0
 
 if uname -a | grep raspberry > /dev/null ; then
-	USER_INCLUDE_PATH="~/code/booboo/shim4/external"
+	USER_INCLUDE_PATH="~/code/shim4/external"
 else
-	USER_INCLUDE_PATH="~/code/steamworks/public;~/code/booboo/shim4/external;/usr/include/SDL2"
+	USER_INCLUDE_PATH="~/code/steamworks/public;~/code/shim4/external;/usr/include/SDL2"
 fi
 
 while [ "${1-}" ] ; do
@@ -47,21 +47,21 @@ TTH_FLAGS="$FLAGS $TTH_FLAGS"
 
 pushd . > /dev/null
 
-cd ~/code/booboo
+cd ~/code
 cd tgui6
 rm -rf build
 mkdir build
 cd build
-cmake .. -DUSER_INCLUDE_PATH="$USER_INCLUDE_PATH;~/code/booboo/shim4/external/SDL2_ttf-2.0.14" $TGUI_FLAGS
+cmake .. -DUSER_INCLUDE_PATH="$USER_INCLUDE_PATH;~/code/shim4/external/SDL2_ttf-2.0.14" $TGUI_FLAGS
 cd ../../shim4
 rm -rf build
 mkdir build
 cd build
-cmake .. -DUSER_INCLUDE_PATH="$USER_INCLUDE_PATH;/usr/include/freetype2;/code/booboo/shim4/external/SDL2_ttf-2.0.14;~/code/booboo/tgui6/include" -DUSER_LIBRARY_PATH="~/code/booboo/tgui6/build" $SHIM_FLAGS
-cd ../..
+cmake .. -DUSER_INCLUDE_PATH="$USER_INCLUDE_PATH;/usr/include/freetype2;/code/shim4/external/SDL2_ttf-2.0.14;~/code/tgui6/include" -DUSER_LIBRARY_PATH="~/code/tgui6/build" $SHIM_FLAGS
+cd ../../booboo
 rm -rf build
 mkdir build
 cd build
-cmake .. -DUSER_INCLUDE_PATH="$USER_INCLUDE_PATH;~/code/booboo/shim4/external/SDL2_ttf-2.0.14;~/code/booboo/tgui6/include;~/code/booboo/shim4/include;~/code/booboo/wedge3/include" -DUSER_LIBRARY_PATH="~/code/booboo/tgui6/build;~/code/booboo/shim4/build;~/code/booboo/wedge3/build;~/code/steamworks/redistributable_bin/linux64" $TTH_FLAGS
+cmake .. -DUSER_INCLUDE_PATH="$USER_INCLUDE_PATH;~/code/shim4/external/SDL2_ttf-2.0.14;~/code/tgui6/include;~/code/shim4/include;~/code/booboo/wedge3/include" -DUSER_LIBRARY_PATH="~/code/tgui6/build;~/code/shim4/build;~/code/booboo/wedge3/build;~/code/steamworks/redistributable_bin/linux64" $TTH_FLAGS
 
 popd > /dev/null

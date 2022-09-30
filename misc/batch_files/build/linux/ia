@@ -1,5 +1,5 @@
 #!/bin/sh
-mkdir ~/code/3
+mkdir ~/code/b
 cd ~/code/booboo/data
 compress_dir
-cp ~/code/booboo/data.cpa ~/code/booboo/build/booboo ~/code/booboo/docs/3rd_party.html ~/code/3
+cp ~/code/booboo/data.cpa ~/code/booboo/build/BooBoo ~/code/booboo/docs/3rd_party.html ~/code/b

@@ -5,12 +5,12 @@ else
 	NPROC=`nproc`
 fi
 CWD=`pwd`
-cd ~/code/booboo
-rm "build/booboo"
+cd ~/code
 cd tgui6/build
 make -j$NPROC
 cd ../../shim4/build
 make -j$NPROC
-cd ../../build
+cd ../../booboo/build
+rm "BooBoo"
 make -j$NPROC
 cd $CWD
