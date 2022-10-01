@@ -81,6 +81,18 @@ function draw
 	clear 0 0 0
 
 	call draw_menu
+
+	var number nj
+	joystick_count nj
+	var string s
+	string_format s "% Joystick(s) Connected" nj
+	var number y
+	= y 360
+	var number h
+	font_height font h
+	- y h
+	- y 10
+	font_draw font 255 255 255 255 s 10 y
 }
 
 function run
