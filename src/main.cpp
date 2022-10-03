@@ -452,7 +452,7 @@ again:
 			try {
 				code = util::load_text_from_filesystem(fn);
 			}
-			catch (util::Error e) {
+			catch (util::Error &e) {
 				gui::fatalerror("ERROR", "Program is missing or corrupt!", gui::OK, true);
 			}
 		}
@@ -460,7 +460,7 @@ again:
 			try {
 				code = util::load_text(fn);
 			}
-			catch (util::Error e) {
+			catch (util::Error &e) {
 				gui::fatalerror("ERROR", "Program is missing or corrupt!", gui::OK, true);
 			}
 		}
@@ -471,7 +471,7 @@ again:
 				code = util::load_text_from_filesystem(fn);
 				booboo::load_from_filesystem = true;
 			}
-			catch (util::Error e) {
+			catch (util::Error &e) {
 				gui::fatalerror("ERROR", "Program is missing or corrupt!", gui::OK, true);
 			}
 		}
@@ -480,12 +480,12 @@ again:
 				code = util::load_text_from_filesystem("main.boo");
 				booboo::load_from_filesystem = true;
 			}
-			catch (util::Error e) {
+			catch (util::Error &e) {
 				try {
 					code = util::load_text("code/main.boo");
 					booboo::load_from_filesystem = false;
 				}
-				catch (util::Error e) {
+				catch (util::Error &e) {
 					gui::fatalerror("ERROR", "Program is missing or corrupt!", gui::OK, true);
 				}
 			}
@@ -518,7 +518,7 @@ again:
 	booboo::end();
 
 	}
-	catch (util::Error e) {
+	catch (util::Error &e) {
 		gui::fatalerror("ERROR", e.error_message.c_str(), gui::OK, true);
 	}
 
