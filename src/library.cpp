@@ -495,12 +495,21 @@ static bool corefunc_goto(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected goto paramters on line " + util::itos(get_line_num(prg)));
 	}
 
+	std::map<std::string, Label>::iterator it = prg.labels.find(name);
+	if (it != prg.labels.end()) {
+		Label &l = (*it).second;
+		prg.p = l.p;
+		prg.line = l.line;
+	}
+
+	/*
 	for (size_t i = 0; i < prg.labels.size(); i++) {
 		if (prg.labels[i].name == name) {
 			prg.p = prg.labels[i].p;
 			prg.line = prg.labels[i].line;
 		}
 	}
+	*/
 
 	return true;
 }
@@ -541,11 +550,11 @@ static bool corefunc_je(Program &prg, std::string tok)
 	}
 
 	if (prg.compare_flag == 0) {
-		for (size_t i = 0; i < prg.labels.size(); i++) {
-			if (prg.labels[i].name == label) {
-				prg.p = prg.labels[i].p;
-				prg.line = prg.labels[i].line;
-			}
+		std::map<std::string, Label>::iterator it = prg.labels.find(label);
+		if (it != prg.labels.end()) {
+			Label &l = (*it).second;
+			prg.p = l.p;
+			prg.line = l.line;
 		}
 	}
 
@@ -561,11 +570,11 @@ static bool corefunc_jne(Program &prg, std::string tok)
 	}
 
 	if (prg.compare_flag != 0) {
-		for (size_t i = 0; i < prg.labels.size(); i++) {
-			if (prg.labels[i].name == label) {
-				prg.p = prg.labels[i].p;
-				prg.line = prg.labels[i].line;
-			}
+		std::map<std::string, Label>::iterator it = prg.labels.find(label);
+		if (it != prg.labels.end()) {
+			Label &l = (*it).second;
+			prg.p = l.p;
+			prg.line = l.line;
 		}
 	}
 
@@ -581,11 +590,11 @@ static bool corefunc_jl(Program &prg, std::string tok)
 	}
 
 	if (prg.compare_flag < 0) {
-		for (size_t i = 0; i < prg.labels.size(); i++) {
-			if (prg.labels[i].name == label) {
-				prg.p = prg.labels[i].p;
-				prg.line = prg.labels[i].line;
-			}
+		std::map<std::string, Label>::iterator it = prg.labels.find(label);
+		if (it != prg.labels.end()) {
+			Label &l = (*it).second;
+			prg.p = l.p;
+			prg.line = l.line;
 		}
 	}
 
@@ -601,11 +610,11 @@ static bool corefunc_jle(Program &prg, std::string tok)
 	}
 
 	if (prg.compare_flag <= 0) {
-		for (size_t i = 0; i < prg.labels.size(); i++) {
-			if (prg.labels[i].name == label) {
-				prg.p = prg.labels[i].p;
-				prg.line = prg.labels[i].line;
-			}
+		std::map<std::string, Label>::iterator it = prg.labels.find(label);
+		if (it != prg.labels.end()) {
+			Label &l = (*it).second;
+			prg.p = l.p;
+			prg.line = l.line;
 		}
 	}
 
@@ -621,11 +630,11 @@ static bool corefunc_jg(Program &prg, std::string tok)
 	}
 
 	if (prg.compare_flag > 0) {
-		for (size_t i = 0; i < prg.labels.size(); i++) {
-			if (prg.labels[i].name == label) {
-				prg.p = prg.labels[i].p;
-				prg.line = prg.labels[i].line;
-			}
+		std::map<std::string, Label>::iterator it = prg.labels.find(label);
+		if (it != prg.labels.end()) {
+			Label &l = (*it).second;
+			prg.p = l.p;
+			prg.line = l.line;
 		}
 	}
 
@@ -641,11 +650,11 @@ static bool corefunc_jge(Program &prg, std::string tok)
 	}
 
 	if (prg.compare_flag >= 0) {
-		for (size_t i = 0; i < prg.labels.size(); i++) {
-			if (prg.labels[i].name == label) {
-				prg.p = prg.labels[i].p;
-				prg.line = prg.labels[i].line;
-			}
+		std::map<std::string, Label>::iterator it = prg.labels.find(label);
+		if (it != prg.labels.end()) {
+			Label &l = (*it).second;
+			prg.p = l.p;
+			prg.line = l.line;
 		}
 	}
 

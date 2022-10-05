@@ -285,9 +285,9 @@ std::string token(Program &prg, bool add_lines)
 	return tok;
 }
 
-std::vector<Label> process_labels(Program prg)
+std::map<std::string, Label> process_labels(Program prg)
 {
-	std::vector<Label> labels;
+	std::map<std::string, Label> labels;
 	std::string tok;
 
 	prg.p = 0;
@@ -337,7 +337,7 @@ std::vector<Label> process_labels(Program prg)
 			l.p = prg.p;
 			l.line = prg.line;
 
-			labels.push_back(l);
+			labels[name] = l;
 		}
 	}
 
@@ -516,7 +516,7 @@ void process_functions(Program &prg)
 			p.start_line = start_line;
 			p.code = prg.code.substr(save_p, end_p-save_p);
 			p.labels = process_labels(p);
-			prg.functions.push_back(p);
+			prg.functions[name] = p;
 		}
 	}
 
@@ -546,110 +546,111 @@ static void set_string_or_number(Program &prg, std::string name, double value)
 
 void call_function(Program &prg, std::string function_name, std::string result_name)
 {
-	for (size_t i = 0; i < prg.functions.size(); i++) {
-		if (prg.functions[i].name == function_name) {
-			std::map<std::string, Variable> tmp;
-			prg.variables_backup_stack.push_back(tmp);
+	std::map<std::string, Program>::iterator it = prg.functions.find(function_name);
+	if (it != prg.functions.end()) {
+		Program &func = (*it).second;
 
-			for (size_t j = 0; j < prg.functions[i].parameters.size(); j++) {
-				std::string param = token(prg);
-				
-				if (param == "") {
-					throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected call parameters on line " + util::itos(get_line_num(prg)));
-				}
-				
-				Variable var;
+		std::map<std::string, Variable> tmp;
+		prg.variables_backup_stack.push_back(tmp);
 
-				var.function = function_name;
-
-				if (param[0] == '-' || isdigit(param[0])) {
-					var.name = prg.functions[i].parameters[j];
-					var.type = Variable::NUMBER;
-					var.n = atof(param.c_str());
-				}
-				else {
-					Variable &v1 = find_variable(prg, param);
-					var = v1;
-					var.name = prg.functions[i].parameters[j];
-				}
-
-				std::map<std::string, Variable> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
-				std::map<std::string, Variable>::iterator it3;
-				if ((it3 = prg.variables.find(var.name)) != prg.variables.end()) {
-					variables_backup[var.name] = prg.variables[var.name];
-				}
-
-				prg.variables[var.name] = var;
+		for (size_t j = 0; j < func.parameters.size(); j++) {
+			std::string param = token(prg);
+			
+			if (param == "") {
+				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected call parameters on line " + util::itos(get_line_num(prg)));
 			}
+			
+			Variable var;
 
-			std::string code_bak = prg.code;
-			int p_bak = prg.p;
-			int line_bak = prg.line;
-			int start_line_bak = prg.start_line;
-			std::vector<Label> labels_bak = prg.labels;
-			Variable result_bak = prg.result;
-			std::string name_bak = prg.name;
+			var.function = function_name;
 
-			prg.p = 0;
-			prg.line = 1;
-			prg.prev_tok_p = 0;
-			prg.prev_tok_line = 1;
-			prg.code = prg.functions[i].code;
-			prg.start_line = prg.functions[i].start_line;
-			prg.name = prg.functions[i].name;
-			prg.labels = prg.functions[i].labels;
-
-			while (process_includes(prg));
-			prg.labels = process_labels(prg);
-			process_functions(prg);
-
-			while (interpret(prg)) {
+			if (param[0] == '-' || isdigit(param[0])) {
+				var.name = func.parameters[j];
+				var.type = Variable::NUMBER;
+				var.n = atof(param.c_str());
 			}
-
-			prg.code = code_bak;
-			prg.p = p_bak;
-			prg.line = line_bak;
-			prg.start_line = start_line_bak;
-			prg.labels = labels_bak;
-			prg.name = name_bak;
-
-			for (std::map<std::string, Variable>::iterator it = prg.variables.begin(); it != prg.variables.end();) {
-				if ((*it).second.function == function_name) {
-					it = prg.variables.erase(it);
-				}
-				else {
-					it++;
-				}
+			else {
+				Variable &v1 = find_variable(prg, param);
+				var = v1;
+				var.name = func.parameters[j];
 			}
 
 			std::map<std::string, Variable> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
-			for (std::map<std::string, Variable>::iterator it = variables_backup.begin(); it != variables_backup.end(); it++) {
-				prg.variables[(*it).first] = (*it).second;
+			std::map<std::string, Variable>::iterator it3;
+			if ((it3 = prg.variables.find(var.name)) != prg.variables.end()) {
+				variables_backup[var.name] = prg.variables[var.name];
 			}
-			prg.variables_backup_stack.erase(prg.variables_backup_stack.begin()+(prg.variables_backup_stack.size()-1));
+
+			prg.variables[var.name] = var;
+		}
+
+		std::string code_bak = prg.code;
+		int p_bak = prg.p;
+		int line_bak = prg.line;
+		int start_line_bak = prg.start_line;
+		std::map<std::string, Label> labels_bak = prg.labels;
+		Variable result_bak = prg.result;
+		std::string name_bak = prg.name;
+
+		prg.p = 0;
+		prg.line = 1;
+		prg.prev_tok_p = 0;
+		prg.prev_tok_line = 1;
+		prg.code = func.code;
+		prg.start_line = func.start_line;
+		prg.name = func.name;
+		prg.labels = func.labels;
+
+		while (process_includes(prg));
+		prg.labels = process_labels(prg);
+		process_functions(prg);
+
+		while (interpret(prg)) {
+		}
+
+		prg.code = code_bak;
+		prg.p = p_bak;
+		prg.line = line_bak;
+		prg.start_line = start_line_bak;
+		prg.labels = labels_bak;
+		prg.name = name_bak;
+
+		for (std::map<std::string, Variable>::iterator it = prg.variables.begin(); it != prg.variables.end();) {
+			if ((*it).second.function == function_name) {
+				it = prg.variables.erase(it);
+			}
+			else {
+				it++;
+			}
+		}
+
+		std::map<std::string, Variable> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
+		for (std::map<std::string, Variable>::iterator it = variables_backup.begin(); it != variables_backup.end(); it++) {
+			prg.variables[(*it).first] = (*it).second;
+		}
+		prg.variables_backup_stack.erase(prg.variables_backup_stack.begin()+(prg.variables_backup_stack.size()-1));
 
 
-			if (result_name != "") {
-				for (std::map<std::string, Variable>::iterator it = prg.variables.begin(); it != prg.variables.end(); it++) {
-					Variable &v = (*it).second;
-					if (result_name == (*it).first) {
-						std::string bak = v.name;
-						std::string bak2 = v.function;
-						v = prg.result;
-						v.name = bak;
-						v.function = bak2;
-						/*
-						if (prg.variables[i].type == Variable::VECTOR && prg.result.type == Variable::VECTOR) {
-							prg.vectors[(int)prg.variables[i].n] = prg.vectors[(int)p.result.n];
-						}
-						*/
-						break;
+		if (result_name != "") {
+			for (std::map<std::string, Variable>::iterator it = prg.variables.begin(); it != prg.variables.end(); it++) {
+				Variable &v = (*it).second;
+				if (result_name == (*it).first) {
+					std::string bak = v.name;
+					std::string bak2 = v.function;
+					v = prg.result;
+					v.name = bak;
+					v.function = bak2;
+					/*
+					if (prg.variables[i].type == Variable::VECTOR && prg.result.type == Variable::VECTOR) {
+						prg.vectors[(int)prg.variables[i].n] = prg.vectors[(int)p.result.n];
 					}
+					*/
+					break;
 				}
 			}
-
-			prg.result = result_bak;
 		}
+
+		prg.result = result_bak;
 	}
 }
 

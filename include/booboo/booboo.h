@@ -45,8 +45,8 @@ struct Program {
 	
 	std::map<std::string, Variable> variables;
 	std::vector< std::map<std::string, Variable> > variables_backup_stack;
-	std::vector<Program> functions;
-	std::vector<Label> labels;
+	std::map<std::string, Program> functions;
+	std::map<std::string, Label> labels;
 
 	std::vector<std::string> parameters;
 	Variable result;

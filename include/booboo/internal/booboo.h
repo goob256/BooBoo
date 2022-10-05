@@ -9,7 +9,7 @@
 
 namespace booboo {
 
-std::vector<Label> process_labels(Program prg);
+std::map<std::string, Label> process_labels(Program prg);
 bool process_includes(Program &prg);
 void process_functions(Program &prg);
 
