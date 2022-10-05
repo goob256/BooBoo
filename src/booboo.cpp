@@ -181,7 +181,7 @@ std::string token(Program &prg, bool add_lines)
 	char s[2];
 	s[1] = 0;
 
-	else if (prg.code[prg.p] == '+') {
+	if (prg.code[prg.p] == '+') {
 		prg.p++;
 		return "+";
 	}
