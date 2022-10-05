@@ -16,7 +16,7 @@ void skip_whitespace(Program &prg, bool add_lines)
 		if (prg.code[prg.p] == '\n') {
 			prg.line++;
 			if (add_lines) {
-				prg.line_numbers.push_back(prg.line);
+				//prg.line_numbers.push_back(prg.line);
 			}
 		}
 		prg.p++;
@@ -181,9 +181,9 @@ std::string token(Program &prg, bool add_lines)
 	char s[2];
 	s[1] = 0;
 
-	if (prg.code[prg.p] == ';') {
+	else if (prg.code[prg.p] == '+') {
 		prg.p++;
-		return ";";
+		return "+";
 	}
 	else if (prg.code[prg.p] == '-') {
 		prg.p++;
@@ -200,17 +200,13 @@ std::string token(Program &prg, bool add_lines)
 			return "-";
 		}
 	}
-	else if (prg.code[prg.p] == ':') {
-		prg.p++;
-		return ":";
-	}
 	else if (prg.code[prg.p] == '=') {
 		prg.p++;
 		return "=";
 	}
-	else if (prg.code[prg.p] == '+') {
+	else if (prg.code[prg.p] == '?') {
 		prg.p++;
-		return "+";
+		return "?";
 	}
 	else if (prg.code[prg.p] == '*') {
 		prg.p++;
@@ -220,21 +216,13 @@ std::string token(Program &prg, bool add_lines)
 		prg.p++;
 		return "/";
 	}
+	else if (prg.code[prg.p] == ':') {
+		prg.p++;
+		return ":";
+	}
 	else if (prg.code[prg.p] == '%') {
 		prg.p++;
 		return "%";
-	}
-	else if (prg.code[prg.p] == '?') {
-		prg.p++;
-		return "?";
-	}
-	else if (prg.code[prg.p] == '{') {
-		prg.p++;
-		return "{";
-	}
-	else if (prg.code[prg.p] == '}') {
-		prg.p++;
-		return "}";
 	}
 	else if (isdigit(prg.code[prg.p])) {
 		while (prg.p < prg.code.length() && (isdigit(prg.code[prg.p]) || prg.code[prg.p] == '.')) {
@@ -274,6 +262,18 @@ std::string token(Program &prg, bool add_lines)
 		}
 
 		return tok;
+	}
+	else if (prg.code[prg.p] == '{') {
+		prg.p++;
+		return "{";
+	}
+	else if (prg.code[prg.p] == '}') {
+		prg.p++;
+		return "}";
+	}
+	else if (prg.code[prg.p] == ';') {
+		prg.p++;
+		return ";";
 	}
 	else if (tok == "") {
 		return "";
@@ -357,7 +357,7 @@ bool process_includes(Program &prg)
 	prg.prev_tok_p = 0;
 	prg.prev_tok_line = 1;
 	prg.line_numbers.clear();
-	prg.line_numbers.push_back(prg.line);
+	//prg.line_numbers.push_back(prg.line);
 
 	int prev = prg.p;
 	int start = 0;
@@ -368,7 +368,7 @@ bool process_includes(Program &prg)
 				prg.p++;
 			}
 			prg.line++;
-			prg.line_numbers.push_back(prg.line);
+			//prg.line_numbers.push_back(prg.line);
 			if (prg.p < prg.code.length()) {
 				prg.p++;
 			}
@@ -408,7 +408,7 @@ bool process_includes(Program &prg)
 			}
 
 			for (int i = 0; i < nlines; i++) {
-				prg.line_numbers.push_back(i+1);
+				//prg.line_numbers.push_back(i+1);
 			}
 
 			start = prg.p;
@@ -441,7 +441,7 @@ void process_functions(Program &prg)
 	prg.prev_tok_p = 0;
 	prg.prev_tok_line = 1;
 	prg.line_numbers.clear();
-	prg.line_numbers.push_back(prg.line);
+	//prg.line_numbers.push_back(prg.line);
 
 	while ((tok = token(prg, true)) != "") {
 		if (tok == ";") {
@@ -449,7 +449,7 @@ void process_functions(Program &prg)
 				prg.p++;
 			}
 			prg.line++;
-			prg.line_numbers.push_back(prg.line);
+			//prg.line_numbers.push_back(prg.line);
 			if (prg.p < prg.code.length()) {
 				prg.p++;
 			}
