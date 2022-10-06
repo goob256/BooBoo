@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <stack>
 
 namespace booboo {
 
@@ -44,7 +45,7 @@ struct Program {
 	int prev_tok_line;
 	
 	std::map<std::string, Variable> variables;
-	std::vector< std::map<std::string, Variable> > variables_backup_stack;
+	std::stack< std::map<std::string, Variable> > variables_backup_stack;
 	std::map<std::string, Program> functions;
 	std::map<std::string, Label> labels;
 

@@ -117,7 +117,7 @@ static bool corefunc_var(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
-	std::map<std::string, Variable> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
+	std::map<std::string, Variable> &variables_backup = prg.variables_backup_stack.top();
 	std::map<std::string, Variable>::iterator it3;
 	if ((it3 = prg.variables.find(var.name)) != prg.variables.end()) {
 		if ((*it3).second.function != prg.name) {

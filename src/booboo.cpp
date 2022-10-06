@@ -551,7 +551,7 @@ void call_function(Program &prg, std::string function_name, std::string result_n
 		Program &func = (*it).second;
 
 		std::map<std::string, Variable> tmp;
-		prg.variables_backup_stack.push_back(tmp);
+		prg.variables_backup_stack.push(tmp);
 
 		for (size_t j = 0; j < func.parameters.size(); j++) {
 			std::string param = token(prg);
@@ -575,7 +575,7 @@ void call_function(Program &prg, std::string function_name, std::string result_n
 				var.name = func.parameters[j];
 			}
 
-			std::map<std::string, Variable> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
+			std::map<std::string, Variable> &variables_backup = prg.variables_backup_stack.top();
 			std::map<std::string, Variable>::iterator it3;
 			if ((it3 = prg.variables.find(var.name)) != prg.variables.end()) {
 				variables_backup[var.name] = prg.variables[var.name];
@@ -624,11 +624,11 @@ void call_function(Program &prg, std::string function_name, std::string result_n
 			}
 		}
 
-		std::map<std::string, Variable> &variables_backup = prg.variables_backup_stack[prg.variables_backup_stack.size()-1];
+		std::map<std::string, Variable> &variables_backup = prg.variables_backup_stack.top();
 		for (std::map<std::string, Variable>::iterator it = variables_backup.begin(); it != variables_backup.end(); it++) {
 			prg.variables[(*it).first] = (*it).second;
 		}
-		prg.variables_backup_stack.erase(prg.variables_backup_stack.begin()+(prg.variables_backup_stack.size()-1));
+		prg.variables_backup_stack.pop();
 
 
 		if (result_name != "") {
@@ -788,6 +788,9 @@ Program create_program(std::string code)
 	while(process_includes(prg));
 	prg.labels = process_labels(prg);
 	process_functions(prg);
+		
+	std::map<std::string, Variable> tmp;
+	prg.variables_backup_stack.push(tmp);
 
 	return prg;
 }
