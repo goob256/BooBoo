@@ -559,6 +559,7 @@ static bool corefunc_compare(Program &prg, std::string tok)
 	else if (a_string || b_string) {
 		prg.compare_flag = 0;
 	}
+	// FIXME: if they're vectors or something then it should report an error
 	else {
 		std::vector<std::string> strings;
 		strings.push_back(a);
