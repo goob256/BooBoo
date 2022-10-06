@@ -103,6 +103,14 @@ string_format
 	format strings with replacements
 	e.g. string_format dest "I'm % years old" age
 
+reset
+	load a different BooBoo script
+	e.g. reset "next_slide.boo"
+
+exit
+	Exit the app with a return code to the environment
+	e.g. exit 0
+
 sin
 	trigonometry functions
 	e.g. sin dest 3.14159
