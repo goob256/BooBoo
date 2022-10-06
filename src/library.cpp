@@ -523,19 +523,57 @@ static bool corefunc_compare(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected ? parameters on line " + util::itos(get_line_num(prg)));
 	}
 
-	std::vector<std::string> strings;
-	strings.push_back(a);
-	strings.push_back(b);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
+	bool a_string = false;
+	bool b_string = false;
+	std::string s1;
+	std::string s2;
 
-	if (values[0] < values[1]) {
-		prg.compare_flag = -1;
+	if (a[0] == '"') {
+		a_string = true;
+		s1 = remove_quotes(unescape(a));
 	}
-	else if (values[0] == values[1]) {
+	else if (a[0] == '_' || isalpha(a[0])) {
+		Variable &v = find_variable(prg, a);
+		if (v.type == Variable::STRING) {
+			a_string = true;
+			s1 = v.s;
+		}
+	}
+
+	if (b[0] == '"') {
+		b_string = true;
+		s2 = remove_quotes(unescape(b));
+	}
+	else if (b[0] == '_' || isalpha(b[0])) {
+		Variable &v = find_variable(prg, b);
+		if (v.type == Variable::STRING) {
+			b_string = true;
+			s2 = v.s;
+		}
+	}
+	
+	if (a_string && b_string) {
+		prg.compare_flag = strcmp(s1.c_str(), s2.c_str());
+		//throw util::ParseError(util::itos(prg.compare_flag) + " " + a + " " + b + " " + s1 + " " + s2);
+	}
+	else if (a_string || b_string) {
 		prg.compare_flag = 0;
 	}
 	else {
-		prg.compare_flag = 1;
+		std::vector<std::string> strings;
+		strings.push_back(a);
+		strings.push_back(b);
+		std::vector<double> values = variable_names_to_numbers(prg, strings);
+
+		if (values[0] < values[1]) {
+			prg.compare_flag = -1;
+		}
+		else if (values[0] == values[1]) {
+			prg.compare_flag = 0;
+		}
+		else {
+			prg.compare_flag = 1;
+		}
 	}
 
 	return true;
@@ -3010,6 +3048,8 @@ void start()
 	add_syntax("cfg_set_string", cfgfunc_set_string);
 	add_syntax("cfg_number_exists", cfgfunc_number_exists);
 	add_syntax("cfg_string_exists", cfgfunc_string_exists);
+
+	return_code = 0;
 }
 
 } // end namespace booboo

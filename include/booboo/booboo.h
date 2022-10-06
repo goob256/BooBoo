@@ -67,6 +67,7 @@ typedef bool (*library_func)(Program &prg, std::string tok);
 
 extern std::string reset_game_name;
 extern bool load_from_filesystem;
+extern int return_code;
 
 // These are the main functions
 void start();

@@ -4,11 +4,14 @@
 
 #include "booboo/booboo.h"
 
+extern bool quit;
+
 namespace booboo {
 
 std::map<std::string, library_func> library_map;
 std::string reset_game_name;
 bool load_from_filesystem;
+int return_code;
 
 void skip_whitespace(Program &prg, bool add_lines)
 {
@@ -679,6 +682,15 @@ static bool interpret_breakers(Program &prg, std::string tok)
 		}
 
 		reset_game_name = names;
+	}
+	else if (tok == "exit") {
+		std::string code = token(prg);
+		std::vector<std::string> strings;
+		strings.push_back(code);
+		std::vector<double> values = variable_names_to_numbers(prg, strings);
+		return_code = values[0];
+		reset_game_name = "";
+		quit = true;
 	}
 	else if (tok == "return") {
 		std::string value = token(prg);

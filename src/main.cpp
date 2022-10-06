@@ -4,7 +4,7 @@
 
 bool load_from_filesystem_set;
 
-static bool quit;
+bool quit;
 
 booboo::Program prg;
 
@@ -522,5 +522,5 @@ again:
 		gui::fatalerror("ERROR", e.error_message.c_str(), gui::OK, true);
 	}
 
-	return 0;
+	return booboo::return_code;
 }
