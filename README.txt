@@ -1,3 +1,3 @@
-Mini game/multimedia language
+Mini language with a game/multimedia API
 
 To see a demo, go to https://b1stable.com.
