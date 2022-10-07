@@ -78,6 +78,7 @@ void destroy_program(Program &prg);
 void call_function(Program &prg, std::string function_name, std::string result_name);
 
 // These are for adding syntax
+void add_breaker(std::string name, library_func func);
 void add_syntax(std::string name, library_func func);
 std::string token(Program &prg, bool add_lines = false);
 int get_line_num(Program &prg);

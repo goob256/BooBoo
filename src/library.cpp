@@ -3,6 +3,8 @@
 #include "booboo/booboo.h"
 #include "booboo/internal/booboo.h"
 
+extern bool quit;
+
 using namespace booboo;
 
 static std::map< std::string, double > cfg_numbers;
@@ -85,6 +87,72 @@ static void save_cfg(std::string cfg_name)
 	}
 
 	fclose(f);
+}
+
+bool breaker_reset(Program &prg, std::string tok)
+{
+	std::string name = token(prg);
+
+	if (name == "") {
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected reset parameters on line " + util::itos(get_line_num(prg)));
+	}
+
+	std::string names;
+
+	if (name[0] == '"') {
+		names = remove_quotes(unescape(name));
+	}
+	else {
+		Variable &v1 = find_variable(prg, name);
+		if (v1.type == Variable::STRING) {
+			names = v1.s;
+		}
+		else {
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		}
+	}
+
+	reset_game_name = names;
+
+	return true;
+}
+
+bool breaker_exit(Program &prg, std::string tok)
+{
+	std::string code = token(prg);
+	std::vector<std::string> strings;
+	strings.push_back(code);
+	std::vector<double> values = variable_names_to_numbers(prg, strings);
+	return_code = values[0];
+	reset_game_name = "";
+	quit = true;
+	return true;
+}
+
+bool breaker_return(Program &prg, std::string tok)
+{
+	std::string value = token(prg);
+
+	if (value == "") {
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected return parameters on line " + util::itos(get_line_num(prg)));
+	}
+	
+	if (value[0] == '-' || isdigit(value[0])) {
+		prg.result.type = Variable::NUMBER;
+		prg.result.n = atof(value.c_str());
+	}
+	else if (value[0] == '"') {
+		prg.result.type = Variable::STRING;
+		prg.result.s = remove_quotes(unescape(value));
+	}
+	else {
+		Variable &v1 = find_variable(prg, value);
+		prg.result = v1;
+	}
+
+	prg.result.name = "result";
+
+	return true;
 }
 
 static bool corefunc_var(Program &prg, std::string tok)
@@ -2977,6 +3045,10 @@ namespace booboo {
 
 void start()
 {
+	add_breaker("reset", breaker_reset);
+	add_breaker("exit", breaker_exit);
+	add_breaker("return", breaker_return);
+
 	add_syntax("var", corefunc_var);
 	add_syntax("=", corefunc_set);
 	add_syntax("+", corefunc_add);

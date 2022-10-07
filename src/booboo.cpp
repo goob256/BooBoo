@@ -4,10 +4,9 @@
 
 #include "booboo/booboo.h"
 
-extern bool quit;
-
 namespace booboo {
 
+std::map<std::string, library_func> breaker_map;
 std::map<std::string, library_func> library_map;
 std::string reset_game_name;
 bool load_from_filesystem;
@@ -657,70 +656,6 @@ void call_function(Program &prg, std::string function_name, std::string result_n
 	}
 }
 
-static bool interpret_breakers(Program &prg, std::string tok)
-{
-	if (tok == "reset") {
-		std::string name = token(prg);
-
-		if (name == "") {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected reset parameters on line " + util::itos(get_line_num(prg)));
-		}
-
-		std::string names;
-
-		if (name[0] == '"') {
-			names = remove_quotes(unescape(name));
-		}
-		else {
-			Variable &v1 = find_variable(prg, name);
-			if (v1.type == Variable::STRING) {
-				names = v1.s;
-			}
-			else {
-				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-			}
-		}
-
-		reset_game_name = names;
-	}
-	else if (tok == "exit") {
-		std::string code = token(prg);
-		std::vector<std::string> strings;
-		strings.push_back(code);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
-		return_code = values[0];
-		reset_game_name = "";
-		quit = true;
-	}
-	else if (tok == "return") {
-		std::string value = token(prg);
-
-		if (value == "") {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected return parameters on line " + util::itos(get_line_num(prg)));
-		}
-		
-		if (value[0] == '-' || isdigit(value[0])) {
-			prg.result.type = Variable::NUMBER;
-			prg.result.n = atof(value.c_str());
-		}
-		else if (value[0] == '"') {
-			prg.result.type = Variable::STRING;
-			prg.result.s = remove_quotes(unescape(value));
-		}
-		else {
-			Variable &v1 = find_variable(prg, value);
-			prg.result = v1;
-		}
-
-		prg.result.name = "result";
-	}
-	else {
-		return false;
-	}
-
-	return true;
-}
-
 bool interpret(Program &prg)
 {
 	std::string tok = token(prg);
@@ -729,11 +664,14 @@ bool interpret(Program &prg)
 		return false;
 	}
 
-	if (interpret_breakers(prg, tok) == true) {
-		return false;
+	std::map<std::string, library_func>::iterator it = breaker_map.find(tok);
+	if (it != breaker_map.end()) {
+		if ((*it).second(prg, tok) == true) {
+			return false;
+		}
 	}
 
-	std::map<std::string, library_func>::iterator it = library_map.find(tok);
+	it = library_map.find(tok);
 	if (it == library_map.end()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid token \"" + tok + "\" on line " + util::itos(get_line_num(prg)));
 	}
@@ -768,6 +706,11 @@ void destroy_program(Program &prg)
 	prg.variables.clear();
 	prg.functions.clear();
 	prg.labels.clear();
+}
+
+void add_breaker(std::string name, library_func processing)
+{
+	breaker_map[name] = processing;
 }
 
 void add_syntax(std::string name, library_func processing)
