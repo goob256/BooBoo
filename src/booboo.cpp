@@ -669,13 +669,7 @@ bool interpret(Program &prg)
 	}
 	else {
 		library_func func = (*it).second;
-		Return_Type ret = func(prg, tok);
-		if (ret == RETURN_EXIT) {
-			return false;
-		}
-		else {
-			return ret == RETURN_SUCCESS ? true : false;
-		}
+		return func(prg, tok);
 	}
 
 	return true;

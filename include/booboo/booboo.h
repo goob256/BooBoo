@@ -63,13 +63,7 @@ struct Program {
 	std::vector<int> line_numbers;
 };
 
-enum Return_Type {
-	RETURN_SUCCESS = 0,
-	RETURN_ERROR,
-	RETURN_EXIT
-};
-
-typedef Return_Type (*library_func)(Program &prg, std::string tok);
+typedef bool (*library_func)(Program &prg, std::string tok);
 
 extern std::string reset_game_name;
 extern bool load_from_filesystem;

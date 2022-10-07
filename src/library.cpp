@@ -89,7 +89,7 @@ static void save_cfg(std::string cfg_name)
 	fclose(f);
 }
 
-static Return_Type breaker_reset(Program &prg, std::string tok)
+static bool breaker_reset(Program &prg, std::string tok)
 {
 	std::string name = token(prg);
 
@@ -114,10 +114,10 @@ static Return_Type breaker_reset(Program &prg, std::string tok)
 
 	reset_game_name = names;
 
-	return RETURN_EXIT;
+	return false;
 }
 
-static Return_Type breaker_exit(Program &prg, std::string tok)
+static bool breaker_exit(Program &prg, std::string tok)
 {
 	std::string code = token(prg);
 	std::vector<std::string> strings;
@@ -126,10 +126,10 @@ static Return_Type breaker_exit(Program &prg, std::string tok)
 	return_code = values[0];
 	reset_game_name = "";
 	quit = true;
-	return RETURN_EXIT;
+	return false;
 }
 
-static Return_Type breaker_return(Program &prg, std::string tok)
+static bool breaker_return(Program &prg, std::string tok)
 {
 	std::string value = token(prg);
 
@@ -152,10 +152,10 @@ static Return_Type breaker_return(Program &prg, std::string tok)
 
 	prg.result.name = "result";
 
-	return RETURN_EXIT;
+	return false;
 }
 
-static Return_Type corefunc_var(Program &prg, std::string tok)
+static bool corefunc_var(Program &prg, std::string tok)
 {
 	Variable var;
 
@@ -195,10 +195,10 @@ static Return_Type corefunc_var(Program &prg, std::string tok)
 
 	prg.variables[var.name] = var;
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_set(Program &prg, std::string tok)
+static bool corefunc_set(Program &prg, std::string tok)
 {
 	std::string dest =  token(prg);
 	std::string src =  token(prg);
@@ -251,10 +251,10 @@ static Return_Type corefunc_set(Program &prg, std::string tok)
 		}
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_add(Program &prg, std::string tok)
+static bool corefunc_add(Program &prg, std::string tok)
 {
 	std::string dest =  token(prg);
 	std::string src =  token(prg);
@@ -304,10 +304,10 @@ static Return_Type corefunc_add(Program &prg, std::string tok)
 		}
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_subtract(Program &prg, std::string tok)
+static bool corefunc_subtract(Program &prg, std::string tok)
 {
 	std::string dest =  token(prg);
 	std::string src =  token(prg);
@@ -345,10 +345,10 @@ static Return_Type corefunc_subtract(Program &prg, std::string tok)
 		}
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_multiply(Program &prg, std::string tok)
+static bool corefunc_multiply(Program &prg, std::string tok)
 {
 	std::string dest =  token(prg);
 	std::string src =  token(prg);
@@ -386,10 +386,10 @@ static Return_Type corefunc_multiply(Program &prg, std::string tok)
 		}
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_divide(Program &prg, std::string tok)
+static bool corefunc_divide(Program &prg, std::string tok)
 {
 	std::string dest =  token(prg);
 	std::string src =  token(prg);
@@ -427,10 +427,10 @@ static Return_Type corefunc_divide(Program &prg, std::string tok)
 		}
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_intmod(Program &prg, std::string tok)
+static bool corefunc_intmod(Program &prg, std::string tok)
 {
 	std::string dest =  token(prg);
 	std::string src =  token(prg);
@@ -468,10 +468,10 @@ static Return_Type corefunc_intmod(Program &prg, std::string tok)
 		}
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_fmod(Program &prg, std::string tok)
+static bool corefunc_fmod(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string src = token(prg);
@@ -509,10 +509,10 @@ static Return_Type corefunc_fmod(Program &prg, std::string tok)
 		}
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_neg(Program &prg, std::string tok)
+static bool corefunc_neg(Program &prg, std::string tok)
 {
 	std::string name = token(prg);
 	
@@ -529,10 +529,10 @@ static Return_Type corefunc_neg(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_label(Program &prg, std::string tok)
+static bool corefunc_label(Program &prg, std::string tok)
 {
 	std::string name = token(prg);
 
@@ -552,10 +552,10 @@ static Return_Type corefunc_label(Program &prg, std::string tok)
 	//prg.labels.push_back(l);
 	//already got these
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_goto(Program &prg, std::string tok)
+static bool corefunc_goto(Program &prg, std::string tok)
 {
 	std::string name = token(prg);
 
@@ -579,10 +579,10 @@ static Return_Type corefunc_goto(Program &prg, std::string tok)
 	}
 	*/
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_compare(Program &prg, std::string tok)
+static bool corefunc_compare(Program &prg, std::string tok)
 {
 	std::string a = token(prg);
 	std::string b = token(prg);
@@ -645,10 +645,10 @@ static Return_Type corefunc_compare(Program &prg, std::string tok)
 		}
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_je(Program &prg, std::string tok)
+static bool corefunc_je(Program &prg, std::string tok)
 {
 	std::string label = token(prg);
 
@@ -665,10 +665,10 @@ static Return_Type corefunc_je(Program &prg, std::string tok)
 		}
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_jne(Program &prg, std::string tok)
+static bool corefunc_jne(Program &prg, std::string tok)
 {
 	std::string label = token(prg);
 
@@ -685,10 +685,10 @@ static Return_Type corefunc_jne(Program &prg, std::string tok)
 		}
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_jl(Program &prg, std::string tok)
+static bool corefunc_jl(Program &prg, std::string tok)
 {
 	std::string label = token(prg);
 
@@ -705,10 +705,10 @@ static Return_Type corefunc_jl(Program &prg, std::string tok)
 		}
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_jle(Program &prg, std::string tok)
+static bool corefunc_jle(Program &prg, std::string tok)
 {
 	std::string label = token(prg);
 
@@ -725,10 +725,10 @@ static Return_Type corefunc_jle(Program &prg, std::string tok)
 		}
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_jg(Program &prg, std::string tok)
+static bool corefunc_jg(Program &prg, std::string tok)
 {
 	std::string label = token(prg);
 
@@ -745,10 +745,10 @@ static Return_Type corefunc_jg(Program &prg, std::string tok)
 		}
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_jge(Program &prg, std::string tok)
+static bool corefunc_jge(Program &prg, std::string tok)
 {
 	std::string label = token(prg);
 
@@ -765,10 +765,10 @@ static Return_Type corefunc_jge(Program &prg, std::string tok)
 		}
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_call(Program &prg, std::string tok)
+static bool corefunc_call(Program &prg, std::string tok)
 {
 	std::string tok2 = token(prg);
 	std::string function_name;
@@ -794,10 +794,10 @@ static Return_Type corefunc_call(Program &prg, std::string tok)
 
 	call_function(prg, function_name, result_name);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_function(Program &prg, std::string tok)
+static bool corefunc_function(Program &prg, std::string tok)
 {
 	int start_line = prg.line;
 	std::string name = token(prg);
@@ -862,10 +862,10 @@ static Return_Type corefunc_function(Program &prg, std::string tok)
 	p.labels = process_labels(p);
 	//prg.functions.push_back(p);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_comment(Program &prg, std::string tok)
+static bool corefunc_comment(Program &prg, std::string tok)
 {
 	while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
 		prg.p++;
@@ -875,10 +875,10 @@ static Return_Type corefunc_comment(Program &prg, std::string tok)
 		prg.p++;
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_inspect(Program &prg, std::string tok)
+static bool corefunc_inspect(Program &prg, std::string tok)
 {
 	std::string name = token(prg);
 	
@@ -909,10 +909,10 @@ static Return_Type corefunc_inspect(Program &prg, std::string tok)
 
 	gui::popup("INSPECTOR", buf, gui::OK);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type corefunc_string_format(Program &prg, std::string tok)
+static bool corefunc_string_format(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string fmt = token(prg);
@@ -1008,10 +1008,10 @@ static Return_Type corefunc_string_format(Program &prg, std::string tok)
 	v1.type = Variable::STRING;
 	v1.s = result;
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type mathfunc_sin(Program &prg, std::string tok)
+static bool mathfunc_sin(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string vs = token(prg);
@@ -1034,10 +1034,10 @@ static Return_Type mathfunc_sin(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type mathfunc_cos(Program &prg, std::string tok)
+static bool mathfunc_cos(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string vs = token(prg);
@@ -1060,10 +1060,10 @@ static Return_Type mathfunc_cos(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type mathfunc_atan2(Program &prg, std::string tok)
+static bool mathfunc_atan2(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string vs1 = token(prg);
@@ -1088,10 +1088,10 @@ static Return_Type mathfunc_atan2(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type mathfunc_abs(Program &prg, std::string tok)
+static bool mathfunc_abs(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string vs = token(prg);
@@ -1114,10 +1114,10 @@ static Return_Type mathfunc_abs(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type mathfunc_pow(Program &prg, std::string tok)
+static bool mathfunc_pow(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string vs1 = token(prg);
@@ -1142,10 +1142,10 @@ static Return_Type mathfunc_pow(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type mathfunc_sqrt(Program &prg, std::string tok)
+static bool mathfunc_sqrt(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string vs1 = token(prg);
@@ -1168,10 +1168,10 @@ static Return_Type mathfunc_sqrt(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type mathfunc_rand(Program &prg, std::string tok)
+static bool mathfunc_rand(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string min_incl = token(prg);
@@ -1198,10 +1198,10 @@ static Return_Type mathfunc_rand(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type gfxfunc_clear(Program &prg, std::string tok)
+static bool gfxfunc_clear(Program &prg, std::string tok)
 {
 	std::string r =  token(prg);
 	std::string g =  token(prg);
@@ -1225,24 +1225,24 @@ static Return_Type gfxfunc_clear(Program &prg, std::string tok)
 
 	gfx::clear(c);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type primfunc_start_primitives(Program &prg, std::string tok)
+static bool primfunc_start_primitives(Program &prg, std::string tok)
 {
 	gfx::draw_primitives_start();
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type primfunc_end_primitives(Program &prg, std::string tok)
+static bool primfunc_end_primitives(Program &prg, std::string tok)
 {
 	gfx::draw_primitives_end();
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type primfunc_line(Program &prg, std::string tok)
+static bool primfunc_line(Program &prg, std::string tok)
 {
 	std::string r =  token(prg);
 	std::string g =  token(prg);
@@ -1287,10 +1287,10 @@ static Return_Type primfunc_line(Program &prg, std::string tok)
 
 	gfx::draw_line(c, p1, p2, thick);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type primfunc_filled_triangle(Program &prg, std::string tok)
+static bool primfunc_filled_triangle(Program &prg, std::string tok)
 {
 	std::string r1 =  token(prg);
 	std::string g1 =  token(prg);
@@ -1361,10 +1361,10 @@ static Return_Type primfunc_filled_triangle(Program &prg, std::string tok)
 
 	gfx::draw_filled_triangle(c, p1, p2, p3);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type primfunc_rectangle(Program &prg, std::string tok)
+static bool primfunc_rectangle(Program &prg, std::string tok)
 {
 	std::string r =  token(prg);
 	std::string g =  token(prg);
@@ -1410,10 +1410,10 @@ static Return_Type primfunc_rectangle(Program &prg, std::string tok)
 
 	gfx::draw_rectangle(c, p, sz, thick);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type primfunc_filled_rectangle(Program &prg, std::string tok)
+static bool primfunc_filled_rectangle(Program &prg, std::string tok)
 {
 	std::string r1 =  token(prg);
 	std::string g1 =  token(prg);
@@ -1493,10 +1493,10 @@ static Return_Type primfunc_filled_rectangle(Program &prg, std::string tok)
 
 	gfx::draw_filled_rectangle(c, p, sz);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type primfunc_ellipse(Program &prg, std::string tok)
+static bool primfunc_ellipse(Program &prg, std::string tok)
 {
 	std::string r =  token(prg);
 	std::string g =  token(prg);
@@ -1544,10 +1544,10 @@ static Return_Type primfunc_ellipse(Program &prg, std::string tok)
 
 	gfx::draw_ellipse(c, p, _rx, _ry, thick, _sections);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type primfunc_filled_ellipse(Program &prg, std::string tok)
+static bool primfunc_filled_ellipse(Program &prg, std::string tok)
 {
 	std::string r =  token(prg);
 	std::string g =  token(prg);
@@ -1592,10 +1592,10 @@ static Return_Type primfunc_filled_ellipse(Program &prg, std::string tok)
 
 	gfx::draw_filled_ellipse(c, p, _rx, _ry, _sections);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type primfunc_circle(Program &prg, std::string tok)
+static bool primfunc_circle(Program &prg, std::string tok)
 {
 	std::string r =  token(prg);
 	std::string g =  token(prg);
@@ -1639,10 +1639,10 @@ static Return_Type primfunc_circle(Program &prg, std::string tok)
 
 	gfx::draw_circle(c, p, _r, thick, _sections);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type primfunc_filled_circle(Program &prg, std::string tok)
+static bool primfunc_filled_circle(Program &prg, std::string tok)
 {
 	std::string r =  token(prg);
 	std::string g =  token(prg);
@@ -1683,10 +1683,10 @@ static Return_Type primfunc_filled_circle(Program &prg, std::string tok)
 
 	gfx::draw_filled_circle(c, p, _r, _sections);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type mmlfunc_create(Program &prg, std::string tok)
+static bool mmlfunc_create(Program &prg, std::string tok)
 {
 	std::string var = token(prg);
 	std::string str = token(prg);
@@ -1729,10 +1729,10 @@ static Return_Type mmlfunc_create(Program &prg, std::string tok)
 
 	prg.mmls[prg.mml_id++] = mml;
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type mmlfunc_load(Program &prg, std::string tok)
+static bool mmlfunc_load(Program &prg, std::string tok)
 {
 	std::string var = token(prg);
 	std::string name = token(prg);
@@ -1757,10 +1757,10 @@ static Return_Type mmlfunc_load(Program &prg, std::string tok)
 
 	prg.mmls[prg.mml_id++] = mml;
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type mmlfunc_play(Program &prg, std::string tok)
+static bool mmlfunc_play(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string volume = token(prg);
@@ -1784,10 +1784,10 @@ static Return_Type mmlfunc_play(Program &prg, std::string tok)
 
 	mml->play(values[1], values[2] == 0 ? false : true);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type mmlfunc_stop(Program &prg, std::string tok)
+static bool mmlfunc_stop(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 
@@ -1807,10 +1807,10 @@ static Return_Type mmlfunc_stop(Program &prg, std::string tok)
 
 	mml->stop();
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type imagefunc_load(Program &prg, std::string tok)
+static bool imagefunc_load(Program &prg, std::string tok)
 {
 	std::string var = token(prg);
 	std::string name = token(prg);
@@ -1835,10 +1835,10 @@ static Return_Type imagefunc_load(Program &prg, std::string tok)
 
 	prg.images[prg.image_id++] = img;
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type imagefunc_draw(Program &prg, std::string tok)
+static bool imagefunc_draw(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string r = token(prg);
@@ -1888,10 +1888,10 @@ static Return_Type imagefunc_draw(Program &prg, std::string tok)
 
 	img->draw_tinted(c, util::Point<float>(values[5], values[6]), flags);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type imagefunc_stretch_region(Program &prg, std::string tok)
+static bool imagefunc_stretch_region(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string r = token(prg);
@@ -1953,10 +1953,10 @@ static Return_Type imagefunc_stretch_region(Program &prg, std::string tok)
 
 	img->stretch_region_tinted(c, util::Point<float>(values[5], values[6]), util::Size<float>(values[7], values[8]), util::Point<float>(values[9], values[10]), util::Size<float>(values[11], values[12]), flags);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type imagefunc_draw_rotated_scaled(Program &prg, std::string tok)
+static bool imagefunc_draw_rotated_scaled(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string r = token(prg);
@@ -2016,10 +2016,10 @@ static Return_Type imagefunc_draw_rotated_scaled(Program &prg, std::string tok)
 
 	img->draw_tinted_rotated_scaledxy(c, util::Point<float>(values[5], values[6]), util::Point<float>(values[7], values[8]), values[9], values[10], values[11]);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type imagefunc_start(Program &prg, std::string tok)
+static bool imagefunc_start(Program &prg, std::string tok)
 {
 	std::string img = token(prg);
 
@@ -2039,10 +2039,10 @@ static Return_Type imagefunc_start(Program &prg, std::string tok)
 
 	image->start_batch();
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type imagefunc_end(Program &prg, std::string tok)
+static bool imagefunc_end(Program &prg, std::string tok)
 {
 	std::string img = token(prg);
 
@@ -2062,10 +2062,10 @@ static Return_Type imagefunc_end(Program &prg, std::string tok)
 
 	image->end_batch();
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type imagefunc_size(Program &prg, std::string tok)
+static bool imagefunc_size(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string dest1 = token(prg);
@@ -2101,10 +2101,10 @@ static Return_Type imagefunc_size(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type fontfunc_load(Program &prg, std::string tok)
+static bool fontfunc_load(Program &prg, std::string tok)
 {
 	std::string var = token(prg);
 	std::string name = token(prg);
@@ -2137,10 +2137,10 @@ static Return_Type fontfunc_load(Program &prg, std::string tok)
 
 	prg.fonts[prg.font_id++] = font;
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type fontfunc_draw(Program &prg, std::string tok)
+static bool fontfunc_draw(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string r = token(prg);
@@ -2199,10 +2199,10 @@ static Return_Type fontfunc_draw(Program &prg, std::string tok)
 
 	font->draw(c, txt, util::Point<float>(values[5], values[6]));
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type fontfunc_width(Program &prg, std::string tok)
+static bool fontfunc_width(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string dest = token(prg);
@@ -2249,10 +2249,10 @@ static Return_Type fontfunc_width(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type fontfunc_height(Program &prg, std::string tok)
+static bool fontfunc_height(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string dest = token(prg);
@@ -2278,7 +2278,7 @@ static Return_Type fontfunc_height(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
 void set_string_or_number(Program &prg, std::string name, double value)
@@ -2293,7 +2293,7 @@ void set_string_or_number(Program &prg, std::string name, double value)
 	}
 }
 
-static Return_Type joyfunc_poll(Program &prg, std::string tok)
+static bool joyfunc_poll(Program &prg, std::string tok)
 {
 	std::string num = token(prg);
 	std::string x1 = token(prg);
@@ -2473,10 +2473,10 @@ static Return_Type joyfunc_poll(Program &prg, std::string tok)
 		set_string_or_number(prg, start, startb);
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type joyfunc_count(Program &prg, std::string tok)
+static bool joyfunc_count(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	
@@ -2493,10 +2493,10 @@ static Return_Type joyfunc_count(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type vectorfunc_add(Program &prg, std::string tok)
+static bool vectorfunc_add(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string value = token(prg);
@@ -2540,10 +2540,10 @@ static Return_Type vectorfunc_add(Program &prg, std::string tok)
 
 	v.push_back(var);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type vectorfunc_size(Program &prg, std::string tok)
+static bool vectorfunc_size(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string dest = token(prg);
@@ -2571,10 +2571,10 @@ static Return_Type vectorfunc_size(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type vectorfunc_set(Program &prg, std::string tok)
+static bool vectorfunc_set(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string index = token(prg);
@@ -2619,10 +2619,10 @@ static Return_Type vectorfunc_set(Program &prg, std::string tok)
 
 	v[values[1]] = var;
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type vectorfunc_insert(Program &prg, std::string tok)
+static bool vectorfunc_insert(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string index = token(prg);
@@ -2667,10 +2667,10 @@ static Return_Type vectorfunc_insert(Program &prg, std::string tok)
 
 	v.insert(v.begin()+values[1], var);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type vectorfunc_get(Program &prg, std::string tok)
+static bool vectorfunc_get(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string dest = token(prg);
@@ -2703,10 +2703,10 @@ static Return_Type vectorfunc_get(Program &prg, std::string tok)
 	v1.name = bak;
 	v1.function = bak2;
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type vectorfunc_erase(Program &prg, std::string tok)
+static bool vectorfunc_erase(Program &prg, std::string tok)
 {
 	std::string id = token(prg);
 	std::string index = token(prg);
@@ -2732,10 +2732,10 @@ static Return_Type vectorfunc_erase(Program &prg, std::string tok)
 
 	v.erase(v.begin() + int(values[1]));
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type cfgfunc_load(Program &prg, std::string tok)
+static bool cfgfunc_load(Program &prg, std::string tok)
 {
 	cfg_numbers.clear();
 	cfg_strings.clear();
@@ -2773,10 +2773,10 @@ static Return_Type cfgfunc_load(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type cfgfunc_save(Program &prg, std::string tok)
+static bool cfgfunc_save(Program &prg, std::string tok)
 {
 	std::string cfg_name = token(prg);
 
@@ -2801,10 +2801,10 @@ static Return_Type cfgfunc_save(Program &prg, std::string tok)
 
 	save_cfg(cfg_names);
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type cfgfunc_get_number(Program &prg, std::string tok)
+static bool cfgfunc_get_number(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string name = token(prg);
@@ -2836,10 +2836,10 @@ static Return_Type cfgfunc_get_number(Program &prg, std::string tok)
 
 	v1.n = cfg_numbers[names];
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type cfgfunc_get_string(Program &prg, std::string tok)
+static bool cfgfunc_get_string(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string name = token(prg);
@@ -2871,10 +2871,10 @@ static Return_Type cfgfunc_get_string(Program &prg, std::string tok)
 
 	v1.s = cfg_strings[names];
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type cfgfunc_set_number(Program &prg, std::string tok)
+static bool cfgfunc_set_number(Program &prg, std::string tok)
 {
 	std::string name = token(prg);
 	std::string value = token(prg);
@@ -2904,10 +2904,10 @@ static Return_Type cfgfunc_set_number(Program &prg, std::string tok)
 
 	cfg_numbers[names] = values[0];
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type cfgfunc_set_string(Program &prg, std::string tok)
+static bool cfgfunc_set_string(Program &prg, std::string tok)
 {
 	std::string name = token(prg);
 	std::string value = token(prg);
@@ -2948,10 +2948,10 @@ static Return_Type cfgfunc_set_string(Program &prg, std::string tok)
 
 	cfg_strings[names] = values;
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type cfgfunc_number_exists(Program &prg, std::string tok)
+static bool cfgfunc_number_exists(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string name = token(prg);
@@ -2993,10 +2993,10 @@ static Return_Type cfgfunc_number_exists(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
-static Return_Type cfgfunc_string_exists(Program &prg, std::string tok)
+static bool cfgfunc_string_exists(Program &prg, std::string tok)
 {
 	std::string dest = token(prg);
 	std::string name = token(prg);
@@ -3038,7 +3038,7 @@ static Return_Type cfgfunc_string_exists(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
-	return RETURN_SUCCESS;
+	return true;
 }
 
 namespace booboo {
