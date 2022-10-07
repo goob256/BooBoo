@@ -6,7 +6,6 @@
 
 namespace booboo {
 
-std::map<std::string, library_func> breaker_map;
 std::map<std::string, library_func> library_map;
 std::string reset_game_name;
 bool load_from_filesystem;
@@ -664,20 +663,19 @@ bool interpret(Program &prg)
 		return false;
 	}
 
-	std::map<std::string, library_func>::iterator it = breaker_map.find(tok);
-	if (it != breaker_map.end()) {
-		if ((*it).second(prg, tok) == true) {
-			return false;
-		}
-	}
-
-	it = library_map.find(tok);
+	std::map<std::string, library_func>::iterator it = library_map.find(tok);
 	if (it == library_map.end()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid token \"" + tok + "\" on line " + util::itos(get_line_num(prg)));
 	}
 	else {
 		library_func func = (*it).second;
-		return func(prg, tok);
+		Return_Type ret = func(prg, tok);
+		if (ret == RETURN_EXIT) {
+			return false;
+		}
+		else {
+			return ret == RETURN_SUCCESS ? true : false;
+		}
 	}
 
 	return true;
@@ -706,11 +704,6 @@ void destroy_program(Program &prg)
 	prg.variables.clear();
 	prg.functions.clear();
 	prg.labels.clear();
-}
-
-void add_breaker(std::string name, library_func processing)
-{
-	breaker_map[name] = processing;
 }
 
 void add_syntax(std::string name, library_func processing)
