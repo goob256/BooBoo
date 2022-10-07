@@ -128,7 +128,7 @@ Variable &find_variable(Program &prg, std::string name)
 	return (*it).second;
 }
 
-std::vector<double> variable_names_to_numbers(Program &prg, std::vector<std::string> strings)
+std::vector<double> variable_names_to_numbers(Program &prg, std::vector<std::string> &strings)
 {
 	std::vector<double> values;
 

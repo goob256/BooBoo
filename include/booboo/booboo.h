@@ -82,7 +82,7 @@ void add_syntax(std::string name, library_func func);
 std::string token(Program &prg, bool add_lines = false);
 int get_line_num(Program &prg);
 Variable &find_variable(Program &prg, std::string name);
-std::vector<double> variable_names_to_numbers(Program &prg, std::vector<std::string> strings);
+std::vector<double> variable_names_to_numbers(Program &prg, std::vector<std::string> &strings);
 void set_string_or_number(Program &prg, std::string name, std::string value);
 void skip_whitespace(Program &prg, bool add_lines = false);
 std::string remove_quotes(std::string s);
