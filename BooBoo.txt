@@ -111,6 +111,10 @@ exit
 	Exit the app with a return code to the environment
 	e.g. exit 0
 
+return
+	Return a value from a function
+	e.g. return 1
+
 sin
 	trigonometry functions
 	e.g. sin dest 3.14159
@@ -305,3 +309,4 @@ cfg_number_exists
 cfg_string_exists
 	check if a string name exists in config
 	e.g. cfg_string_exists "name"
+
