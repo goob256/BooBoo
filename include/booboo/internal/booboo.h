@@ -12,6 +12,7 @@ namespace booboo {
 std::map<std::string, Label> process_labels(Program prg);
 bool process_includes(Program &prg);
 void process_functions(Program &prg);
+void init_token_map();
 
 } // end namespace booboo
 

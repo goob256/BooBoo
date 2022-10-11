@@ -6,7 +6,10 @@
 
 namespace booboo {
 
+typedef std::string (*token_func)(Program &, bool);
+
 std::map<std::string, library_func> library_map;
+std::map<char, token_func> token_map;
 std::string reset_game_name;
 bool load_from_filesystem;
 int return_code;
@@ -167,6 +170,115 @@ static int count_lines(std::string s)
 	return count;
 }
 
+static std::string tokenfunc_add(booboo::Program &prg, bool add_lines)
+{
+	prg.p++;
+	return "+";
+}
+
+
+static std::string tokenfunc_subtract(booboo::Program &prg, bool add_lines)
+{
+	char s[2];
+	s[1] = 0;
+
+	prg.p++;
+	if (prg.p < prg.code.length() && isdigit(prg.code[prg.p])) {
+		std::string tok = "-";
+		while (prg.p < prg.code.length() && (isdigit(prg.code[prg.p]) || prg.code[prg.p] == '.')) {
+			s[0] = prg.code[prg.p];
+			tok += s;
+			prg.p++;
+		}
+		return tok;
+	}
+	else {
+		return "-";
+	}
+}
+
+static std::string tokenfunc_equals(booboo::Program &prg, bool add_lines)
+{
+	prg.p++;
+	return "=";
+}
+
+static std::string tokenfunc_compare(booboo::Program &prg, bool add_lines)
+{
+	prg.p++;
+	return "?";
+}
+
+static std::string tokenfunc_multiply(booboo::Program &prg, bool add_lines)
+{
+	prg.p++;
+	return "*";
+}
+
+static std::string tokenfunc_divide(booboo::Program &prg, bool add_lines)
+{
+	prg.p++;
+	return "/";
+}
+
+static std::string tokenfunc_label(booboo::Program &prg, bool add_lines)
+{
+	prg.p++;
+	return ":";
+}
+
+static std::string tokenfunc_modulus(booboo::Program &prg, bool add_lines)
+{
+	prg.p++;
+	return "%";
+}
+
+static std::string tokenfunc_string(booboo::Program &prg, bool add_lines)
+{
+	char s[2];
+	s[1] = 0;
+
+	int prev = -1;
+	int prev_prev = -1;
+
+	std::string tok = "\"";
+	prg.p++;
+
+	if (prg.p < prg.code.length()) {
+		while (prg.p < prg.code.length() && (prg.code[prg.p] != '"' || (prev == '\\' && prev_prev != '\\')) && prg.code[prg.p] != '\n') {
+			s[0] = prg.code[prg.p];
+			tok += s;
+			prev_prev = prev;
+			prev = prg.code[prg.p];
+			prg.p++;
+		}
+
+		tok += "\"";
+
+		prg.p++;
+	}
+
+	return tok;
+}
+
+static std::string tokenfunc_openbrace(booboo::Program &prg, bool add_lines)
+{
+	prg.p++;
+	return "{";
+}
+
+static std::string tokenfunc_closebrace(booboo::Program &prg, bool add_lines)
+{
+	prg.p++;
+	return "}";
+}
+
+static std::string tokenfunc_comment(booboo::Program &prg, bool add_lines)
+{
+	prg.p++;
+	return ";";
+}
+
 std::string token(Program &prg, bool add_lines)
 {
 	prg.prev_tok_p = prg.p;
@@ -182,50 +294,12 @@ std::string token(Program &prg, bool add_lines)
 	char s[2];
 	s[1] = 0;
 
-	if (prg.code[prg.p] == '+') {
-		prg.p++;
-		return "+";
+	std::map<char, token_func>::iterator it = token_map.find(prg.code[prg.p]);
+	if (it != token_map.end()) {
+		return (*it).second(prg, add_lines);
 	}
-	else if (prg.code[prg.p] == '-') {
-		prg.p++;
-		if (prg.p < prg.code.length() && isdigit(prg.code[prg.p])) {
-			tok = "-";
-			while (prg.p < prg.code.length() && (isdigit(prg.code[prg.p]) || prg.code[prg.p] == '.')) {
-				s[0] = prg.code[prg.p];
-				tok += s;
-				prg.p++;
-			}
-			return tok;
-		}
-		else {
-			return "-";
-		}
-	}
-	else if (prg.code[prg.p] == '=') {
-		prg.p++;
-		return "=";
-	}
-	else if (prg.code[prg.p] == '?') {
-		prg.p++;
-		return "?";
-	}
-	else if (prg.code[prg.p] == '*') {
-		prg.p++;
-		return "*";
-	}
-	else if (prg.code[prg.p] == '/') {
-		prg.p++;
-		return "/";
-	}
-	else if (prg.code[prg.p] == ':') {
-		prg.p++;
-		return ":";
-	}
-	else if (prg.code[prg.p] == '%') {
-		prg.p++;
-		return "%";
-	}
-	else if (isdigit(prg.code[prg.p])) {
+
+	if (isdigit(prg.code[prg.p])) {
 		while (prg.p < prg.code.length() && (isdigit(prg.code[prg.p]) || prg.code[prg.p] == '.')) {
 			s[0] = prg.code[prg.p];
 			tok += s;
@@ -240,41 +314,6 @@ std::string token(Program &prg, bool add_lines)
 			prg.p++;
 		}
 		return tok;
-	}
-	else if (prg.code[prg.p] == '"') {
-		int prev = -1;
-		int prev_prev = -1;
-
-		std::string tok = "\"";
-		prg.p++;
-
-		if (prg.p < prg.code.length()) {
-			while (prg.p < prg.code.length() && (prg.code[prg.p] != '"' || (prev == '\\' && prev_prev != '\\')) && prg.code[prg.p] != '\n') {
-				s[0] = prg.code[prg.p];
-				tok += s;
-				prev_prev = prev;
-				prev = prg.code[prg.p];
-				prg.p++;
-			}
-
-			tok += "\"";
-
-			prg.p++;
-		}
-
-		return tok;
-	}
-	else if (prg.code[prg.p] == '{') {
-		prg.p++;
-		return "{";
-	}
-	else if (prg.code[prg.p] == '}') {
-		prg.p++;
-		return "}";
-	}
-	else if (prg.code[prg.p] == ';') {
-		prg.p++;
-		return ";";
 	}
 	else if (tok == "") {
 		return "";
@@ -708,6 +747,22 @@ void add_syntax(std::string name, library_func processing)
 void end()
 {
 	library_map.clear();
+}
+
+void init_token_map()
+{
+	token_map['+'] = tokenfunc_add;
+	token_map['-'] = tokenfunc_subtract;
+	token_map['='] = tokenfunc_equals;
+	token_map['?'] = tokenfunc_compare;
+	token_map['*'] = tokenfunc_multiply;
+	token_map['/'] = tokenfunc_divide;
+	token_map[':'] = tokenfunc_label;
+	token_map['%'] = tokenfunc_modulus;
+	token_map['"'] = tokenfunc_string;
+	token_map['{'] = tokenfunc_openbrace;
+	token_map['}'] = tokenfunc_closebrace;
+	token_map[';'] = tokenfunc_comment;
 }
 
 Program create_program(std::string code)

@@ -3045,6 +3045,8 @@ namespace booboo {
 
 void start()
 {
+	init_token_map();
+
 	add_syntax("reset", breaker_reset);
 	add_syntax("exit", breaker_exit);
 	add_syntax("return", breaker_return);
