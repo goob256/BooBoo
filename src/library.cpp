@@ -162,7 +162,7 @@ static bool corefunc_var(Program &prg, std::string tok)
 	std::string type = token(prg);
 	std::string name =  token(prg);
 
-	if (type == "" || name == "") {
+	if (name == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected var parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -203,7 +203,7 @@ static bool corefunc_set(Program &prg, std::string tok)
 	std::string dest =  token(prg);
 	std::string src =  token(prg);
 
-	if (dest == "" || src == "") {
+	if (src == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected = parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -259,7 +259,7 @@ static bool corefunc_add(Program &prg, std::string tok)
 	std::string dest =  token(prg);
 	std::string src =  token(prg);
 
-	if (dest == "" || src == "") {
+	if (src == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected + parameters on line " + util::itos(get_line_num(prg)));
 	}
 	
@@ -312,7 +312,7 @@ static bool corefunc_subtract(Program &prg, std::string tok)
 	std::string dest =  token(prg);
 	std::string src =  token(prg);
 
-	if (dest == "" || src == "") {
+	if (src == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected - parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -353,7 +353,7 @@ static bool corefunc_multiply(Program &prg, std::string tok)
 	std::string dest =  token(prg);
 	std::string src =  token(prg);
 
-	if (dest == "" || src == "") {
+	if (src == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected * parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -394,7 +394,7 @@ static bool corefunc_divide(Program &prg, std::string tok)
 	std::string dest =  token(prg);
 	std::string src =  token(prg);
 
-	if (dest == "" || src == "") {
+	if (src == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected / parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -435,7 +435,7 @@ static bool corefunc_intmod(Program &prg, std::string tok)
 	std::string dest =  token(prg);
 	std::string src =  token(prg);
 
-	if (dest == "" || src == "") {
+	if (src == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected %% parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -476,7 +476,7 @@ static bool corefunc_fmod(Program &prg, std::string tok)
 	std::string dest = token(prg);
 	std::string src = token(prg);
 
-	if (dest == "" || src == "") {
+	if (src == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected fmod parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -587,7 +587,7 @@ static bool corefunc_compare(Program &prg, std::string tok)
 	std::string a = token(prg);
 	std::string b = token(prg);
 
-	if (a == "" || b == "") {
+	if (b == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected ? parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -781,7 +781,7 @@ static bool corefunc_call(Program &prg, std::string tok)
 	if (tok2 == "=") {
 		result_name = token(prg);
 		function_name = token(prg);
-		if (result_name == "" || function_name == "") {
+		if (function_name == "") {
 			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected call parameters on line " + util::itos(get_line_num(prg)));
 		}
 
@@ -917,7 +917,7 @@ static bool corefunc_string_format(Program &prg, std::string tok)
 	std::string dest = token(prg);
 	std::string fmt = token(prg);
 	
-	if (dest == "" || fmt == "") {
+	if (fmt == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected string_format parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -1017,7 +1017,7 @@ static bool mathfunc_sin(Program &prg, std::string tok)
 	std::string vs = token(prg);
 	float v;
 	
-	if (dest == "" || vs == "") {
+	if (vs == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected sin parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -1043,7 +1043,7 @@ static bool mathfunc_cos(Program &prg, std::string tok)
 	std::string vs = token(prg);
 	float v;
 	
-	if (dest == "" || vs == "") {
+	if (vs == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cos paramters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -1070,7 +1070,7 @@ static bool mathfunc_atan2(Program &prg, std::string tok)
 	std::string vs2 = token(prg);
 	float v;
 	
-	if (dest == "" || vs1 == "" || vs2 == "") {
+	if (vs2 == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected atan2 parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -1097,7 +1097,7 @@ static bool mathfunc_abs(Program &prg, std::string tok)
 	std::string vs = token(prg);
 	float v;
 	
-	if (dest == "" || vs == "") {
+	if (vs == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected abs parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -1124,7 +1124,7 @@ static bool mathfunc_pow(Program &prg, std::string tok)
 	std::string vs2 = token(prg);
 	float v;
 	
-	if (dest == "" || vs1 == "" || vs2 == "") {
+	if (vs2 == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected pow parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -1151,7 +1151,7 @@ static bool mathfunc_sqrt(Program &prg, std::string tok)
 	std::string vs1 = token(prg);
 	float v;
 	
-	if (dest == "" || vs1 == "") {
+	if (vs1 == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected sqrt parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -1177,7 +1177,7 @@ static bool mathfunc_rand(Program &prg, std::string tok)
 	std::string min_incl = token(prg);
 	std::string max_incl = token(prg);
 
-	if (dest == "" || min_incl == "" || max_incl == "") {
+	if (max_incl == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected rand parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -1207,7 +1207,7 @@ static bool gfxfunc_clear(Program &prg, std::string tok)
 	std::string g =  token(prg);
 	std::string b =  token(prg);
 	
-	if (r == "" || g == "" || b == "") {
+	if (b == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected clear parameters on line " + util::itos(get_line_num(prg)));
 	}
 	
@@ -1254,7 +1254,7 @@ static bool primfunc_line(Program &prg, std::string tok)
 	std::string y2 =  token(prg);
 	std::string thickness = token(prg);
 	
-	if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || x2 == "" || y2 == "" || thickness == "") {
+	if (thickness == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected line parameters on line " + util::itos(get_line_num(prg)));
 	}
 	
@@ -1311,7 +1311,7 @@ static bool primfunc_filled_triangle(Program &prg, std::string tok)
 	std::string x3 =  token(prg);
 	std::string y3 =  token(prg);
 	
-	if (r1 == "" || g1 == "" || b1 == "" || a1 == "" || r2 == "" || g2 == "" || b2 == "" || a2 == "" || r3 == "" || g3 =="" || b3 == "" || a3 == "" || x == "" || y == "" || x2 == "" || y2 == "" || x3 == "" || y3 == "") {
+	if (y3 == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected filled_triangle parameters on line " + util::itos(get_line_num(prg)));
 	}
 	
@@ -1376,7 +1376,7 @@ static bool primfunc_rectangle(Program &prg, std::string tok)
 	std::string h =  token(prg);
 	std::string thickness =  token(prg);
 	
-	if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || w == "" || h == "" || thickness == "") {
+	if (thickness == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected rectangle parameters on line " + util::itos(get_line_num(prg)));
 	}
 	
@@ -1436,7 +1436,7 @@ static bool primfunc_filled_rectangle(Program &prg, std::string tok)
 	std::string w =  token(prg);
 	std::string h =  token(prg);
 	
-	if (r1 == "" || g1 == "" || b1 == "" || a1 == "" || r2 == "" || g2 == "" || b2 == "" || a2 == "" || r3 == "" || g3 =="" || b3 == "" || a3 == "" || r4 == "" || g4 == "" || b4 == "" || a4 == "" || x == "" || y == "" || w == "" || h == "") {
+	if (h == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected filled_rectangle parameters on line " + util::itos(get_line_num(prg)));
 	}
 	
@@ -1509,7 +1509,7 @@ static bool primfunc_ellipse(Program &prg, std::string tok)
 	std::string thickness =  token(prg);
 	std::string sections =  token(prg);
 	
-	if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || rx == "" || ry == "" || thickness == "" || sections == "") {
+	if (sections == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected ellipse parameters on line " + util::itos(get_line_num(prg)));
 	}
 	
@@ -1559,7 +1559,7 @@ static bool primfunc_filled_ellipse(Program &prg, std::string tok)
 	std::string ry =  token(prg);
 	std::string sections =  token(prg);
 	
-	if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || rx == "" || ry == "" || sections == "") {
+	if (sections == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected filled_ellipse parameters on line " + util::itos(get_line_num(prg)));
 	}
 	
@@ -1607,7 +1607,7 @@ static bool primfunc_circle(Program &prg, std::string tok)
 	std::string thickness =  token(prg);
 	std::string sections =  token(prg);
 	
-	if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || radius == "" || thickness == "" || sections == "") {
+	if (sections == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected circle parameters on line " + util::itos(get_line_num(prg)));
 	}
 	
@@ -1653,7 +1653,7 @@ static bool primfunc_filled_circle(Program &prg, std::string tok)
 	std::string radius =  token(prg);
 	std::string sections =  token(prg);
 	
-	if (r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || radius == "" || sections == "") {
+	if (sections == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected filled_circle parameters on line " + util::itos(get_line_num(prg)));
 	}
 	
@@ -1691,7 +1691,7 @@ static bool mmlfunc_create(Program &prg, std::string tok)
 	std::string var = token(prg);
 	std::string str = token(prg);
 
-	if (var == "" || str == "") {
+	if (str == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected mml_create parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -1737,7 +1737,7 @@ static bool mmlfunc_load(Program &prg, std::string tok)
 	std::string var = token(prg);
 	std::string name = token(prg);
 
-	if (var == "" || name == "") {
+	if (name == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected mml_load parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -1766,7 +1766,7 @@ static bool mmlfunc_play(Program &prg, std::string tok)
 	std::string volume = token(prg);
 	std::string loop = token(prg);
 
-	if (id == "" || volume == "" || loop == "") {
+	if (loop == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected mml_play parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -1815,7 +1815,7 @@ static bool imagefunc_load(Program &prg, std::string tok)
 	std::string var = token(prg);
 	std::string name = token(prg);
 
-	if (var == "" || name == "") {
+	if (name == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_load parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -1850,7 +1850,7 @@ static bool imagefunc_draw(Program &prg, std::string tok)
 	std::string flip_h = token(prg);
 	std::string flip_v = token(prg);
 
-	if (id == "" || r == "" || g == "" || b == "" || a == "" || x == "" || y == "" || flip_h == "" || flip_v == "") {
+	if (flip_v == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_draw parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -1909,7 +1909,7 @@ static bool imagefunc_stretch_region(Program &prg, std::string tok)
 	std::string flip_h = token(prg);
 	std::string flip_v = token(prg);
 
-	if (id == "" || r == "" || g == "" || b == "" || a == "" || sx == "" || sy == "" || sw == "" || sh == "" || dx == "" || dy == "" || dw == "" || dh == "" || flip_h == "" || flip_v == "") {
+	if (flip_v == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_stretch_region parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -1973,7 +1973,7 @@ static bool imagefunc_draw_rotated_scaled(Program &prg, std::string tok)
 	std::string flip_h = token(prg);
 	std::string flip_v = token(prg);
 
-	if (id == "" || r == "" || g == "" || b == "" || a == "" || cx == "" || cy == "" || x == "" || y == "" || angle == "" || scale_x == "" || scale_y == "" || flip_h == "" || flip_v == "") {
+	if (flip_v == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_draw_rotated_scaled parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -2071,7 +2071,7 @@ static bool imagefunc_size(Program &prg, std::string tok)
 	std::string dest1 = token(prg);
 	std::string dest2 = token(prg);
 
-	if (id == "" || dest1 == "" || dest2 == "") {
+	if (dest2 == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_size parameters on line " + util::itos(get_line_num(prg)));
 	}
 	
@@ -2111,7 +2111,7 @@ static bool fontfunc_load(Program &prg, std::string tok)
 	std::string size = token(prg);
 	std::string smooth = token(prg);
 
-	if (var == "" || name == "" || size == "" || smooth == "") {
+	if (smooth == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected font_load parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -2151,7 +2151,7 @@ static bool fontfunc_draw(Program &prg, std::string tok)
 	std::string x = token(prg);
 	std::string y = token(prg);
 
-	if (id == "" || r == "" || g == "" || b == "" || a == "" || text == "" || x == "" || y == "") {
+	if (y == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected font_draw parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -2208,7 +2208,7 @@ static bool fontfunc_width(Program &prg, std::string tok)
 	std::string dest = token(prg);
 	std::string text = token(prg);
 	
-	if (id == "" || dest == "" || text == "") {
+	if (text == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected font_width parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -2257,7 +2257,7 @@ static bool fontfunc_height(Program &prg, std::string tok)
 	std::string id = token(prg);
 	std::string dest = token(prg);
 	
-	if (id == "" || dest == "") {
+	if (dest == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected font_height parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -2317,7 +2317,7 @@ static bool joyfunc_poll(Program &prg, std::string tok)
 	std::string back = token(prg);
 	std::string start = token(prg);
 
-	if (num == "" || x1 == "" || y1 == "" || x2 == "" || y2 == "" || x3 == "" || y3 == "" || l == "" || r == "" || u == "" || d == "" || a == "" || b == "" || x == "" || y == "" || lb == "" || rb == "" || ls == "" || rs == "" || back == "" || start == "") {
+	if (start == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected joystick_poll parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -2501,7 +2501,7 @@ static bool vectorfunc_add(Program &prg, std::string tok)
 	std::string id = token(prg);
 	std::string value = token(prg);
 
-	if (id == "" || value == "") {
+	if (value == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected vector_add parameters on line " + util::itos(get_line_num(prg)));
 	}
 	
@@ -2548,7 +2548,7 @@ static bool vectorfunc_size(Program &prg, std::string tok)
 	std::string id = token(prg);
 	std::string dest = token(prg);
 
-	if (id == "" || dest == "") {
+	if (dest == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected vector_size parameters on line " + util::itos(get_line_num(prg)));
 	}
 	
@@ -2580,7 +2580,7 @@ static bool vectorfunc_set(Program &prg, std::string tok)
 	std::string index = token(prg);
 	std::string value = token(prg);
 
-	if (id == "" || index == "" || value == "") {
+	if (value == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected vector_set parameters on line " + util::itos(get_line_num(prg)));
 	}
 	
@@ -2628,7 +2628,7 @@ static bool vectorfunc_insert(Program &prg, std::string tok)
 	std::string index = token(prg);
 	std::string value = token(prg);
 
-	if (id == "" || index == "" || value == "") {
+	if (value == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected vector_insert parameters on line " + util::itos(get_line_num(prg)));
 	}
 	
@@ -2676,7 +2676,7 @@ static bool vectorfunc_get(Program &prg, std::string tok)
 	std::string dest = token(prg);
 	std::string index = token(prg);
 
-	if (id == "" || dest == "" || index == "") {
+	if (index == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected vector_get parameters on line " + util::itos(get_line_num(prg)));
 	}
 	
@@ -2711,7 +2711,7 @@ static bool vectorfunc_erase(Program &prg, std::string tok)
 	std::string id = token(prg);
 	std::string index = token(prg);
 
-	if (id == "" || index == "") {
+	if (index == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected vector_erase parameters on line " + util::itos(get_line_num(prg)));
 	}
 	
@@ -2743,7 +2743,7 @@ static bool cfgfunc_load(Program &prg, std::string tok)
 	std::string found = token(prg);
 	std::string cfg_name = token(prg);
 
-	if (found == "" || cfg_name == "") {
+	if (cfg_name == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_load parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -2809,7 +2809,7 @@ static bool cfgfunc_get_number(Program &prg, std::string tok)
 	std::string dest = token(prg);
 	std::string name = token(prg);
 
-	if (dest == "" || name == "") {
+	if (name == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_get_number parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -2844,7 +2844,7 @@ static bool cfgfunc_get_string(Program &prg, std::string tok)
 	std::string dest = token(prg);
 	std::string name = token(prg);
 
-	if (dest == "" || name == "") {
+	if (name == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_get_string parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -2879,7 +2879,7 @@ static bool cfgfunc_set_number(Program &prg, std::string tok)
 	std::string name = token(prg);
 	std::string value = token(prg);
 
-	if (value == "" || name == "") {
+	if (value == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_set_number parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -2912,7 +2912,7 @@ static bool cfgfunc_set_string(Program &prg, std::string tok)
 	std::string name = token(prg);
 	std::string value = token(prg);
 
-	if (value == "" || name == "") {
+	if (value == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_set_string parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -2956,7 +2956,7 @@ static bool cfgfunc_number_exists(Program &prg, std::string tok)
 	std::string dest = token(prg);
 	std::string name = token(prg);
 
-	if (dest == "" || name == "") {
+	if (name == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_number_exists parameters on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -3001,7 +3001,7 @@ static bool cfgfunc_string_exists(Program &prg, std::string tok)
 	std::string dest = token(prg);
 	std::string name = token(prg);
 
-	if (dest == "" || name == "") {
+	if (name == "") {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_string_exists parameters on line " + util::itos(get_line_num(prg)));
 	}
 
