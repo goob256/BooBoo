@@ -29,82 +29,19 @@ void skip_whitespace(Program &prg, bool add_lines)
 
 std::string remove_quotes(std::string s)
 {
-	std::string ret;
+	int start = 0;
+	int count = s.length();
 
-	if (s.length() == 0) {
-		return ret;
-	}
-	
 	if (s[0] == '"') {
-		ret = s.substr(1);
-	}
-	else {
-		ret = s;
+		start++;
+		count--;
 	}
 
-	if (ret.length() <= 1) {
-		return "";
+	if (s[s.length()-1] == '"') {
+		count--;
 	}
 
-	if (ret[ret.length()-1] == '"') {
-		ret = ret.substr(0, ret.length()-1);
-	}
-
-	return ret;
-}
-
-std::string unescape(std::string s)
-{
-	std::string ret;
-	int p = 0;
-	char buf[2];
-	buf[1] = 0;
-
-	if (s.length() == 0) {
-		return "";
-	}
-
-	while (p < s.length()) {
-		if (s[p] == '\\') {
-			if (p+1 < s.length()) {
-				if (s[p+1] == '\\' || s[p+1] == '"') {
-					p++;
-					buf[0] = s[p];
-					ret += buf;
-					p++;
-				}
-				else if (s[p+1] == 'n') {
-					p++;
-					buf[0] = '\n';
-					ret += buf;
-					p++;
-				}
-				else if (s[p+1] == 't') {
-					p++;
-					buf[0] = '\t';
-					ret += buf;
-					p++;
-				}
-				else {
-					buf[0] = '\\';
-					ret += buf;
-					p++;
-				}
-			}
-			else {
-				buf[0] = '\\';
-				ret += buf;
-				p++;
-			}
-		}
-		else {
-			buf[0] = s[p];
-			ret += buf;
-			p++;
-		}
-	}
-
-	return ret;
+	return s.substr(start, count);
 }
 
 int get_line_num(Program &prg)
@@ -155,19 +92,6 @@ std::vector<double> variable_names_to_numbers(Program &prg, std::vector<std::str
 	}
 
 	return values;
-}
-
-static int count_lines(std::string s)
-{
-	int count = 0;
-
-	for (int i = 0; i < s.length(); i++) {
-		if (s[i] == '\n') {
-			count++;
-		}
-	}
-
-	return count;
 }
 
 static std::string tokenfunc_add(booboo::Program &prg)
@@ -421,7 +345,7 @@ bool process_includes(Program &prg)
 				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid include name on line " + util::itos(get_line_num(prg)));
 			}
 
-			name = remove_quotes(unescape(name));
+			name = remove_quotes(util::unescape_string(name));
 
 			code += prg.code.substr(start, prev-start);
 
