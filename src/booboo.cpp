@@ -6,7 +6,7 @@
 
 namespace booboo {
 
-typedef std::string (*token_func)(Program &, bool);
+typedef std::string (*token_func)(Program &);
 
 std::map<std::string, library_func> library_map;
 std::map<char, token_func> token_map;
@@ -170,14 +170,14 @@ static int count_lines(std::string s)
 	return count;
 }
 
-static std::string tokenfunc_add(booboo::Program &prg, bool add_lines)
+static std::string tokenfunc_add(booboo::Program &prg)
 {
 	prg.p++;
 	return "+";
 }
 
 
-static std::string tokenfunc_subtract(booboo::Program &prg, bool add_lines)
+static std::string tokenfunc_subtract(booboo::Program &prg)
 {
 	char s[2];
 	s[1] = 0;
@@ -197,43 +197,43 @@ static std::string tokenfunc_subtract(booboo::Program &prg, bool add_lines)
 	}
 }
 
-static std::string tokenfunc_equals(booboo::Program &prg, bool add_lines)
+static std::string tokenfunc_equals(booboo::Program &prg)
 {
 	prg.p++;
 	return "=";
 }
 
-static std::string tokenfunc_compare(booboo::Program &prg, bool add_lines)
+static std::string tokenfunc_compare(booboo::Program &prg)
 {
 	prg.p++;
 	return "?";
 }
 
-static std::string tokenfunc_multiply(booboo::Program &prg, bool add_lines)
+static std::string tokenfunc_multiply(booboo::Program &prg)
 {
 	prg.p++;
 	return "*";
 }
 
-static std::string tokenfunc_divide(booboo::Program &prg, bool add_lines)
+static std::string tokenfunc_divide(booboo::Program &prg)
 {
 	prg.p++;
 	return "/";
 }
 
-static std::string tokenfunc_label(booboo::Program &prg, bool add_lines)
+static std::string tokenfunc_label(booboo::Program &prg)
 {
 	prg.p++;
 	return ":";
 }
 
-static std::string tokenfunc_modulus(booboo::Program &prg, bool add_lines)
+static std::string tokenfunc_modulus(booboo::Program &prg)
 {
 	prg.p++;
 	return "%";
 }
 
-static std::string tokenfunc_string(booboo::Program &prg, bool add_lines)
+static std::string tokenfunc_string(booboo::Program &prg)
 {
 	char s[2];
 	s[1] = 0;
@@ -261,19 +261,19 @@ static std::string tokenfunc_string(booboo::Program &prg, bool add_lines)
 	return tok;
 }
 
-static std::string tokenfunc_openbrace(booboo::Program &prg, bool add_lines)
+static std::string tokenfunc_openbrace(booboo::Program &prg)
 {
 	prg.p++;
 	return "{";
 }
 
-static std::string tokenfunc_closebrace(booboo::Program &prg, bool add_lines)
+static std::string tokenfunc_closebrace(booboo::Program &prg)
 {
 	prg.p++;
 	return "}";
 }
 
-static std::string tokenfunc_comment(booboo::Program &prg, bool add_lines)
+static std::string tokenfunc_comment(booboo::Program &prg)
 {
 	prg.p++;
 	return ";";
@@ -296,7 +296,7 @@ std::string token(Program &prg, bool add_lines)
 
 	std::map<char, token_func>::iterator it = token_map.find(prg.code[prg.p]);
 	if (it != token_map.end()) {
-		return (*it).second(prg, add_lines);
+		return (*it).second(prg);
 	}
 
 	if (isdigit(prg.code[prg.p])) {
