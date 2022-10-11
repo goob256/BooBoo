@@ -86,7 +86,6 @@ std::vector<double> variable_names_to_numbers(Program &prg, std::vector<std::str
 void set_string_or_number(Program &prg, std::string name, std::string value);
 void skip_whitespace(Program &prg, bool add_lines = false);
 std::string remove_quotes(std::string s);
-std::string unescape(std::string s);
 
 } // end namespace booboo
 

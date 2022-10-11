@@ -100,7 +100,7 @@ static bool breaker_reset(Program &prg, std::string tok)
 	std::string names;
 
 	if (name[0] == '"') {
-		names = remove_quotes(unescape(name));
+		names = remove_quotes(util::unescape_string(name));
 	}
 	else {
 		Variable &v1 = find_variable(prg, name);
@@ -143,7 +143,7 @@ static bool breaker_return(Program &prg, std::string tok)
 	}
 	else if (value[0] == '"') {
 		prg.result.type = Variable::STRING;
-		prg.result.s = remove_quotes(unescape(value));
+		prg.result.s = remove_quotes(util::unescape_string(value));
 	}
 	else {
 		Variable &v1 = find_variable(prg, value);
@@ -225,7 +225,7 @@ static bool corefunc_set(Program &prg, std::string tok)
 			v1.n = atof(remove_quotes(src).c_str());
 		}
 		else if (v1.type == Variable::STRING) {
-			v1.s = remove_quotes(unescape(src));
+			v1.s = remove_quotes(util::unescape_string(src));
 		}
 		else {
 			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
@@ -281,7 +281,7 @@ static bool corefunc_add(Program &prg, std::string tok)
 			v1.n += atof(remove_quotes(src).c_str());
 		}
 		else if (v1.type == Variable::STRING) {
-			v1.s += remove_quotes(unescape(src));
+			v1.s += remove_quotes(util::unescape_string(src));
 		}
 		else {
 			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
@@ -598,7 +598,7 @@ static bool corefunc_compare(Program &prg, std::string tok)
 
 	if (a[0] == '"') {
 		a_string = true;
-		s1 = remove_quotes(unescape(a));
+		s1 = remove_quotes(util::unescape_string(a));
 	}
 	else if (a[0] == '_' || isalpha(a[0])) {
 		Variable &v = find_variable(prg, a);
@@ -610,7 +610,7 @@ static bool corefunc_compare(Program &prg, std::string tok)
 
 	if (b[0] == '"') {
 		b_string = true;
-		s2 = remove_quotes(unescape(b));
+		s2 = remove_quotes(util::unescape_string(b));
 	}
 	else if (b[0] == '_' || isalpha(b[0])) {
 		Variable &v = find_variable(prg, b);
@@ -894,7 +894,7 @@ static bool corefunc_inspect(Program &prg, std::string tok)
 		snprintf(buf, 1000, "%s", name.c_str());
 	}
 	else if (name[0] == '"') {
-		std::string s = remove_quotes(unescape(name));
+		std::string s = remove_quotes(util::unescape_string(name));
 		snprintf(buf, 1000, "%s", s.c_str());
 	}
 	else if (v1.type == Variable::NUMBER) {
@@ -924,7 +924,7 @@ static bool corefunc_string_format(Program &prg, std::string tok)
 	std::string fmts;
 
 	if (fmt[0] == '"') {
-		fmts = remove_quotes(unescape(fmt));
+		fmts = remove_quotes(util::unescape_string(fmt));
 	}
 	else {
 		Variable &v1 = find_variable(prg, fmt);
@@ -975,7 +975,7 @@ static bool corefunc_string_format(Program &prg, std::string tok)
 			val = param;
 		}
 		else if (param[0] == '"') {
-			val = remove_quotes(unescape(param));
+			val = remove_quotes(util::unescape_string(param));
 		}
 		else {
 			Variable &v1 = find_variable(prg, param);
@@ -1710,7 +1710,7 @@ static bool mmlfunc_create(Program &prg, std::string tok)
 	std::string strs;
 
 	if (str[0] == '"') {
-		strs = remove_quotes(unescape(str));
+		strs = remove_quotes(util::unescape_string(str));
 	}
 	else {
 		Variable &v1 = find_variable(prg, str);
@@ -1753,7 +1753,7 @@ static bool mmlfunc_load(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
-	audio::MML *mml = new audio::MML(remove_quotes(unescape(name)));
+	audio::MML *mml = new audio::MML(remove_quotes(util::unescape_string(name)));
 
 	prg.mmls[prg.mml_id++] = mml;
 
@@ -1831,7 +1831,7 @@ static bool imagefunc_load(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
-	gfx::Image *img = new gfx::Image(remove_quotes(unescape(name)));
+	gfx::Image *img = new gfx::Image(remove_quotes(util::unescape_string(name)));
 
 	prg.images[prg.image_id++] = img;
 
@@ -2132,7 +2132,7 @@ static bool fontfunc_load(Program &prg, std::string tok)
 	strings.push_back(smooth);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
-	gfx::TTF *font = new gfx::TTF(remove_quotes(unescape(name)), values[0], 256);
+	gfx::TTF *font = new gfx::TTF(remove_quotes(util::unescape_string(name)), values[0], 256);
 	font->set_smooth(values[1]);
 
 	prg.fonts[prg.font_id++] = font;
@@ -2180,7 +2180,7 @@ static bool fontfunc_draw(Program &prg, std::string tok)
 	std::string txt;
 
 	if (text[0] == '"') {
-		txt = remove_quotes(unescape(text));
+		txt = remove_quotes(util::unescape_string(text));
 	}
 	else {
 		Variable &v1 = find_variable(prg, text);
@@ -2219,7 +2219,7 @@ static bool fontfunc_width(Program &prg, std::string tok)
 	std::string txt;
 
 	if (text[0] == '"') {
-		txt = remove_quotes(unescape(text));
+		txt = remove_quotes(util::unescape_string(text));
 	}
 	else {
 		Variable &v1 = find_variable(prg, text);
@@ -2526,7 +2526,7 @@ static bool vectorfunc_add(Program &prg, std::string tok)
 		var.type = Variable::STRING;
 		var.function = prg.name;
 		var.name = "-constant-";
-		var.s = remove_quotes(unescape(value));
+		var.s = remove_quotes(util::unescape_string(value));
 	}
 	else if (value[0] == '-' || isdigit(value[0])) {
 		var.type = Variable::NUMBER;
@@ -2605,7 +2605,7 @@ static bool vectorfunc_set(Program &prg, std::string tok)
 		var.type = Variable::STRING;
 		var.function = prg.name;
 		var.name = "-constant-";
-		var.s = remove_quotes(unescape(value));
+		var.s = remove_quotes(util::unescape_string(value));
 	}
 	else if (value[0] == '-' || isdigit(value[0])) {
 		var.type = Variable::NUMBER;
@@ -2653,7 +2653,7 @@ static bool vectorfunc_insert(Program &prg, std::string tok)
 		var.type = Variable::STRING;
 		var.function = prg.name;
 		var.name = "-constant-";
-		var.s = remove_quotes(unescape(value));
+		var.s = remove_quotes(util::unescape_string(value));
 	}
 	else if (value[0] == '-' || isdigit(value[0])) {
 		var.type = Variable::NUMBER;
@@ -2750,7 +2750,7 @@ static bool cfgfunc_load(Program &prg, std::string tok)
 	std::string cfg_names;
 
 	if (cfg_name[0] == '"') {
-		cfg_names = remove_quotes(unescape(cfg_name));
+		cfg_names = remove_quotes(util::unescape_string(cfg_name));
 	}
 	else  {
 		Variable &v1 = find_variable(prg, cfg_name);
@@ -2787,7 +2787,7 @@ static bool cfgfunc_save(Program &prg, std::string tok)
 	std::string cfg_names;
 
 	if (cfg_name[0] == '"') {
-		cfg_names = remove_quotes(unescape(cfg_name));
+		cfg_names = remove_quotes(util::unescape_string(cfg_name));
 	}
 	else  {
 		Variable &v1 = find_variable(prg, cfg_name);
@@ -2816,7 +2816,7 @@ static bool cfgfunc_get_number(Program &prg, std::string tok)
 	std::string names;
 
 	if (name[0] == '"') {
-		names = remove_quotes(unescape(name));
+		names = remove_quotes(util::unescape_string(name));
 	}
 	else  {
 		Variable &v1 = find_variable(prg, name);
@@ -2851,7 +2851,7 @@ static bool cfgfunc_get_string(Program &prg, std::string tok)
 	std::string names;
 
 	if (name[0] == '"') {
-		names = remove_quotes(unescape(name));
+		names = remove_quotes(util::unescape_string(name));
 	}
 	else  {
 		Variable &v1 = find_variable(prg, name);
@@ -2886,7 +2886,7 @@ static bool cfgfunc_set_number(Program &prg, std::string tok)
 	std::string names;
 
 	if (name[0] == '"') {
-		names = remove_quotes(unescape(name));
+		names = remove_quotes(util::unescape_string(name));
 	}
 	else  {
 		Variable &v1 = find_variable(prg, name);
@@ -2919,7 +2919,7 @@ static bool cfgfunc_set_string(Program &prg, std::string tok)
 	std::string names;
 
 	if (name[0] == '"') {
-		names = remove_quotes(unescape(name));
+		names = remove_quotes(util::unescape_string(name));
 	}
 	else  {
 		Variable &v1 = find_variable(prg, name);
@@ -2934,7 +2934,7 @@ static bool cfgfunc_set_string(Program &prg, std::string tok)
 	std::string values;
 
 	if (value[0] == '"') {
-		values = remove_quotes(unescape(value));
+		values = remove_quotes(util::unescape_string(value));
 	}
 	else  {
 		Variable &v1 = find_variable(prg, value);
@@ -2963,7 +2963,7 @@ static bool cfgfunc_number_exists(Program &prg, std::string tok)
 	std::string names;
 
 	if (name[0] == '"') {
-		names = remove_quotes(unescape(name));
+		names = remove_quotes(util::unescape_string(name));
 	}
 	else  {
 		Variable &v1 = find_variable(prg, name);
@@ -3008,7 +3008,7 @@ static bool cfgfunc_string_exists(Program &prg, std::string tok)
 	std::string names;
 
 	if (name[0] == '"') {
-		names = remove_quotes(unescape(name));
+		names = remove_quotes(util::unescape_string(name));
 	}
 	else  {
 		Variable &v1 = find_variable(prg, name);
