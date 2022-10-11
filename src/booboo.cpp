@@ -315,14 +315,11 @@ std::string token(Program &prg, bool add_lines)
 		}
 		return tok;
 	}
-	else if (tok == "") {
-		return "";
-	}
 	else {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Parse error on line " + util::itos(prg.line+prg.start_line) + " (pc=" + util::itos(prg.p) + ", tok=\"" + tok + "\")");
 	}
 
-	return tok;
+	return "";
 }
 
 std::map<std::string, Label> process_labels(Program prg)
