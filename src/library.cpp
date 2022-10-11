@@ -2079,8 +2079,8 @@ static bool imagefunc_size(Program &prg, std::string tok)
 	strings.push_back(id);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 	
-	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + util::itos(get_line_num(prg)));
+	if (prg.images.find(values[0]) == prg.images.end()) {
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid image on line " + util::itos(get_line_num(prg)));
 	}
 
 	gfx::Image *img = prg.images[values[0]];
