@@ -17,7 +17,7 @@ var number sel
 = sel 0
 
 var number font
-font_load font "DejaVuSans.ttf" 16 0
+font_load font "font.ttf" 16 0
 var number font_size
 font_height font font_size
 

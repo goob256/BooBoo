@@ -11,7 +11,7 @@ var vector fonts
 
 var number f
 
-font_load f "DejaVuSans.ttf" size 0
+font_load f "font.ttf" size 0
 
 vector_add fonts f
 

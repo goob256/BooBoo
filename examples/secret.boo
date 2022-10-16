@@ -10,7 +10,7 @@ var number hidden
 = hidden 1
 
 var number font
-font_load font "DejaVuSans.ttf" 128 1
+font_load font "font.ttf" 128 1
 
 function run
 {
