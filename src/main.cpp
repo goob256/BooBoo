@@ -1,6 +1,14 @@
+//#define LUA_BENCH
+//#define CPP_BENCH
+
 #include <shim4/shim4.h>
 
 #include "booboo/booboo.h"
+
+#ifdef CPP_BENCH
+gfx::Image *grass;
+gfx::Image *robot;
+#endif
 
 bool load_from_filesystem_set;
 
@@ -13,6 +21,178 @@ char **orig_argv;
 
 std::string extra_args;
 std::string extra_args_orig;
+
+#ifdef LUA_BENCH
+#include <lua5.2/lua.h>
+#include <lua5.2/lauxlib.h>
+#include <lua5.2/lualib.h>
+
+lua_State *lua_state;
+std::vector<gfx::Image *> lua_images;
+
+/*
+ * Call a Lua function, leaving the results on the stack.
+ */
+void call_lua(lua_State* lua_state, const char *func, const char *sig, ...)
+{
+	va_list vl;
+	int narg, nres;  /* number of arguments and results */
+
+	va_start(vl, sig);
+	lua_getglobal(lua_state, func);  /* get function */
+
+	if (!lua_isfunction(lua_state, -1)) {
+		lua_pop(lua_state, 1);
+		return;
+	}
+
+	/* push arguments */
+	narg = 0;
+	while (*sig) {  /* push arguments */
+		switch (*sig++) {
+			case 'd':  /* double argument */
+				lua_pushnumber(lua_state, va_arg(vl, double));
+				break;
+			case 'b':  /* boolean (int) argument */
+				lua_pushboolean(lua_state, va_arg(vl, int));
+				break;
+			case 'i':  /* int argument */
+				lua_pushnumber(lua_state, va_arg(vl, int));
+				break;
+
+			case 's':  /* string argument */
+				lua_pushstring(lua_state, va_arg(vl, char *));
+				break;
+			case 'u':  /* userdata argument */
+				lua_pushlightuserdata(lua_state, va_arg(vl, void *));
+				break;
+			case '>':
+				goto endwhile;
+			default:
+				break;
+		}
+		narg++;
+		luaL_checkstack(lua_state, 1, "too many arguments");
+	}
+endwhile:
+
+	/* do the call */
+	nres = strlen(sig);  /* number of expected results */
+	lua_pcall(lua_state, narg, nres, 0);
+
+	va_end(vl);
+}
+
+extern "C" {
+
+static int c_load_image(lua_State *stack)
+{
+	const char *name = lua_tostring(stack, 1);
+
+	int n = lua_images.size();
+
+	lua_images.push_back(new gfx::Image(name));
+
+	lua_pushnumber(stack, n);
+
+	return 1;
+}
+
+static int c_image_size(lua_State *stack)
+{
+	int n = lua_tonumber(stack, 1);
+
+	lua_pushnumber(stack, lua_images[n]->size.w);
+	lua_pushnumber(stack, lua_images[n]->size.h);
+
+	return 2;
+}
+
+static int c_image_draw(lua_State *stack)
+{
+	int n = lua_tonumber(stack, 1);
+	int tint_r = lua_tonumber(stack, 2);
+	int tint_g = lua_tonumber(stack, 3);
+	int tint_b = lua_tonumber(stack, 4);
+	int tint_a = lua_tonumber(stack, 5);
+	int x = lua_tonumber(stack, 6);
+	int y = lua_tonumber(stack, 7);
+	int flip_h = lua_tonumber(stack, 8);
+	int flip_v = lua_tonumber(stack, 9);
+
+	SDL_Colour c;
+	c.r = tint_r;
+	c.g = tint_g;
+	c.b = tint_b;
+	c.a = tint_a;
+
+	int flip = 0;
+	if (flip_h) {
+		flip |= gfx::Image::FLIP_H;
+	}
+	if (flip_v) {
+		flip |= gfx::Image::FLIP_V;
+	}
+
+	lua_images[n]->draw_tinted(c, util::Point<float>(x, y), flip);
+
+	return 0;
+}
+
+static int c_image_start(lua_State *stack)
+{
+	int n = lua_tonumber(stack, 1);
+
+	lua_images[n]->start_batch();
+
+	return 0;
+}
+
+static int c_image_end(lua_State *stack)
+{
+	int n = lua_tonumber(stack, 1);
+
+	lua_images[n]->end_batch();
+
+	return 0;
+}
+
+static int c_rand(lua_State *stack)
+{
+	int min_incl = lua_tonumber(stack, 1);
+	int max_incl = lua_tonumber(stack, 2);
+
+	lua_pushnumber(stack, util::rand(min_incl, max_incl));
+
+	return 1;
+}
+
+}
+
+void init_lua()
+{
+	lua_state = luaL_newstate();
+
+	luaL_openlibs(lua_state);
+
+	#define REGISTER_FUNCTION(name) \
+		lua_pushcfunction(lua_state, c_ ## name); \
+		lua_setglobal(lua_state, #name);
+
+	REGISTER_FUNCTION(load_image);
+	REGISTER_FUNCTION(image_size);
+	REGISTER_FUNCTION(image_draw);
+	REGISTER_FUNCTION(image_start);
+	REGISTER_FUNCTION(image_end);
+	REGISTER_FUNCTION(rand);
+
+	#undef REGISTER_FUNCION
+
+	std::string program = util::load_text_from_filesystem("benchmark.lua");
+	luaL_loadstring(lua_state, program.c_str());
+	lua_pcall(lua_state, 0, 0, 0);
+}
+#endif
 
 bool start()
 {
@@ -132,7 +312,26 @@ void draw_all()
 
 	gfx::set_cull_mode(gfx::NO_FACE);
 
+#ifdef LUA_BENCH
+	call_lua(lua_state, "draw", "");
+#elif defined CPP_BENCH
+	int w = 640 / grass->size.w;
+	int h = 360 / grass->size.h;
+	grass->start_batch();
+	for (int y = 0; y < h; y++) {
+		for (int x = 0; x < w; x++) {
+			grass->draw(util::Point<float>(x*grass->size.w, y*grass->size.h));
+		}
+	}
+	grass->end_batch();
+	for (int i = 0; i < 17; i++) {
+		int x = util::rand(0, w-1);
+		int y = util::rand(0, h-1);
+		robot->draw(util::Point<float>(x*robot->size.w, y*robot->size.h));
+	}
+#else
 	booboo::call_function(prg, "draw", "");
+#endif
 
 	gfx::draw_guis();
 	gfx::draw_notifications();
@@ -234,7 +433,7 @@ static void loop()
 			TGUI_Event *event = shim::handle_event(&sdl_event);
 			handle_event(event);
 
-			booboo::call_function(prg, "run", "");
+			//booboo::call_function(prg, "run", "");
 
 			if (booboo::reset_game_name != "") {
 				quit = true;
@@ -491,7 +690,8 @@ again:
 			}
 		}
 	}
-	
+
+
 	load_from_filesystem_set = true;
 
 	prg = booboo::create_program(code);
@@ -499,6 +699,13 @@ again:
 	// This does one token at a time, and we want it to finish the main body so it's a loop
 	while (booboo::interpret(prg)) {
 	}
+
+#ifdef LUA_BENCH
+	init_lua();
+#elif defined CPP_BENCH
+	grass = new gfx::Image("misc/grass.tga");
+	robot = new gfx::Image("misc/robot.tga");
+#endif
 	
 	if (booboo::reset_game_name == "") {
 		go();

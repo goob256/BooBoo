@@ -102,7 +102,7 @@ else() # Linux
 	set_target_properties("booboo" PROPERTIES OUTPUT_NAME "BooBoo")
 	#set(LIBS ${LIBS} shim4_static tgui6_static SDL2 GL Xcursor X11 z vorbisfile vorbis ogg)
 	#set(LIBS ${LIBS} shim4_static tgui6_static SDL2 GL Xcursor X11 FLAC ogg z)
-	set(LIBS ${LIBS} shim4_static tgui6_static SDL2 GL Xcursor X11 FLAC vorbis ogg freetype png z)
+	set(LIBS ${LIBS} shim4_static tgui6_static SDL2 GL Xcursor X11 FLAC vorbis ogg freetype png z lua5.2)
 endif()
 
 target_link_libraries("booboo" ${LIBS})
