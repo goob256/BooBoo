@@ -34,7 +34,7 @@ struct Label {
 };
 
 struct Statement {
-	std::string method;
+	int method;
 	std::vector<std::string> data;
 };
 

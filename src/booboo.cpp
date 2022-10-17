@@ -8,7 +8,8 @@ namespace booboo {
 
 typedef std::string (*token_func)(Program &);
 
-std::map<std::string, library_func> library_map;
+std::map<std::string, int> library_map;
+std::vector<library_func> library;
 std::map<char, token_func> token_map;
 std::string reset_game_name;
 bool load_from_filesystem;
@@ -440,7 +441,7 @@ static void compile(Program &prg)
 		}
 		else if (library_map.find(tok) != library_map.end()) {
 			Statement s;
-			s.method = tok;
+			s.method = library_map[tok];
 			prg.program.push_back(s);
 		}
 		else if (prg.program.size() == 0) {
@@ -702,38 +703,14 @@ bool interpret(Program &prg)
 
 	int pc_bak = prg.pc;
 
-	std::map<std::string, library_func>::iterator it = library_map.find(s.method);
-	if (it == library_map.end()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid token \"" + s.method + "\" on line " + util::itos(get_line_num(prg)));
-	}
-	else {
-		library_func func = (*it).second;
-		ret = func(prg, s.data);
-	}
+	library_func func = library[s.method];
+	ret = func(prg, s.data);
 
 	if (pc_bak == prg.pc) {
 		prg.pc++;
 	}
 
 	return ret;
-	/*
-	std::string tok = token(prg);
-
-	if (tok == "") {
-		return false;
-	}
-
-	std::map<std::string, library_func>::iterator it = library_map.find(tok);
-	if (it == library_map.end()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid token \"" + tok + "\" on line " + util::itos(get_line_num(prg)));
-	}
-	else {
-		library_func func = (*it).second;
-		return func(prg, tok);
-	}
-
-	return true;
-	*/
 }
 
 void destroy_program(Program &prg)
@@ -763,7 +740,8 @@ void destroy_program(Program &prg)
 
 void add_syntax(std::string name, library_func processing)
 {
-	library_map[name] = processing;
+	library_map[name] = library.size();
+	library.push_back(processing);
 }
 
 void end()
