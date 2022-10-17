@@ -1,5 +1,6 @@
 //#define LUA_BENCH
 //#define CPP_BENCH
+//#define DUMP
 
 #include <shim4/shim4.h>
 
@@ -311,7 +312,7 @@ void draw_all()
 	gfx::clear(shim::black);
 
 	gfx::set_cull_mode(gfx::NO_FACE);
-
+	
 #ifdef LUA_BENCH
 	call_lua(lua_state, "draw", "");
 #elif defined CPP_BENCH
@@ -330,7 +331,7 @@ void draw_all()
 		robot->draw(util::Point<float>(x*robot->size.w, y*robot->size.h));
 	}
 #else
-	booboo::call_function(prg, "draw", "");
+	booboo::call_function(prg, "draw", std::vector<std::string>(), "");
 #endif
 
 	gfx::draw_guis();
@@ -433,7 +434,7 @@ static void loop()
 			TGUI_Event *event = shim::handle_event(&sdl_event);
 			handle_event(event);
 
-			//booboo::call_function(prg, "run", "");
+			booboo::call_function(prg, "run", std::vector<std::string>(), "");
 
 			if (booboo::reset_game_name != "") {
 				quit = true;
@@ -693,9 +694,9 @@ again:
 
 
 	load_from_filesystem_set = true;
-
+	
 	prg = booboo::create_program(code);
-
+	
 	// This does one token at a time, and we want it to finish the main body so it's a loop
 	while (booboo::interpret(prg)) {
 	}
@@ -706,12 +707,47 @@ again:
 	grass = new gfx::Image("misc/grass.tga");
 	robot = new gfx::Image("misc/robot.tga");
 #endif
+
+#ifdef DUMP
+	printf("main:\n");
+	for (size_t i = 0; i < prg.program.size(); i++) {
+		booboo::Statement &s = prg.program[i];
+		printf("%s ", s.method.c_str());
+		for (size_t j = 0; j < s.data.size(); j++) {
+			printf("%s ", s.data[j].c_str());
+		}
+		printf("\n");
+	}
+	std::map<std::string, booboo::Label>::iterator it2;
+	for (it2 = prg.labels.begin(); it2 != prg.labels.end(); it2++) {
+		std::string label = (*it2).first;
+		printf("label %s %d\n", label.c_str(), (*it2).second.pc);
+	}
+	std::map<std::string, booboo::Program>::iterator it;
+	for (it = prg.functions.begin(); it != prg.functions.end(); it++) {
+		booboo::Program prg = (*it).second;
+		printf("%s:\n", (*it).first.c_str());
+		for (size_t i = 0; i < prg.program.size(); i++) {
+			booboo::Statement &s = prg.program[i];
+			printf("%s ", s.method.c_str());
+			for (size_t j = 0; j < s.data.size(); j++) {
+				printf("%s ", s.data[j].c_str());
+			}
+			printf("\n");
+		}
+		std::map<std::string, booboo::Label>::iterator it2;
+		for (it2 = prg.labels.begin(); it2 != prg.labels.end(); it2++) {
+			std::string label = (*it2).first;
+			printf("label %s %d\n", label.c_str(), (*it2).second.pc);
+		}
+	}
+#endif
 	
 	if (booboo::reset_game_name == "") {
 		go();
 	}
 
-	booboo::call_function(prg, "end", "");
+	booboo::call_function(prg, "end", std::vector<std::string>(), "");
 
 	booboo::destroy_program(prg);
 

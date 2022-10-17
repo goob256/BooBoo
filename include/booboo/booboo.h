@@ -30,6 +30,12 @@ struct Label {
 	std::string name;
 	int p;
 	int line;
+	int pc;
+};
+
+struct Statement {
+	std::string method;
+	std::vector<std::string> data;
 };
 
 struct Program {
@@ -61,9 +67,12 @@ struct Program {
 	std::map<int, gfx::TTF *> fonts;
 	std::map< int, std::vector<Variable> > vectors;
 	std::vector<int> line_numbers;
+
+	std::vector<Statement> program;
+	int pc;
 };
 
-typedef bool (*library_func)(Program &prg, std::string tok);
+typedef bool (*library_func)(Program &prg, std::vector<std::string> &v);
 
 extern std::string reset_game_name;
 extern bool load_from_filesystem;
@@ -75,7 +84,7 @@ void end();
 Program create_program(std::string code);
 bool interpret(Program &prg);
 void destroy_program(Program &prg);
-void call_function(Program &prg, std::string function_name, std::string result_name);
+void call_function(Program &prg, std::string function_name, std::vector<std::string> params, std::string result_name);
 
 // These are for adding syntax
 void add_syntax(std::string name, library_func func);

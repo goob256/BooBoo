@@ -89,13 +89,9 @@ static void save_cfg(std::string cfg_name)
 	fclose(f);
 }
 
-static bool breaker_reset(Program &prg, std::string tok)
+static bool breaker_reset(Program &prg, std::vector<std::string> &v)
 {
-	std::string name = token(prg);
-
-	if (name == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected reset parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string name = v[0];
 
 	std::string names;
 
@@ -117,9 +113,9 @@ static bool breaker_reset(Program &prg, std::string tok)
 	return false;
 }
 
-static bool breaker_exit(Program &prg, std::string tok)
+static bool breaker_exit(Program &prg, std::vector<std::string> &v)
 {
-	std::string code = token(prg);
+	std::string code = v[0];
 	std::vector<std::string> strings;
 	strings.push_back(code);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -129,14 +125,10 @@ static bool breaker_exit(Program &prg, std::string tok)
 	return false;
 }
 
-static bool breaker_return(Program &prg, std::string tok)
+static bool breaker_return(Program &prg, std::vector<std::string> &v)
 {
-	std::string value = token(prg);
+	std::string value = v[0];
 
-	if (value == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected return parameters on line " + util::itos(get_line_num(prg)));
-	}
-	
 	if (value[0] == '-' || isdigit(value[0])) {
 		prg.result.type = Variable::NUMBER;
 		prg.result.n = atof(value.c_str());
@@ -155,16 +147,12 @@ static bool breaker_return(Program &prg, std::string tok)
 	return false;
 }
 
-static bool corefunc_var(Program &prg, std::string tok)
+static bool corefunc_var(Program &prg, std::vector<std::string> &v)
 {
 	Variable var;
 
-	std::string type = token(prg);
-	std::string name =  token(prg);
-
-	if (name == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected var parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string type = v[0];
+	std::string name =  v[1];
 
 	var.name = name;
 	var.function = prg.name;
@@ -198,14 +186,10 @@ static bool corefunc_var(Program &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_set(Program &prg, std::string tok)
+static bool corefunc_set(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest =  token(prg);
-	std::string src =  token(prg);
-
-	if (src == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected = parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string dest = v[0];
+	std::string src = v[1];
 
 	Variable &v1 = find_variable(prg, dest);
 
@@ -254,15 +238,11 @@ static bool corefunc_set(Program &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_add(Program &prg, std::string tok)
+static bool corefunc_add(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest =  token(prg);
-	std::string src =  token(prg);
+	std::string dest = v[0];
+	std::string src = v[1];
 
-	if (src == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected + parameters on line " + util::itos(get_line_num(prg)));
-	}
-	
 	Variable &v1 = find_variable(prg, dest);
 
 	if (src[0] == '-' || isdigit(src[0])) {
@@ -307,14 +287,10 @@ static bool corefunc_add(Program &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_subtract(Program &prg, std::string tok)
+static bool corefunc_subtract(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest =  token(prg);
-	std::string src =  token(prg);
-
-	if (src == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected - parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string dest = v[0];
+	std::string src = v[1];
 
 	Variable &v1 = find_variable(prg, dest);
 
@@ -348,14 +324,10 @@ static bool corefunc_subtract(Program &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_multiply(Program &prg, std::string tok)
+static bool corefunc_multiply(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest =  token(prg);
-	std::string src =  token(prg);
-
-	if (src == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected * parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string dest = v[0];
+	std::string src = v[1];
 
 	Variable &v1 = find_variable(prg, dest);
 
@@ -389,14 +361,10 @@ static bool corefunc_multiply(Program &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_divide(Program &prg, std::string tok)
+static bool corefunc_divide(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest =  token(prg);
-	std::string src =  token(prg);
-
-	if (src == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected / parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string dest = v[0];
+	std::string src = v[1];
 
 	Variable &v1 = find_variable(prg, dest);
 
@@ -430,14 +398,10 @@ static bool corefunc_divide(Program &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_intmod(Program &prg, std::string tok)
+static bool corefunc_intmod(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest =  token(prg);
-	std::string src =  token(prg);
-
-	if (src == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected %% parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string dest = v[0];
+	std::string src = v[1];
 
 	Variable &v1 = find_variable(prg, dest);
 
@@ -471,14 +435,10 @@ static bool corefunc_intmod(Program &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_fmod(Program &prg, std::string tok)
+static bool corefunc_fmod(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest = token(prg);
-	std::string src = token(prg);
-
-	if (src == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected fmod parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string dest = v[0];
+	std::string src = v[1];
 
 	Variable &v1 = find_variable(prg, dest);
 
@@ -512,14 +472,10 @@ static bool corefunc_fmod(Program &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_neg(Program &prg, std::string tok)
+static bool corefunc_neg(Program &prg, std::vector<std::string> &v)
 {
-	std::string name = token(prg);
+	std::string name = v[0];
 	
-	if (name == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected neg parameters on line " + util::itos(get_line_num(prg)));
-	}
-
 	Variable &v1 = find_variable(prg, name);
 
 	if (v1.type == Variable::NUMBER) {
@@ -532,13 +488,9 @@ static bool corefunc_neg(Program &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_label(Program &prg, std::string tok)
+static bool corefunc_label(Program &prg, std::vector<std::string> &v)
 {
-	std::string name = token(prg);
-
-	if (name == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected label paramters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string name = v[0];
 
 	if (name[0] != '_' && isalpha(name[0]) == false) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid label name on line " + util::itos(get_line_num(prg)));
@@ -548,6 +500,7 @@ static bool corefunc_label(Program &prg, std::string tok)
 	l.name = name;
 	l.p = prg.p;
 	l.line = prg.line;
+	l.pc = prg.pc;
 	
 	//prg.labels.push_back(l);
 	//already got these
@@ -555,19 +508,16 @@ static bool corefunc_label(Program &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_goto(Program &prg, std::string tok)
+static bool corefunc_goto(Program &prg, std::vector<std::string> &v)
 {
-	std::string name = token(prg);
-
-	if (name == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected goto paramters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string name = v[0];
 
 	std::map<std::string, Label>::iterator it = prg.labels.find(name);
 	if (it != prg.labels.end()) {
 		Label &l = (*it).second;
 		prg.p = l.p;
 		prg.line = l.line;
+		prg.pc = l.pc;
 	}
 
 	/*
@@ -582,14 +532,10 @@ static bool corefunc_goto(Program &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_compare(Program &prg, std::string tok)
+static bool corefunc_compare(Program &prg, std::vector<std::string> &v)
 {
-	std::string a = token(prg);
-	std::string b = token(prg);
-
-	if (b == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected ? parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string a = v[0];
+	std::string b = v[1];
 
 	bool a_string = false;
 	bool b_string = false;
@@ -648,13 +594,9 @@ static bool corefunc_compare(Program &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_je(Program &prg, std::string tok)
+static bool corefunc_je(Program &prg, std::vector<std::string> &v)
 {
-	std::string label = token(prg);
-
-	if (label == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected je parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string label = v[0];
 
 	if (prg.compare_flag == 0) {
 		std::map<std::string, Label>::iterator it = prg.labels.find(label);
@@ -662,19 +604,16 @@ static bool corefunc_je(Program &prg, std::string tok)
 			Label &l = (*it).second;
 			prg.p = l.p;
 			prg.line = l.line;
+			prg.pc = l.pc;
 		}
 	}
 
 	return true;
 }
 
-static bool corefunc_jne(Program &prg, std::string tok)
+static bool corefunc_jne(Program &prg, std::vector<std::string> &v)
 {
-	std::string label = token(prg);
-
-	if (label == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected jne parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string label = v[0];
 
 	if (prg.compare_flag != 0) {
 		std::map<std::string, Label>::iterator it = prg.labels.find(label);
@@ -682,19 +621,16 @@ static bool corefunc_jne(Program &prg, std::string tok)
 			Label &l = (*it).second;
 			prg.p = l.p;
 			prg.line = l.line;
+			prg.pc = l.pc;
 		}
 	}
 
 	return true;
 }
 
-static bool corefunc_jl(Program &prg, std::string tok)
+static bool corefunc_jl(Program &prg, std::vector<std::string> &v)
 {
-	std::string label = token(prg);
-
-	if (label == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected jl parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string label = v[0];
 
 	if (prg.compare_flag < 0) {
 		std::map<std::string, Label>::iterator it = prg.labels.find(label);
@@ -702,19 +638,16 @@ static bool corefunc_jl(Program &prg, std::string tok)
 			Label &l = (*it).second;
 			prg.p = l.p;
 			prg.line = l.line;
+			prg.pc = l.pc;
 		}
 	}
 
 	return true;
 }
 
-static bool corefunc_jle(Program &prg, std::string tok)
+static bool corefunc_jle(Program &prg, std::vector<std::string> &v)
 {
-	std::string label = token(prg);
-
-	if (label == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected jle parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string label = v[0];
 
 	if (prg.compare_flag <= 0) {
 		std::map<std::string, Label>::iterator it = prg.labels.find(label);
@@ -722,19 +655,16 @@ static bool corefunc_jle(Program &prg, std::string tok)
 			Label &l = (*it).second;
 			prg.p = l.p;
 			prg.line = l.line;
+			prg.pc = l.pc;
 		}
 	}
 
 	return true;
 }
 
-static bool corefunc_jg(Program &prg, std::string tok)
+static bool corefunc_jg(Program &prg, std::vector<std::string> &v)
 {
-	std::string label = token(prg);
-
-	if (label == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected jg parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string label = v[0];
 
 	if (prg.compare_flag > 0) {
 		std::map<std::string, Label>::iterator it = prg.labels.find(label);
@@ -742,19 +672,16 @@ static bool corefunc_jg(Program &prg, std::string tok)
 			Label &l = (*it).second;
 			prg.p = l.p;
 			prg.line = l.line;
+			prg.pc = l.pc;
 		}
 	}
 
 	return true;
 }
 
-static bool corefunc_jge(Program &prg, std::string tok)
+static bool corefunc_jge(Program &prg, std::vector<std::string> &v)
 {
-	std::string label = token(prg);
-
-	if (label == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected jge parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string label = v[0];
 
 	if (prg.compare_flag >= 0) {
 		std::map<std::string, Label>::iterator it = prg.labels.find(label);
@@ -762,28 +689,23 @@ static bool corefunc_jge(Program &prg, std::string tok)
 			Label &l = (*it).second;
 			prg.p = l.p;
 			prg.line = l.line;
+			prg.pc = l.pc;
 		}
 	}
 
 	return true;
 }
 
-static bool corefunc_call(Program &prg, std::string tok)
+static bool corefunc_call(Program &prg, std::vector<std::string> &v)
 {
-	std::string tok2 = token(prg);
+	std::string tok2 = v[0];
 	std::string function_name;
 	std::string result_name;
+	int _tok = 1;
 
-	if (tok2 == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected call parameters on line " + util::itos(get_line_num(prg)));
-	}
-
-	if (tok2 == "=") {
-		result_name = token(prg);
-		function_name = token(prg);
-		if (function_name == "") {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected call parameters on line " + util::itos(get_line_num(prg)));
-		}
+	if (tok2 == ">") {
+		result_name = v[_tok++];
+		function_name = v[_tok++];
 
 		// check for errors
 		find_variable(prg, result_name);
@@ -792,26 +714,28 @@ static bool corefunc_call(Program &prg, std::string tok)
 		function_name = tok2;
 	}
 
-	call_function(prg, function_name, result_name);
+	std::vector<std::string> params;
+	for (int i = _tok; i < v.size(); i++) {
+		params.push_back(v[i]);
+	}
+
+	call_function(prg, function_name, params, result_name);
 
 	return true;
 }
 
-static bool corefunc_function(Program &prg, std::string tok)
+static bool corefunc_function(Program &prg, std::vector<std::string> &v)
 {
 	int start_line = prg.line;
-	std::string name = token(prg);
+	std::string name = v[0];
 	int save = get_line_num(prg);
-
-	if (name == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected function parameters on line " + util::itos(get_line_num(prg)));
-	}
+	int _tok = 1;
 
 	Program p;
 	
 	std::string tok2;
 
-	while ((tok2 = token(prg)) != "") {
+	while ((tok2 = v[_tok++]) != "") {
 		if (tok2 == "{") {
 			break;
 		}
@@ -834,7 +758,7 @@ static bool corefunc_function(Program &prg, std::string tok)
 	int save_p = prg.p;
 	int end_p = prg.p;
 
-	while ((tok2 = token(prg)) != "") {
+	while ((tok2 = v[_tok++]) != "") {
 		if (tok2 == "}") {
 			break;
 		}
@@ -865,7 +789,7 @@ static bool corefunc_function(Program &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_comment(Program &prg, std::string tok)
+static bool corefunc_comment(Program &prg, std::vector<std::string> &v)
 {
 	while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
 		prg.p++;
@@ -878,14 +802,10 @@ static bool corefunc_comment(Program &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_inspect(Program &prg, std::string tok)
+static bool corefunc_inspect(Program &prg, std::vector<std::string> &v)
 {
-	std::string name = token(prg);
+	std::string name = v[0];
 	
-	if (name == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected inspect parameters on line " + util::itos(get_line_num(prg)));
-	}
-
 	Variable &v1 = find_variable(prg, name);
 
 	char buf[1000];
@@ -912,15 +832,12 @@ static bool corefunc_inspect(Program &prg, std::string tok)
 	return true;
 }
 
-static bool corefunc_string_format(Program &prg, std::string tok)
+static bool corefunc_string_format(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest = token(prg);
-	std::string fmt = token(prg);
+	std::string dest = v[0];
+	std::string fmt = v[1];
+	int _tok = 2;
 	
-	if (fmt == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected string_format parameters on line " + util::itos(get_line_num(prg)));
-	}
-
 	std::string fmts;
 
 	if (fmt[0] == '"') {
@@ -963,11 +880,7 @@ static bool corefunc_string_format(Program &prg, std::string tok)
 
 		result += fmts.substr(start, c-start);
 
-		std::string param = token(prg);
-
-		if (param == "") {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected string_format parameters on line " + util::itos(get_line_num(prg)));
-		}
+		std::string param = v[_tok++];
 
 		std::string val;
 
@@ -1011,16 +924,11 @@ static bool corefunc_string_format(Program &prg, std::string tok)
 	return true;
 }
 
-static bool mathfunc_sin(Program &prg, std::string tok)
+static bool mathfunc_sin(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest = token(prg);
-	std::string vs = token(prg);
-	float v;
+	std::string dest = v[0];
+	std::string vs = v[1];
 	
-	if (vs == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected sin parameters on line " + util::itos(get_line_num(prg)));
-	}
-
 	std::vector<std::string> strings;
 	strings.push_back(vs);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -1037,16 +945,11 @@ static bool mathfunc_sin(Program &prg, std::string tok)
 	return true;
 }
 
-static bool mathfunc_cos(Program &prg, std::string tok)
+static bool mathfunc_cos(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest = token(prg);
-	std::string vs = token(prg);
-	float v;
+	std::string dest = v[0];
+	std::string vs = v[1];
 	
-	if (vs == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cos paramters on line " + util::itos(get_line_num(prg)));
-	}
-
 	std::vector<std::string> strings;
 	strings.push_back(vs);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -1063,17 +966,12 @@ static bool mathfunc_cos(Program &prg, std::string tok)
 	return true;
 }
 
-static bool mathfunc_atan2(Program &prg, std::string tok)
+static bool mathfunc_atan2(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest = token(prg);
-	std::string vs1 = token(prg);
-	std::string vs2 = token(prg);
-	float v;
+	std::string dest = v[0];
+	std::string vs1 = v[1];
+	std::string vs2 = v[2];
 	
-	if (vs2 == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected atan2 parameters on line " + util::itos(get_line_num(prg)));
-	}
-
 	std::vector<std::string> strings;
 	strings.push_back(vs1);
 	strings.push_back(vs2);
@@ -1091,16 +989,11 @@ static bool mathfunc_atan2(Program &prg, std::string tok)
 	return true;
 }
 
-static bool mathfunc_abs(Program &prg, std::string tok)
+static bool mathfunc_abs(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest = token(prg);
-	std::string vs = token(prg);
-	float v;
+	std::string dest = v[0];
+	std::string vs = v[1];
 	
-	if (vs == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected abs parameters on line " + util::itos(get_line_num(prg)));
-	}
-
 	std::vector<std::string> strings;
 	strings.push_back(vs);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -1117,17 +1010,12 @@ static bool mathfunc_abs(Program &prg, std::string tok)
 	return true;
 }
 
-static bool mathfunc_pow(Program &prg, std::string tok)
+static bool mathfunc_pow(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest = token(prg);
-	std::string vs1 = token(prg);
-	std::string vs2 = token(prg);
-	float v;
+	std::string dest = v[0];
+	std::string vs1 = v[1];
+	std::string vs2 = v[2];
 	
-	if (vs2 == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected pow parameters on line " + util::itos(get_line_num(prg)));
-	}
-
 	std::vector<std::string> strings;
 	strings.push_back(vs1);
 	strings.push_back(vs2);
@@ -1145,16 +1033,11 @@ static bool mathfunc_pow(Program &prg, std::string tok)
 	return true;
 }
 
-static bool mathfunc_sqrt(Program &prg, std::string tok)
+static bool mathfunc_sqrt(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest = token(prg);
-	std::string vs1 = token(prg);
-	float v;
+	std::string dest = v[0];
+	std::string vs1 = v[1];
 	
-	if (vs1 == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected sqrt parameters on line " + util::itos(get_line_num(prg)));
-	}
-
 	std::vector<std::string> strings;
 	strings.push_back(vs1);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -1171,15 +1054,11 @@ static bool mathfunc_sqrt(Program &prg, std::string tok)
 	return true;
 }
 
-static bool mathfunc_rand(Program &prg, std::string tok)
+static bool mathfunc_rand(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest = token(prg);
-	std::string min_incl = token(prg);
-	std::string max_incl = token(prg);
-
-	if (max_incl == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected rand parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string dest = v[0];
+	std::string min_incl = v[1];
+	std::string max_incl = v[2];
 
 	std::vector<std::string> strings;
 	strings.push_back(min_incl);
@@ -1201,16 +1080,12 @@ static bool mathfunc_rand(Program &prg, std::string tok)
 	return true;
 }
 
-static bool gfxfunc_clear(Program &prg, std::string tok)
+static bool gfxfunc_clear(Program &prg, std::vector<std::string> &v)
 {
-	std::string r =  token(prg);
-	std::string g =  token(prg);
-	std::string b =  token(prg);
-	
-	if (b == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected clear parameters on line " + util::itos(get_line_num(prg)));
-	}
-	
+	std::string r =  v[0];
+	std::string g =  v[1];
+	std::string b =  v[2];
+
 	std::vector<std::string> strings;
 	strings.push_back(r);
 	strings.push_back(g);
@@ -1228,35 +1103,31 @@ static bool gfxfunc_clear(Program &prg, std::string tok)
 	return true;
 }
 
-static bool primfunc_start_primitives(Program &prg, std::string tok)
+static bool primfunc_start_primitives(Program &prg, std::vector<std::string> &v)
 {
 	gfx::draw_primitives_start();
 
 	return true;
 }
 
-static bool primfunc_end_primitives(Program &prg, std::string tok)
+static bool primfunc_end_primitives(Program &prg, std::vector<std::string> &v)
 {
 	gfx::draw_primitives_end();
 
 	return true;
 }
 
-static bool primfunc_line(Program &prg, std::string tok)
+static bool primfunc_line(Program &prg, std::vector<std::string> &v)
 {
-	std::string r =  token(prg);
-	std::string g =  token(prg);
-	std::string b =  token(prg);
-	std::string a =  token(prg);
-	std::string x =  token(prg);
-	std::string y =  token(prg);
-	std::string x2 =  token(prg);
-	std::string y2 =  token(prg);
-	std::string thickness = token(prg);
-	
-	if (thickness == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected line parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string r =  v[0];
+	std::string g =  v[1];
+	std::string b =  v[2];
+	std::string a =  v[3];
+	std::string x =  v[4];
+	std::string y =  v[5];
+	std::string x2 =  v[6];
+	std::string y2 =  v[7];
+	std::string thickness = v[8];
 	
 	std::vector<std::string> strings;
 	strings.push_back(r);
@@ -1290,30 +1161,26 @@ static bool primfunc_line(Program &prg, std::string tok)
 	return true;
 }
 
-static bool primfunc_filled_triangle(Program &prg, std::string tok)
+static bool primfunc_filled_triangle(Program &prg, std::vector<std::string> &v)
 {
-	std::string r1 =  token(prg);
-	std::string g1 =  token(prg);
-	std::string b1 =  token(prg);
-	std::string a1 =  token(prg);
-	std::string r2 =  token(prg);
-	std::string g2 =  token(prg);
-	std::string b2 =  token(prg);
-	std::string a2 =  token(prg);
-	std::string r3 =  token(prg);
-	std::string g3 =  token(prg);
-	std::string b3 =  token(prg);
-	std::string a3 =  token(prg);
-	std::string x =  token(prg);
-	std::string y =  token(prg);
-	std::string x2 =  token(prg);
-	std::string y2 =  token(prg);
-	std::string x3 =  token(prg);
-	std::string y3 =  token(prg);
-	
-	if (y3 == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected filled_triangle parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string r1 =  v[0];
+	std::string g1 =  v[1];
+	std::string b1 =  v[2];
+	std::string a1 =  v[3];
+	std::string r2 =  v[4];
+	std::string g2 =  v[5];
+	std::string b2 =  v[6];
+	std::string a2 =  v[7];
+	std::string r3 =  v[8];
+	std::string g3 =  v[9];
+	std::string b3 =  v[10];
+	std::string a3 =  v[11];
+	std::string x =  v[12];
+	std::string y =  v[13];
+	std::string x2 =  v[14];
+	std::string y2 =  v[15];
+	std::string x3 =  v[16];
+	std::string y3 =  v[17];
 	
 	std::vector<std::string> strings;
 	strings.push_back(r1);
@@ -1364,21 +1231,17 @@ static bool primfunc_filled_triangle(Program &prg, std::string tok)
 	return true;
 }
 
-static bool primfunc_rectangle(Program &prg, std::string tok)
+static bool primfunc_rectangle(Program &prg, std::vector<std::string> &v)
 {
-	std::string r =  token(prg);
-	std::string g =  token(prg);
-	std::string b =  token(prg);
-	std::string a =  token(prg);
-	std::string x =  token(prg);
-	std::string y =  token(prg);
-	std::string w =  token(prg);
-	std::string h =  token(prg);
-	std::string thickness =  token(prg);
-	
-	if (thickness == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected rectangle parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string r =  v[0];
+	std::string g =  v[1];
+	std::string b =  v[2];
+	std::string a =  v[3];
+	std::string x =  v[4];
+	std::string y =  v[5];
+	std::string w =  v[6];
+	std::string h =  v[7];
+	std::string thickness =  v[8];
 	
 	std::vector<std::string> strings;
 	strings.push_back(r);
@@ -1413,32 +1276,28 @@ static bool primfunc_rectangle(Program &prg, std::string tok)
 	return true;
 }
 
-static bool primfunc_filled_rectangle(Program &prg, std::string tok)
+static bool primfunc_filled_rectangle(Program &prg, std::vector<std::string> &v)
 {
-	std::string r1 =  token(prg);
-	std::string g1 =  token(prg);
-	std::string b1 =  token(prg);
-	std::string a1 =  token(prg);
-	std::string r2 =  token(prg);
-	std::string g2 =  token(prg);
-	std::string b2 =  token(prg);
-	std::string a2 =  token(prg);
-	std::string r3 =  token(prg);
-	std::string g3 =  token(prg);
-	std::string b3 =  token(prg);
-	std::string a3 =  token(prg);
-	std::string r4 =  token(prg);
-	std::string g4 =  token(prg);
-	std::string b4 =  token(prg);
-	std::string a4 =  token(prg);
-	std::string x =  token(prg);
-	std::string y =  token(prg);
-	std::string w =  token(prg);
-	std::string h =  token(prg);
-	
-	if (h == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected filled_rectangle parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string r1 =  v[0];
+	std::string g1 =  v[1];
+	std::string b1 =  v[2];
+	std::string a1 =  v[3];
+	std::string r2 =  v[4];
+	std::string g2 =  v[5];
+	std::string b2 =  v[6];
+	std::string a2 =  v[7];
+	std::string r3 =  v[8];
+	std::string g3 =  v[9];
+	std::string b3 =  v[10];
+	std::string a3 =  v[11];
+	std::string r4 =  v[12];
+	std::string g4 =  v[13];
+	std::string b4 =  v[14];
+	std::string a4 =  v[15];
+	std::string x =  v[16];
+	std::string y =  v[17];
+	std::string w =  v[18];
+	std::string h =  v[19];
 	
 	std::vector<std::string> strings;
 	strings.push_back(r1);
@@ -1496,22 +1355,18 @@ static bool primfunc_filled_rectangle(Program &prg, std::string tok)
 	return true;
 }
 
-static bool primfunc_ellipse(Program &prg, std::string tok)
+static bool primfunc_ellipse(Program &prg, std::vector<std::string> &v)
 {
-	std::string r =  token(prg);
-	std::string g =  token(prg);
-	std::string b =  token(prg);
-	std::string a =  token(prg);
-	std::string x =  token(prg);
-	std::string y =  token(prg);
-	std::string rx =  token(prg);
-	std::string ry =  token(prg);
-	std::string thickness =  token(prg);
-	std::string sections =  token(prg);
-	
-	if (sections == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected ellipse parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string r = v[0];
+	std::string g = v[1];
+	std::string b = v[2];
+	std::string a = v[3];
+	std::string x = v[4];
+	std::string y = v[5];
+	std::string rx = v[6];
+	std::string ry = v[7];
+	std::string thickness = v[8];
+	std::string sections = v[9];
 	
 	std::vector<std::string> strings;
 	strings.push_back(r);
@@ -1547,21 +1402,17 @@ static bool primfunc_ellipse(Program &prg, std::string tok)
 	return true;
 }
 
-static bool primfunc_filled_ellipse(Program &prg, std::string tok)
+static bool primfunc_filled_ellipse(Program &prg, std::vector<std::string> &v)
 {
-	std::string r =  token(prg);
-	std::string g =  token(prg);
-	std::string b =  token(prg);
-	std::string a =  token(prg);
-	std::string x =  token(prg);
-	std::string y =  token(prg);
-	std::string rx =  token(prg);
-	std::string ry =  token(prg);
-	std::string sections =  token(prg);
-	
-	if (sections == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected filled_ellipse parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string r = v[0];
+	std::string g = v[1];
+	std::string b = v[2];
+	std::string a = v[3];
+	std::string x = v[4];
+	std::string y = v[5];
+	std::string rx = v[6];
+	std::string ry = v[7];
+	std::string sections = v[8];
 	
 	std::vector<std::string> strings;
 	strings.push_back(r);
@@ -1595,21 +1446,17 @@ static bool primfunc_filled_ellipse(Program &prg, std::string tok)
 	return true;
 }
 
-static bool primfunc_circle(Program &prg, std::string tok)
+static bool primfunc_circle(Program &prg, std::vector<std::string> &v)
 {
-	std::string r =  token(prg);
-	std::string g =  token(prg);
-	std::string b =  token(prg);
-	std::string a =  token(prg);
-	std::string x =  token(prg);
-	std::string y =  token(prg);
-	std::string radius =  token(prg);
-	std::string thickness =  token(prg);
-	std::string sections =  token(prg);
-	
-	if (sections == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected circle parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string r = v[0];
+	std::string g = v[1];
+	std::string b = v[2];
+	std::string a = v[3];
+	std::string x = v[4];
+	std::string y = v[5];
+	std::string radius = v[6];
+	std::string thickness = v[7];
+	std::string sections = v[8];
 	
 	std::vector<std::string> strings;
 	strings.push_back(r);
@@ -1642,20 +1489,16 @@ static bool primfunc_circle(Program &prg, std::string tok)
 	return true;
 }
 
-static bool primfunc_filled_circle(Program &prg, std::string tok)
+static bool primfunc_filled_circle(Program &prg, std::vector<std::string> &v)
 {
-	std::string r =  token(prg);
-	std::string g =  token(prg);
-	std::string b =  token(prg);
-	std::string a =  token(prg);
-	std::string x =  token(prg);
-	std::string y =  token(prg);
-	std::string radius =  token(prg);
-	std::string sections =  token(prg);
-	
-	if (sections == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected filled_circle parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string r = v[0];
+	std::string g = v[1];
+	std::string b = v[2];
+	std::string a = v[3];
+	std::string x = v[4];
+	std::string y = v[5];
+	std::string radius = v[6];
+	std::string sections = v[7];
 	
 	std::vector<std::string> strings;
 	strings.push_back(r);
@@ -1686,14 +1529,10 @@ static bool primfunc_filled_circle(Program &prg, std::string tok)
 	return true;
 }
 
-static bool mmlfunc_create(Program &prg, std::string tok)
+static bool mmlfunc_create(Program &prg, std::vector<std::string> &v)
 {
-	std::string var = token(prg);
-	std::string str = token(prg);
-
-	if (str == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected mml_create parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string var = v[0];
+	std::string str = v[1];
 
 	Variable &v1 = find_variable(prg, var);
 
@@ -1732,14 +1571,10 @@ static bool mmlfunc_create(Program &prg, std::string tok)
 	return true;
 }
 
-static bool mmlfunc_load(Program &prg, std::string tok)
+static bool mmlfunc_load(Program &prg, std::vector<std::string> &v)
 {
-	std::string var = token(prg);
-	std::string name = token(prg);
-
-	if (name == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected mml_load parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string var = v[0];
+	std::string name = v[1];
 
 	Variable &v1 = find_variable(prg, var);
 
@@ -1760,15 +1595,11 @@ static bool mmlfunc_load(Program &prg, std::string tok)
 	return true;
 }
 
-static bool mmlfunc_play(Program &prg, std::string tok)
+static bool mmlfunc_play(Program &prg, std::vector<std::string> &v)
 {
-	std::string id = token(prg);
-	std::string volume = token(prg);
-	std::string loop = token(prg);
-
-	if (loop == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected mml_play parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string id = v[0];
+	std::string volume = v[1];
+	std::string loop = v[2];
 
 	std::vector<std::string> strings;
 	strings.push_back(id);
@@ -1787,13 +1618,9 @@ static bool mmlfunc_play(Program &prg, std::string tok)
 	return true;
 }
 
-static bool mmlfunc_stop(Program &prg, std::string tok)
+static bool mmlfunc_stop(Program &prg, std::vector<std::string> &v)
 {
-	std::string id = token(prg);
-
-	if (id == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected mml_stop parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string id = v[0];
 
 	std::vector<std::string> strings;
 	strings.push_back(id);
@@ -1810,14 +1637,10 @@ static bool mmlfunc_stop(Program &prg, std::string tok)
 	return true;
 }
 
-static bool imagefunc_load(Program &prg, std::string tok)
+static bool imagefunc_load(Program &prg, std::vector<std::string> &v)
 {
-	std::string var = token(prg);
-	std::string name = token(prg);
-
-	if (name == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_load parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string var = v[0];
+	std::string name = v[1];
 
 	Variable &v1 = find_variable(prg, var);
 
@@ -1838,21 +1661,17 @@ static bool imagefunc_load(Program &prg, std::string tok)
 	return true;
 }
 
-static bool imagefunc_draw(Program &prg, std::string tok)
+static bool imagefunc_draw(Program &prg, std::vector<std::string> &v)
 {
-	std::string id = token(prg);
-	std::string r = token(prg);
-	std::string g = token(prg);
-	std::string b = token(prg);
-	std::string a = token(prg);
-	std::string x = token(prg);
-	std::string y = token(prg);
-	std::string flip_h = token(prg);
-	std::string flip_v = token(prg);
-
-	if (flip_v == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_draw parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string id = v[0];
+	std::string r = v[1];
+	std::string g = v[2];
+	std::string b = v[3];
+	std::string a = v[4];
+	std::string x = v[5];
+	std::string y = v[6];
+	std::string flip_h = v[7];
+	std::string flip_v = v[8];
 
 	std::vector<std::string> strings;
 	strings.push_back(id);
@@ -1891,27 +1710,23 @@ static bool imagefunc_draw(Program &prg, std::string tok)
 	return true;
 }
 
-static bool imagefunc_stretch_region(Program &prg, std::string tok)
+static bool imagefunc_stretch_region(Program &prg, std::vector<std::string> &v)
 {
-	std::string id = token(prg);
-	std::string r = token(prg);
-	std::string g = token(prg);
-	std::string b = token(prg);
-	std::string a = token(prg);
-	std::string sx = token(prg);
-	std::string sy = token(prg);
-	std::string sw = token(prg);
-	std::string sh = token(prg);
-	std::string dx = token(prg);
-	std::string dy = token(prg);
-	std::string dw = token(prg);
-	std::string dh = token(prg);
-	std::string flip_h = token(prg);
-	std::string flip_v = token(prg);
-
-	if (flip_v == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_stretch_region parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string id = v[0];
+	std::string r = v[1];
+	std::string g = v[2];
+	std::string b = v[3];
+	std::string a = v[4];
+	std::string sx = v[5];
+	std::string sy = v[6];
+	std::string sw = v[7];
+	std::string sh = v[8];
+	std::string dx = v[9];
+	std::string dy = v[10];
+	std::string dw = v[11];
+	std::string dh = v[12];
+	std::string flip_h = v[13];
+	std::string flip_v = v[14];
 
 	std::vector<std::string> strings;
 	strings.push_back(id);
@@ -1956,26 +1771,22 @@ static bool imagefunc_stretch_region(Program &prg, std::string tok)
 	return true;
 }
 
-static bool imagefunc_draw_rotated_scaled(Program &prg, std::string tok)
+static bool imagefunc_draw_rotated_scaled(Program &prg, std::vector<std::string> &v)
 {
-	std::string id = token(prg);
-	std::string r = token(prg);
-	std::string g = token(prg);
-	std::string b = token(prg);
-	std::string a = token(prg);
-	std::string cx = token(prg);
-	std::string cy = token(prg);
-	std::string x = token(prg);
-	std::string y = token(prg);
-	std::string angle = token(prg);
-	std::string scale_x = token(prg);
-	std::string scale_y = token(prg);
-	std::string flip_h = token(prg);
-	std::string flip_v = token(prg);
-
-	if (flip_v == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_draw_rotated_scaled parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string id = v[0];
+	std::string r = v[1];
+	std::string g = v[2];
+	std::string b = v[3];
+	std::string a = v[4];
+	std::string cx = v[5];
+	std::string cy = v[6];
+	std::string x = v[7];
+	std::string y = v[8];
+	std::string angle = v[9];
+	std::string scale_x = v[10];
+	std::string scale_y = v[11];
+	std::string flip_h = v[12];
+	std::string flip_v = v[13];
 
 	std::vector<std::string> strings;
 	strings.push_back(id);
@@ -2019,13 +1830,9 @@ static bool imagefunc_draw_rotated_scaled(Program &prg, std::string tok)
 	return true;
 }
 
-static bool imagefunc_start(Program &prg, std::string tok)
+static bool imagefunc_start(Program &prg, std::vector<std::string> &v)
 {
-	std::string img = token(prg);
-
-	if (img == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_start parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string img = v[0];
 
 	std::vector<std::string> strings;
 	strings.push_back(img);
@@ -2042,13 +1849,9 @@ static bool imagefunc_start(Program &prg, std::string tok)
 	return true;
 }
 
-static bool imagefunc_end(Program &prg, std::string tok)
+static bool imagefunc_end(Program &prg, std::vector<std::string> &v)
 {
-	std::string img = token(prg);
-
-	if (img == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_end parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string img = v[0];
 
 	std::vector<std::string> strings;
 	strings.push_back(img);
@@ -2065,16 +1868,12 @@ static bool imagefunc_end(Program &prg, std::string tok)
 	return true;
 }
 
-static bool imagefunc_size(Program &prg, std::string tok)
+static bool imagefunc_size(Program &prg, std::vector<std::string> &v)
 {
-	std::string id = token(prg);
-	std::string dest1 = token(prg);
-	std::string dest2 = token(prg);
+	std::string id = v[0];
+	std::string dest1 = v[1];
+	std::string dest2 = v[2];
 
-	if (dest2 == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected image_size parameters on line " + util::itos(get_line_num(prg)));
-	}
-	
 	std::vector<std::string> strings;
 	strings.push_back(id);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -2104,16 +1903,12 @@ static bool imagefunc_size(Program &prg, std::string tok)
 	return true;
 }
 
-static bool fontfunc_load(Program &prg, std::string tok)
+static bool fontfunc_load(Program &prg, std::vector<std::string> &v)
 {
-	std::string var = token(prg);
-	std::string name = token(prg);
-	std::string size = token(prg);
-	std::string smooth = token(prg);
-
-	if (smooth == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected font_load parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string var = v[0];
+	std::string name = v[1];
+	std::string size = v[2];
+	std::string smooth = v[3];
 
 	Variable &v1 = find_variable(prg, var);
 
@@ -2140,20 +1935,16 @@ static bool fontfunc_load(Program &prg, std::string tok)
 	return true;
 }
 
-static bool fontfunc_draw(Program &prg, std::string tok)
+static bool fontfunc_draw(Program &prg, std::vector<std::string> &v)
 {
-	std::string id = token(prg);
-	std::string r = token(prg);
-	std::string g = token(prg);
-	std::string b = token(prg);
-	std::string a = token(prg);
-	std::string text = token(prg);
-	std::string x = token(prg);
-	std::string y = token(prg);
-
-	if (y == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected font_draw parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string id = v[0];
+	std::string r = v[1];
+	std::string g = v[2];
+	std::string b = v[3];
+	std::string a = v[4];
+	std::string text = v[5];
+	std::string x = v[6];
+	std::string y = v[7];
 
 	std::vector<std::string> strings;
 	strings.push_back(id);
@@ -2202,16 +1993,12 @@ static bool fontfunc_draw(Program &prg, std::string tok)
 	return true;
 }
 
-static bool fontfunc_width(Program &prg, std::string tok)
+static bool fontfunc_width(Program &prg, std::vector<std::string> &v)
 {
-	std::string id = token(prg);
-	std::string dest = token(prg);
-	std::string text = token(prg);
+	std::string id = v[0];
+	std::string dest = v[1];
+	std::string text = v[2];
 	
-	if (text == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected font_width parameters on line " + util::itos(get_line_num(prg)));
-	}
-
 	std::vector<std::string> strings;
 	strings.push_back(id);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -2252,15 +2039,11 @@ static bool fontfunc_width(Program &prg, std::string tok)
 	return true;
 }
 
-static bool fontfunc_height(Program &prg, std::string tok)
+static bool fontfunc_height(Program &prg, std::vector<std::string> &v)
 {
-	std::string id = token(prg);
-	std::string dest = token(prg);
+	std::string id = v[0];
+	std::string dest = v[1];
 	
-	if (dest == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected font_height parameters on line " + util::itos(get_line_num(prg)));
-	}
-
 	std::vector<std::string> strings;
 	strings.push_back(id);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -2293,33 +2076,29 @@ void set_string_or_number(Program &prg, std::string name, double value)
 	}
 }
 
-static bool joyfunc_poll(Program &prg, std::string tok)
+static bool joyfunc_poll(Program &prg, std::vector<std::string> &v)
 {
-	std::string num = token(prg);
-	std::string x1 = token(prg);
-	std::string y1 = token(prg);
-	std::string x2 = token(prg);
-	std::string y2 = token(prg);
-	std::string x3 = token(prg);
-	std::string y3 = token(prg);
-	std::string l = token(prg);
-	std::string r = token(prg);
-	std::string u = token(prg);
-	std::string d = token(prg);
-	std::string a = token(prg);
-	std::string b = token(prg);
-	std::string x = token(prg);
-	std::string y = token(prg);
-	std::string lb = token(prg);
-	std::string rb = token(prg);
-	std::string ls = token(prg);
-	std::string rs = token(prg);
-	std::string back = token(prg);
-	std::string start = token(prg);
-
-	if (start == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected joystick_poll parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string num = v[0];
+	std::string x1 = v[1];
+	std::string y1 = v[2];
+	std::string x2 = v[3];
+	std::string y2 = v[4];
+	std::string x3 = v[5];
+	std::string y3 = v[6];
+	std::string l = v[7];
+	std::string r = v[8];
+	std::string u = v[9];
+	std::string d = v[10];
+	std::string a = v[11];
+	std::string b = v[12];
+	std::string x = v[13];
+	std::string y = v[14];
+	std::string lb = v[15];
+	std::string rb = v[16];
+	std::string ls = v[17];
+	std::string rs = v[18];
+	std::string back = v[19];
+	std::string start = v[20];
 
 	std::vector<std::string> strings;
 	strings.push_back(num);
@@ -2476,14 +2255,10 @@ static bool joyfunc_poll(Program &prg, std::string tok)
 	return true;
 }
 
-static bool joyfunc_count(Program &prg, std::string tok)
+static bool joyfunc_count(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest = token(prg);
+	std::string dest = v[0];
 	
-	if (dest == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected joystick_count parameters on line " + util::itos(get_line_num(prg)));
-	}
-
 	Variable &v1 = find_variable(prg, dest);
 
 	if (v1.type == Variable::NUMBER) {
@@ -2496,15 +2271,11 @@ static bool joyfunc_count(Program &prg, std::string tok)
 	return true;
 }
 
-static bool vectorfunc_add(Program &prg, std::string tok)
+static bool vectorfunc_add(Program &prg, std::vector<std::string> &v)
 {
-	std::string id = token(prg);
-	std::string value = token(prg);
+	std::string id = v[0];
+	std::string value = v[1];
 
-	if (value == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected vector_add parameters on line " + util::itos(get_line_num(prg)));
-	}
-	
 	std::vector<std::string> strings;
 	strings.push_back(id);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -2518,7 +2289,7 @@ static bool vectorfunc_add(Program &prg, std::string tok)
 	}
 	*/
 
-	std::vector<Variable> &v = prg.vectors[values[0]];
+	std::vector<Variable> &vec = prg.vectors[values[0]];
 
 	Variable var;
 
@@ -2538,20 +2309,16 @@ static bool vectorfunc_add(Program &prg, std::string tok)
 		var = find_variable(prg, value);
 	}
 
-	v.push_back(var);
+	vec.push_back(var);
 
 	return true;
 }
 
-static bool vectorfunc_size(Program &prg, std::string tok)
+static bool vectorfunc_size(Program &prg, std::vector<std::string> &v)
 {
-	std::string id = token(prg);
-	std::string dest = token(prg);
+	std::string id = v[0];
+	std::string dest = v[1];
 
-	if (dest == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected vector_size parameters on line " + util::itos(get_line_num(prg)));
-	}
-	
 	std::vector<std::string> strings;
 	strings.push_back(id);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -2560,12 +2327,12 @@ static bool vectorfunc_size(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + util::itos(get_line_num(prg)));
 	}
 
-	std::vector<Variable> &v = prg.vectors[values[0]];
+	std::vector<Variable> &vec = prg.vectors[values[0]];
 
 	Variable &v1 = find_variable(prg, dest);
 
 	if (v1.type == Variable::NUMBER) {
-		v1.n = v.size();
+		v1.n = vec.size();
 	}
 	else {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
@@ -2574,16 +2341,12 @@ static bool vectorfunc_size(Program &prg, std::string tok)
 	return true;
 }
 
-static bool vectorfunc_set(Program &prg, std::string tok)
+static bool vectorfunc_set(Program &prg, std::vector<std::string> &v)
 {
-	std::string id = token(prg);
-	std::string index = token(prg);
-	std::string value = token(prg);
+	std::string id = v[0];
+	std::string index = v[1];
+	std::string value = v[2];
 
-	if (value == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected vector_set parameters on line " + util::itos(get_line_num(prg)));
-	}
-	
 	std::vector<std::string> strings;
 	strings.push_back(id);
 	strings.push_back(index);
@@ -2593,9 +2356,9 @@ static bool vectorfunc_set(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + util::itos(get_line_num(prg)));
 	}
 
-	std::vector<Variable> &v = prg.vectors[values[0]];
+	std::vector<Variable> &vec = prg.vectors[values[0]];
 
-	if (values[1] < 0 || values[1] >= v.size()) {
+	if (values[1] < 0 || values[1] >= vec.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -2617,21 +2380,17 @@ static bool vectorfunc_set(Program &prg, std::string tok)
 		var = find_variable(prg, value);
 	}
 
-	v[values[1]] = var;
+	vec[values[1]] = var;
 
 	return true;
 }
 
-static bool vectorfunc_insert(Program &prg, std::string tok)
+static bool vectorfunc_insert(Program &prg, std::vector<std::string> &v)
 {
-	std::string id = token(prg);
-	std::string index = token(prg);
-	std::string value = token(prg);
+	std::string id = v[0];
+	std::string index = v[1];
+	std::string value = v[2];
 
-	if (value == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected vector_insert parameters on line " + util::itos(get_line_num(prg)));
-	}
-	
 	std::vector<std::string> strings;
 	strings.push_back(id);
 	strings.push_back(index);
@@ -2641,9 +2400,9 @@ static bool vectorfunc_insert(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + util::itos(get_line_num(prg)));
 	}
 
-	std::vector<Variable> &v = prg.vectors[values[0]];
+	std::vector<Variable> &vec = prg.vectors[values[0]];
 
-	if (values[1] < 0 || values[1] > v.size()) {
+	if (values[1] < 0 || values[1] > vec.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -2665,21 +2424,17 @@ static bool vectorfunc_insert(Program &prg, std::string tok)
 		var = find_variable(prg, value);
 	}
 
-	v.insert(v.begin()+values[1], var);
+	vec.insert(vec.begin()+values[1], var);
 
 	return true;
 }
 
-static bool vectorfunc_get(Program &prg, std::string tok)
+static bool vectorfunc_get(Program &prg, std::vector<std::string> &v)
 {
-	std::string id = token(prg);
-	std::string dest = token(prg);
-	std::string index = token(prg);
+	std::string id = v[0];
+	std::string dest = v[1];
+	std::string index = v[2];
 
-	if (index == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected vector_get parameters on line " + util::itos(get_line_num(prg)));
-	}
-	
 	std::vector<std::string> strings;
 	strings.push_back(id);
 	strings.push_back(index);
@@ -2689,9 +2444,9 @@ static bool vectorfunc_get(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + util::itos(get_line_num(prg)));
 	}
 
-	std::vector<Variable> &v = prg.vectors[values[0]];
+	std::vector<Variable> &vec = prg.vectors[values[0]];
 
-	if (values[1] < 0 || values[1] >= v.size()) {
+	if (values[1] < 0 || values[1] >= vec.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -2699,22 +2454,18 @@ static bool vectorfunc_get(Program &prg, std::string tok)
 
 	std::string bak = v1.name;
 	std::string bak2 = v1.function;
-	v1 = v[values[1]];
+	v1 = vec[values[1]];
 	v1.name = bak;
 	v1.function = bak2;
 
 	return true;
 }
 
-static bool vectorfunc_erase(Program &prg, std::string tok)
+static bool vectorfunc_erase(Program &prg, std::vector<std::string> &v)
 {
-	std::string id = token(prg);
-	std::string index = token(prg);
+	std::string id = v[0];
+	std::string index = v[1];
 
-	if (index == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected vector_erase parameters on line " + util::itos(get_line_num(prg)));
-	}
-	
 	std::vector<std::string> strings;
 	strings.push_back(id);
 	strings.push_back(index);
@@ -2724,28 +2475,24 @@ static bool vectorfunc_erase(Program &prg, std::string tok)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + util::itos(get_line_num(prg)));
 	}
 
-	std::vector<Variable> &v = prg.vectors[values[0]];
+	std::vector<Variable> &vec = prg.vectors[values[0]];
 
-	if (values[1] < 0 || values[1] >= v.size()) {
+	if (values[1] < 0 || values[1] >= vec.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + util::itos(get_line_num(prg)));
 	}
 
-	v.erase(v.begin() + int(values[1]));
+	vec.erase(vec.begin() + int(values[1]));
 
 	return true;
 }
 
-static bool cfgfunc_load(Program &prg, std::string tok)
+static bool cfgfunc_load(Program &prg, std::vector<std::string> &v)
 {
 	cfg_numbers.clear();
 	cfg_strings.clear();
 
-	std::string found = token(prg);
-	std::string cfg_name = token(prg);
-
-	if (cfg_name == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_load parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string found = v[0];
+	std::string cfg_name = v[1];
 
 	std::string cfg_names;
 
@@ -2776,13 +2523,9 @@ static bool cfgfunc_load(Program &prg, std::string tok)
 	return true;
 }
 
-static bool cfgfunc_save(Program &prg, std::string tok)
+static bool cfgfunc_save(Program &prg, std::vector<std::string> &v)
 {
-	std::string cfg_name = token(prg);
-
-	if (cfg_name == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_save parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string cfg_name = v[0];
 
 	std::string cfg_names;
 
@@ -2804,14 +2547,10 @@ static bool cfgfunc_save(Program &prg, std::string tok)
 	return true;
 }
 
-static bool cfgfunc_get_number(Program &prg, std::string tok)
+static bool cfgfunc_get_number(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest = token(prg);
-	std::string name = token(prg);
-
-	if (name == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_get_number parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string dest = v[0];
+	std::string name = v[1];
 
 	std::string names;
 
@@ -2839,14 +2578,10 @@ static bool cfgfunc_get_number(Program &prg, std::string tok)
 	return true;
 }
 
-static bool cfgfunc_get_string(Program &prg, std::string tok)
+static bool cfgfunc_get_string(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest = token(prg);
-	std::string name = token(prg);
-
-	if (name == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_get_string parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string dest = v[0];
+	std::string name = v[1];
 
 	std::string names;
 
@@ -2874,14 +2609,10 @@ static bool cfgfunc_get_string(Program &prg, std::string tok)
 	return true;
 }
 
-static bool cfgfunc_set_number(Program &prg, std::string tok)
+static bool cfgfunc_set_number(Program &prg, std::vector<std::string> &v)
 {
-	std::string name = token(prg);
-	std::string value = token(prg);
-
-	if (value == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_set_number parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string name = v[0];
+	std::string value = v[1];
 
 	std::string names;
 
@@ -2907,14 +2638,10 @@ static bool cfgfunc_set_number(Program &prg, std::string tok)
 	return true;
 }
 
-static bool cfgfunc_set_string(Program &prg, std::string tok)
+static bool cfgfunc_set_string(Program &prg, std::vector<std::string> &v)
 {
-	std::string name = token(prg);
-	std::string value = token(prg);
-
-	if (value == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_set_string parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string name = v[0];
+	std::string value = v[1];
 
 	std::string names;
 
@@ -2951,14 +2678,10 @@ static bool cfgfunc_set_string(Program &prg, std::string tok)
 	return true;
 }
 
-static bool cfgfunc_number_exists(Program &prg, std::string tok)
+static bool cfgfunc_number_exists(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest = token(prg);
-	std::string name = token(prg);
-
-	if (name == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_number_exists parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string dest = v[0];
+	std::string name = v[1];
 
 	std::string names;
 
@@ -2996,14 +2719,10 @@ static bool cfgfunc_number_exists(Program &prg, std::string tok)
 	return true;
 }
 
-static bool cfgfunc_string_exists(Program &prg, std::string tok)
+static bool cfgfunc_string_exists(Program &prg, std::vector<std::string> &v)
 {
-	std::string dest = token(prg);
-	std::string name = token(prg);
-
-	if (name == "") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected cfg_string_exists parameters on line " + util::itos(get_line_num(prg)));
-	}
+	std::string dest = v[0];
+	std::string name = v[1];
 
 	std::string names;
 
@@ -3060,7 +2779,7 @@ void start()
 	add_syntax("%", corefunc_intmod);
 	add_syntax("fmod", corefunc_fmod);
 	add_syntax("neg", corefunc_neg);
-	add_syntax(":", corefunc_label);
+	//add_syntax(":", corefunc_label);
 	add_syntax("goto", corefunc_goto);
 	add_syntax("?", corefunc_compare);
 	add_syntax("je", corefunc_je);
