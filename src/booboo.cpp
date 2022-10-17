@@ -541,6 +541,7 @@ void process_functions(Program &prg)
 			p.line = 1;
 			p.start_line = start_line;
 			p.code = prg.code.substr(save_p, end_p-save_p);
+			while (process_includes(p));
 			p.labels = process_labels(p);
 			p.pc = 0;
 			compile(p);
@@ -636,9 +637,9 @@ void call_function(Program &prg, std::string function_name, std::vector<std::str
 		prg.program = func.program;
 		prg.pc = 0;
 
-		while (process_includes(prg));
-		prg.labels = process_labels(prg);
-		process_functions(prg);
+		//while (process_includes(prg));
+		//prg.labels = process_labels(prg);
+		//process_functions(prg);
 
 		while (interpret(prg)) {
 		}
