@@ -117,6 +117,7 @@ static bool breaker_exit(Program &prg, std::vector<std::string> &v)
 {
 	std::string code = v[0];
 	std::vector<std::string> strings;
+	strings.reserve(1);
 	strings.push_back(code);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 	return_code = values[0];
@@ -576,6 +577,7 @@ static bool corefunc_compare(Program &prg, std::vector<std::string> &v)
 	// FIXME: if they're vectors or something then it should report an error
 	else {
 		std::vector<std::string> strings;
+		strings.reserve(2);
 		strings.push_back(a);
 		strings.push_back(b);
 		std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -930,6 +932,7 @@ static bool mathfunc_sin(Program &prg, std::vector<std::string> &v)
 	std::string vs = v[1];
 	
 	std::vector<std::string> strings;
+	strings.reserve(1);
 	strings.push_back(vs);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
@@ -951,6 +954,7 @@ static bool mathfunc_cos(Program &prg, std::vector<std::string> &v)
 	std::string vs = v[1];
 	
 	std::vector<std::string> strings;
+	strings.reserve(1);
 	strings.push_back(vs);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
@@ -973,6 +977,7 @@ static bool mathfunc_atan2(Program &prg, std::vector<std::string> &v)
 	std::string vs2 = v[2];
 	
 	std::vector<std::string> strings;
+	strings.reserve(2);
 	strings.push_back(vs1);
 	strings.push_back(vs2);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -995,6 +1000,7 @@ static bool mathfunc_abs(Program &prg, std::vector<std::string> &v)
 	std::string vs = v[1];
 	
 	std::vector<std::string> strings;
+	strings.reserve(1);
 	strings.push_back(vs);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
@@ -1017,6 +1023,7 @@ static bool mathfunc_pow(Program &prg, std::vector<std::string> &v)
 	std::string vs2 = v[2];
 	
 	std::vector<std::string> strings;
+	strings.reserve(2);
 	strings.push_back(vs1);
 	strings.push_back(vs2);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -1039,6 +1046,7 @@ static bool mathfunc_sqrt(Program &prg, std::vector<std::string> &v)
 	std::string vs1 = v[1];
 	
 	std::vector<std::string> strings;
+	strings.reserve(1);
 	strings.push_back(vs1);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
@@ -1061,6 +1069,7 @@ static bool mathfunc_rand(Program &prg, std::vector<std::string> &v)
 	std::string max_incl = v[2];
 
 	std::vector<std::string> strings;
+	strings.reserve(2);
 	strings.push_back(min_incl);
 	strings.push_back(max_incl);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -1087,6 +1096,7 @@ static bool gfxfunc_clear(Program &prg, std::vector<std::string> &v)
 	std::string b =  v[2];
 
 	std::vector<std::string> strings;
+	strings.reserve(3);
 	strings.push_back(r);
 	strings.push_back(g);
 	strings.push_back(b);
@@ -1130,6 +1140,7 @@ static bool primfunc_line(Program &prg, std::vector<std::string> &v)
 	std::string thickness = v[8];
 	
 	std::vector<std::string> strings;
+	strings.reserve(9);
 	strings.push_back(r);
 	strings.push_back(g);
 	strings.push_back(b);
@@ -1183,6 +1194,7 @@ static bool primfunc_filled_triangle(Program &prg, std::vector<std::string> &v)
 	std::string y3 =  v[17];
 	
 	std::vector<std::string> strings;
+	strings.reserve(18);
 	strings.push_back(r1);
 	strings.push_back(g1);
 	strings.push_back(b1);
@@ -1244,6 +1256,7 @@ static bool primfunc_rectangle(Program &prg, std::vector<std::string> &v)
 	std::string thickness =  v[8];
 	
 	std::vector<std::string> strings;
+	strings.reserve(9);
 	strings.push_back(r);
 	strings.push_back(g);
 	strings.push_back(b);
@@ -1300,6 +1313,7 @@ static bool primfunc_filled_rectangle(Program &prg, std::vector<std::string> &v)
 	std::string h =  v[19];
 	
 	std::vector<std::string> strings;
+	strings.reserve(20);
 	strings.push_back(r1);
 	strings.push_back(g1);
 	strings.push_back(b1);
@@ -1369,6 +1383,7 @@ static bool primfunc_ellipse(Program &prg, std::vector<std::string> &v)
 	std::string sections = v[9];
 	
 	std::vector<std::string> strings;
+	strings.reserve(10);
 	strings.push_back(r);
 	strings.push_back(g);
 	strings.push_back(b);
@@ -1415,6 +1430,7 @@ static bool primfunc_filled_ellipse(Program &prg, std::vector<std::string> &v)
 	std::string sections = v[8];
 	
 	std::vector<std::string> strings;
+	strings.reserve(9);
 	strings.push_back(r);
 	strings.push_back(g);
 	strings.push_back(b);
@@ -1459,6 +1475,7 @@ static bool primfunc_circle(Program &prg, std::vector<std::string> &v)
 	std::string sections = v[8];
 	
 	std::vector<std::string> strings;
+	strings.reserve(9);
 	strings.push_back(r);
 	strings.push_back(g);
 	strings.push_back(b);
@@ -1501,6 +1518,7 @@ static bool primfunc_filled_circle(Program &prg, std::vector<std::string> &v)
 	std::string sections = v[7];
 	
 	std::vector<std::string> strings;
+	strings.reserve(8);
 	strings.push_back(r);
 	strings.push_back(g);
 	strings.push_back(b);
@@ -1602,6 +1620,7 @@ static bool mmlfunc_play(Program &prg, std::vector<std::string> &v)
 	std::string loop = v[2];
 
 	std::vector<std::string> strings;
+	strings.reserve(3);
 	strings.push_back(id);
 	strings.push_back(volume);
 	strings.push_back(loop);
@@ -1623,6 +1642,7 @@ static bool mmlfunc_stop(Program &prg, std::vector<std::string> &v)
 	std::string id = v[0];
 
 	std::vector<std::string> strings;
+	strings.reserve(1);
 	strings.push_back(id);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
@@ -1674,6 +1694,7 @@ static bool imagefunc_draw(Program &prg, std::vector<std::string> &v)
 	std::string flip_v = v[8];
 
 	std::vector<std::string> strings;
+	strings.reserve(9);
 	strings.push_back(id);
 	strings.push_back(r);
 	strings.push_back(g);
@@ -1729,6 +1750,7 @@ static bool imagefunc_stretch_region(Program &prg, std::vector<std::string> &v)
 	std::string flip_v = v[14];
 
 	std::vector<std::string> strings;
+	strings.reserve(15);
 	strings.push_back(id);
 	strings.push_back(r);
 	strings.push_back(g);
@@ -1789,6 +1811,7 @@ static bool imagefunc_draw_rotated_scaled(Program &prg, std::vector<std::string>
 	std::string flip_v = v[13];
 
 	std::vector<std::string> strings;
+	strings.reserve(14);
 	strings.push_back(id);
 	strings.push_back(r);
 	strings.push_back(g);
@@ -1835,6 +1858,7 @@ static bool imagefunc_start(Program &prg, std::vector<std::string> &v)
 	std::string img = v[0];
 
 	std::vector<std::string> strings;
+	strings.reserve(1);
 	strings.push_back(img);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
@@ -1854,6 +1878,7 @@ static bool imagefunc_end(Program &prg, std::vector<std::string> &v)
 	std::string img = v[0];
 
 	std::vector<std::string> strings;
+	strings.reserve(1);
 	strings.push_back(img);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
@@ -1875,6 +1900,7 @@ static bool imagefunc_size(Program &prg, std::vector<std::string> &v)
 	std::string dest2 = v[2];
 
 	std::vector<std::string> strings;
+	strings.reserve(1);
 	strings.push_back(id);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 	
@@ -1923,6 +1949,7 @@ static bool fontfunc_load(Program &prg, std::vector<std::string> &v)
 	}
 
 	std::vector<std::string> strings;
+	strings.reserve(2);
 	strings.push_back(size);
 	strings.push_back(smooth);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -1947,6 +1974,7 @@ static bool fontfunc_draw(Program &prg, std::vector<std::string> &v)
 	std::string y = v[7];
 
 	std::vector<std::string> strings;
+	strings.reserve(7);
 	strings.push_back(id);
 	strings.push_back(r);
 	strings.push_back(g);
@@ -2000,6 +2028,7 @@ static bool fontfunc_width(Program &prg, std::vector<std::string> &v)
 	std::string text = v[2];
 	
 	std::vector<std::string> strings;
+	strings.reserve(1);
 	strings.push_back(id);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
@@ -2045,6 +2074,7 @@ static bool fontfunc_height(Program &prg, std::vector<std::string> &v)
 	std::string dest = v[1];
 	
 	std::vector<std::string> strings;
+	strings.reserve(1);
 	strings.push_back(id);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
@@ -2101,6 +2131,7 @@ static bool joyfunc_poll(Program &prg, std::vector<std::string> &v)
 	std::string start = v[20];
 
 	std::vector<std::string> strings;
+	strings.reserve(1);
 	strings.push_back(num);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
@@ -2277,6 +2308,7 @@ static bool vectorfunc_add(Program &prg, std::vector<std::string> &v)
 	std::string value = v[1];
 
 	std::vector<std::string> strings;
+	strings.reserve(1);
 	strings.push_back(id);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
@@ -2320,6 +2352,7 @@ static bool vectorfunc_size(Program &prg, std::vector<std::string> &v)
 	std::string dest = v[1];
 
 	std::vector<std::string> strings;
+	strings.reserve(1);
 	strings.push_back(id);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 	
@@ -2348,6 +2381,7 @@ static bool vectorfunc_set(Program &prg, std::vector<std::string> &v)
 	std::string value = v[2];
 
 	std::vector<std::string> strings;
+	strings.reserve(2);
 	strings.push_back(id);
 	strings.push_back(index);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -2392,6 +2426,7 @@ static bool vectorfunc_insert(Program &prg, std::vector<std::string> &v)
 	std::string value = v[2];
 
 	std::vector<std::string> strings;
+	strings.reserve(2);
 	strings.push_back(id);
 	strings.push_back(index);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -2436,6 +2471,7 @@ static bool vectorfunc_get(Program &prg, std::vector<std::string> &v)
 	std::string index = v[2];
 
 	std::vector<std::string> strings;
+	strings.reserve(2);
 	strings.push_back(id);
 	strings.push_back(index);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -2467,6 +2503,7 @@ static bool vectorfunc_erase(Program &prg, std::vector<std::string> &v)
 	std::string index = v[1];
 
 	std::vector<std::string> strings;
+	strings.reserve(2);
 	strings.push_back(id);
 	strings.push_back(index);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
@@ -2630,6 +2667,7 @@ static bool cfgfunc_set_number(Program &prg, std::vector<std::string> &v)
 	}
 
 	std::vector<std::string> strings;
+	strings.reserve(1);
 	strings.push_back(value);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 
