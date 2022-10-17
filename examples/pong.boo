@@ -19,11 +19,11 @@ function rand_speed
 var number next_cpu1_speed_update
 rand next_cpu1_speed_update 0 100
 var number cpu1_speed
-call = cpu1_speed rand_speed
+call > cpu1_speed rand_speed
 var number next_cpu2_speed_update
 rand next_cpu2_speed_update 0 100
 var number cpu2_speed
-call = cpu2_speed rand_speed
+call > cpu2_speed rand_speed
 
 var number success
 cfg_load success "com.b1stable.pong"
@@ -347,14 +347,14 @@ function run
 	? next_cpu1_speed_update 0
 	jge test2
 	rand next_cpu1_speed_update 0 100
-	call = cpu1_speed rand_speed
+	call > cpu1_speed rand_speed
 
 :test2
 	- next_cpu2_speed_update 1
 	? next_cpu2_speed_update 0
 	jge slideshow
 	rand next_cpu2_speed_update 0 100
-	call = cpu2_speed rand_speed
+	call > cpu2_speed rand_speed
 
 :slideshow
 	include "slideshow_logic.inc"

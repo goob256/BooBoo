@@ -44,7 +44,7 @@ image_load fire_img "misc/explosion.tga"
 image_load grass_img "misc/grass.tga"
 
 var vector board
-call = board start_board
+call > board start_board
 
 function set_board board x y value
 {
@@ -123,7 +123,7 @@ function start_board
 	rand x 0 w
 	rand y 0 h
 	var number value
-	call = value get_board board x y
+	call > value get_board board x y
 	? value 0
 	jne place_robot
 	; stay a little distance from the player
@@ -363,7 +363,7 @@ function move_robots
 	vector_set board i 0
 
 	var number value
-	call = value get_board board new_x new_y
+	call > value get_board board new_x new_y
 
 	? value 0
 	jne crash
@@ -466,7 +466,7 @@ function move_player l r u d
 	call move_robots
 
 	var number value
-	call = value get_board board player_x player_y
+	call > value get_board board player_x player_y
 
 	? value 2
 	jl done
@@ -632,7 +632,7 @@ function cpu_input
 
 	var number value
 
-	call = value get_board board xx yy
+	call > value get_board board xx yy
 
 	? value 0
 	jne remove
@@ -783,7 +783,7 @@ function run
 	jl finish
 
 	= gameover 0
-	call = board start_board
+	call > board start_board
 
 :lets_go
 
