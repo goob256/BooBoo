@@ -67,9 +67,8 @@ struct Program {
 	int prev_tok_p;
 	int prev_tok_line;
 
-	std::vector<Variable> variables;
-	std::map<std::string, int> variables_map;
-	std::stack< std::map<int, Variable> > variables_backup_stack;
+	std::map<std::string, Variable> variables;
+	std::stack< std::map<std::string, Variable> > variables_backup_stack;
 	std::map<std::string, Program> functions;
 	std::map<std::string, Label> labels;
 
@@ -107,7 +106,7 @@ void call_function(Program &prg, std::string function_name, std::vector<std::str
 void add_syntax(std::string name, library_func func);
 std::string token(Program &prg, Token::Token_Type &ret_type, bool add_lines = false);
 int get_line_num(Program &prg);
-Variable &find_variable(Program &prg, int index);
+Variable &find_variable(Program &prg, std::string name);
 void set_string_or_number(Program &prg, std::string name, std::string value);
 void skip_whitespace(Program &prg, bool add_lines = false);
 std::string remove_quotes(std::string s);

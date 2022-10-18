@@ -12,9 +12,7 @@ static std::map< std::string, std::string > cfg_strings;
 
 static Variable &as_variable(Program &prg, Token &t)
 {
-	std::map<std::string, int>::iterator it;
-	it = prg.variables_map.find(t.s);
-	return prg.variables[(*it).second];
+	return prg.variables[t.s];
 }
 
 static double as_number(Program &prg, Token &t)
@@ -23,9 +21,7 @@ static double as_number(Program &prg, Token &t)
 		return t.n;
 	}
 	else if (t.type == Token::SYMBOL) {
-		std::map<std::string, int>::iterator it;
-		it = prg.variables_map.find(t.s);
-		Variable &v = prg.variables[(*it).second];
+		Variable &v = prg.variables[t.s];
 		if (v.type == Variable::NUMBER) {
 			return v.n;
 		}
@@ -46,9 +42,7 @@ static std::string as_string(Program &prg, Token &t)
 		return buf;
 	}
 	else if (t.type == Token::SYMBOL) {
-		std::map<std::string, int>::iterator it;
-		it = prg.variables_map.find(t.s);
-		Variable &v = prg.variables[(*it).second];
+		Variable &v = prg.variables[t.s];
 		if (v.type == Variable::STRING) {
 			return v.s;
 		}
@@ -174,11 +168,10 @@ static bool breaker_return(Program &prg, std::vector<Token> &v)
 		prg.result.n = v[0].n;
 	}
 	else if (v[0].type == Token::SYMBOL) {
-		std::map<std::string, int>::iterator it;
-		it = prg.variables_map.find(v[0].s);
-		if (it != prg.variables_map.end()) {
-			Variable &var = find_variable(prg, (*it).second);
-			prg.result = var;
+		std::map<std::string, Variable>::iterator it;
+		it = prg.variables.find(v[0].s);
+		if (it != prg.variables.end()) {
+			prg.result = (*it).second;
 		}
 		else {
 			throw util::ParseError("Unknown var " + v[0].token);
@@ -217,21 +210,16 @@ static bool corefunc_var(Program &prg, std::vector<Token> &v)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
-	std::map<std::string, int>::iterator it;
-	if ((it = prg.variables_map.find(var.name)) != prg.variables_map.end()) {
-		int i = (*it).second;
-		Variable &v = prg.variables[i];
+	std::map<std::string, Variable>::iterator it;
+	if ((it = prg.variables.find(var.name)) != prg.variables.end()) {
+		Variable &v = (*it).second;
 		if (v.function != prg.name) {
-			std::map<int, Variable> &variables_backup = prg.variables_backup_stack.top();
-			variables_backup[i] = v;
+			std::map<std::string, Variable> &variables_backup = prg.variables_backup_stack.top();
+			variables_backup[v.name] = v;
 		}
+	}
 
-		prg.variables[i] = var;
-	}
-	else {
-		prg.variables_map[var.name] = prg.variables.size();
-		prg.variables.push_back(var);
-	}
+	prg.variables[var.name] = var;
 
 	return true;
 }
@@ -270,10 +258,10 @@ static bool corefunc_set(Program &prg, std::vector<Token> &v)
 		}
 	}
 	else {
-		std::map<std::string, int>::iterator it;
-		it = prg.variables_map.find(v[1].s);
-		if (it != prg.variables_map.end()) {
-			Variable &v2 = find_variable(prg, (*it).second);
+		std::map<std::string, Variable>::iterator it;
+		it = prg.variables.find(v[1].s);
+		if (it != prg.variables.end()) {
+			Variable &v2 = (*it).second;
 
 			if (v1.type == Variable::NUMBER && v2.type == Variable::NUMBER) {
 				v1.n = v2.n;
@@ -724,10 +712,10 @@ static bool corefunc_inspect(Program &prg, std::vector<Token> &v)
 		snprintf(buf, 1000, "%g", v[0].n);
 	}
 	else if (v[0].type == Token::SYMBOL) {
-		std::map<std::string, int>::iterator it;
-		it = prg.variables_map.find(v[0].s);
-		if (it != prg.variables_map.end()) {
-			Variable &var = find_variable(prg, (*it).second);
+		std::map<std::string, Variable>::iterator it;
+		it = prg.variables.find(v[0].s);
+		if (it != prg.variables.end()) {
+			Variable &var = (*it).second;
 			if (var.type == Variable::NUMBER) {
 				snprintf(buf, 1000, "%g", var.n);
 			}
@@ -1527,9 +1515,9 @@ static bool fontfunc_height(Program &prg, std::vector<Token> &v)
 
 void set_string_or_number(Program &prg, std::string name, double value)
 {
-	std::map<std::string, int>::iterator it = prg.variables_map.find(name);
+	std::map<std::string, Variable>::iterator it = prg.variables.find(name);
 
-	Variable &v1 = prg.variables[(*it).second];
+	Variable &v1 = (*it).second;
 
 	if (v1.type == Variable::NUMBER) {
 		v1.n = value;

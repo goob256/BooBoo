@@ -56,7 +56,6 @@ int get_line_num(Program &prg)
 	return prg.line_numbers[ln];
 }
 
-/*
 Variable &find_variable(Program &prg, std::string name)
 {
 	std::map< std::string, Variable >::iterator it;
@@ -68,12 +67,6 @@ Variable &find_variable(Program &prg, std::string name)
 	}
 
 	return (*it).second;
-}
-*/
-
-Variable &find_variable(Program &prg, int index)
-{
-	return prg.variables[index];
 }
 
 static std::string tokenfunc_add(booboo::Program &prg)
@@ -572,7 +565,7 @@ void call_function(Program &prg, std::string function_name, std::vector<std::str
 	if (it != prg.functions.end()) {
 		Program &func = (*it).second;
 
-		std::map<int, Variable> tmp;
+		std::map<std::string, Variable> tmp;
 		prg.variables_backup_stack.push(tmp);
 
 		for (size_t j = 0; j < func.parameters.size(); j++) {
@@ -590,8 +583,7 @@ void call_function(Program &prg, std::string function_name, std::vector<std::str
 				var.n = atof(param.c_str());
 			}
 			else {
-				std::map<std::string, int>::iterator it = prg.variables_map.find(param);
-				Variable &v1 = find_variable(prg, (*it).second);
+				Variable &v1 = find_variable(prg, param);
 				var = v1;
 				var.name = func.parameters[j];
 			}
@@ -599,17 +591,13 @@ void call_function(Program &prg, std::string function_name, std::vector<std::str
 			
 			var.function = function_name;
 
-			std::map<std::string, int>::iterator it3 = prg.variables_map.find(var.name);
-			if (it3 != prg.variables_map.end()) {
-				std::map<int, Variable> &variables_backup = prg.variables_backup_stack.top();
-				int i = (*it3).second;
-				variables_backup[i] = prg.variables[i];
-				prg.variables[i] = var;
+			std::map<std::string, Variable>::iterator it = prg.variables.find(var.name);
+			if (it != prg.variables.end()) {
+				std::map<std::string, Variable> &variables_backup = prg.variables_backup_stack.top();
+				variables_backup[var.name] = (*it).second;
 			}
-			else {
-				prg.variables_map[var.name] = prg.variables.size();
-				prg.variables.push_back(var);
-			}
+
+			prg.variables[var.name] = var;
 		}
 
 		std::string code_bak = prg.code;
@@ -648,39 +636,32 @@ void call_function(Program &prg, std::string function_name, std::vector<std::str
 		prg.name = name_bak;
 		prg.program = program_bak;
 		prg.pc = pc_bak;
-		
-		std::map<int, Variable> &variables_backup = prg.variables_backup_stack.top();
 
-		while (prg.variables.size() > 0 && prg.variables[prg.variables.size()-1].function == function_name) {
-			int i = prg.variables.size()-1;
-			if (variables_backup.find(i) == variables_backup.end()) {
-				std::map<std::string, int>::iterator it = prg.variables_map.find(prg.variables[i].name);
-				if (it != prg.variables_map.end()) {
-					prg.variables_map.erase(it);
-				}
-				prg.variables.erase(prg.variables.begin()+i);
+		std::map<std::string, Variable> &variables_backup = prg.variables_backup_stack.top();
+
+		std::map<std::string, Variable>::iterator it;
+		for (it = prg.variables.begin(); it != prg.variables.end();) {
+			Variable &v = (*it).second;
+			if (v.function == function_name) {
+				it = prg.variables.erase(it);
 			}
 			else {
-				break;
+				it++;
 			}
 		}
 
-		std::map<int, Variable>::iterator it;
 		for (it = variables_backup.begin(); it != variables_backup.end(); it++) {
-			int i = (*it).first;
 			Variable &v = (*it).second;
-			prg.variables[i] = v;
-			prg.variables_map[v.name] = i;
+			prg.variables[v.name] = v;
 		}
 
 		prg.variables_backup_stack.pop();
 
-
 		if (result_name != "") {
-			std::map<std::string, int>::iterator it;
-			it = prg.variables_map.find(result_name);
-			if (it != prg.variables_map.end()) {
-				Variable &v = prg.variables[(*it).second];
+			std::map<std::string, Variable>::iterator it;
+			it = prg.variables.find(result_name);
+			if (it != prg.variables.end()) {
+				Variable &v = (*it).second;
 				std::string bak = v.name;
 				std::string bak2 = v.function;
 				v = prg.result;
@@ -789,7 +770,7 @@ Program create_program(std::string code)
 	prg.labels = process_labels(prg);
 	process_functions(prg);
 		
-	std::map<int, Variable> tmp;
+	std::map<std::string, Variable> tmp;
 	prg.variables_backup_stack.push(tmp);
 
 	compile(prg);
