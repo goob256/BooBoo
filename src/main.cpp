@@ -317,16 +317,23 @@ void draw_all()
 #ifdef LUA_BENCH
 	call_lua(lua_state, "draw", "");
 #elif defined CPP_BENCH2
+	SDL_Colour c;
+	c.r = 0;
+	c.g = 255;
+	c.b = 0;
+	c.a = 25;
 	for (int x = 0; x < 640; x+=2) {
 		float y = sin(x/640.0f*M_PI*2)*90;
-		gfx::draw_filled_circle(shim::white, util::Point<float>(x, y+180), 8);
+		gfx::draw_filled_circle(c, util::Point<float>(x, y+180), 8);
 	}
 	Uint32 now = SDL_GetTicks();
 	now /= 16;
 	now *= 5;
 	now %= 640;
 	float y = sin(now/640.0f*M_PI*2)*90;
-	gfx::draw_filled_circle(shim::white, util::Point<float>(now, y+180), 32);
+	c.r = 128;
+	c.b = 128;
+	gfx::draw_filled_circle(c, util::Point<float>(now, y+180), 32);
 #elif defined CPP_BENCH
 	int w = 640 / grass->size.w;
 	int h = 360 / grass->size.h;
