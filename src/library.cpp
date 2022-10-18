@@ -87,7 +87,7 @@ static bool load_cfg(std::string cfg_name)
 	try {
 		text = util::load_text_from_filesystem(cfg_path(cfg_name));
 	}
-	catch (util::Error e) {
+	catch (util::Error &e) {
 		return false;
 	}
 
@@ -396,6 +396,7 @@ static bool corefunc_neg(Program &prg, std::vector<Token> &v)
 	return true;
 }
 
+/*
 static bool corefunc_label(Program &prg, std::vector<Token> &v)
 {
 	std::string name = as_string(prg, v[0]);
@@ -413,6 +414,7 @@ static bool corefunc_label(Program &prg, std::vector<Token> &v)
 
 	return true;
 }
+*/
 
 static bool corefunc_goto(Program &prg, std::vector<Token> &v)
 {
@@ -599,7 +601,7 @@ static bool corefunc_call(Program &prg, std::vector<Token> &v)
 	}
 
 	std::vector<std::string> params;
-	for (int i = _tok; i < v.size(); i++) {
+	for (size_t i = _tok; i < v.size(); i++) {
 		params.push_back(v[i].token);
 	}
 
@@ -729,7 +731,7 @@ static bool corefunc_string_format(Program &prg, std::vector<Token> &v)
 	int prev = 0;
 	int arg_count = 0;
 
-	for (int i = 0; i < fmt.length(); i++) {
+	for (size_t i = 0; i < fmt.length(); i++) {
 		if (fmt[i] == '%' && prev != '%') {
 			arg_count++;
 		}
@@ -742,7 +744,7 @@ static bool corefunc_string_format(Program &prg, std::vector<Token> &v)
 
 	for (int arg = 0; arg < arg_count; arg++) {
 		int start = c;
-		while (c < fmt.length()) {
+		while (c < (int)fmt.length()) {
 			if (fmt[c] == '%' && prev != '%') {
 				break;
 			}
@@ -785,7 +787,7 @@ static bool corefunc_string_format(Program &prg, std::vector<Token> &v)
 		c++;
 	}
 
-	if (c < fmt.length()) {
+	if (c < (int)fmt.length()) {
 		result += fmt.substr(c);
 	}
 
@@ -1175,7 +1177,7 @@ static bool mmlfunc_play(Program &prg, std::vector<Token> &v)
 	float volume = as_number(prg, v[1]);
 	bool loop = as_number(prg, v[2]);
 
-	if (id < 0 || id >= prg.mmls.size()) {
+	if (id < 0 || id >= (int)prg.mmls.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid MML on line " + util::itos(get_line_num(prg)));
 	}
 
@@ -1190,7 +1192,7 @@ static bool mmlfunc_stop(Program &prg, std::vector<Token> &v)
 {
 	int id = as_number(prg, v[0]);
 
-	if (id < 0 || id >= prg.mmls.size()) {
+	if (id < 0 || id >= (int)prg.mmls.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid MML on line " + util::itos(get_line_num(prg)));
 	}
 

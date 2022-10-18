@@ -482,7 +482,6 @@ static void loop()
 {
 	// These keep the logic running at 60Hz and drawing at refresh rate is possible
 	// NOTE: screen refresh rate has to be 60Hz or higher for this to work.
-	const float target_fps = shim::refresh_rate <= 0 ? 60.0f : shim::refresh_rate;
 	Uint32 start = SDL_GetTicks();
 	int logic_frames = 0;
 	int drawing_frames = 0;

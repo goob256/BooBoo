@@ -47,9 +47,9 @@ std::string remove_quotes(std::string s)
 
 int get_line_num(Program &prg)
 {
-	int ln = prg.prev_tok_line + prg.start_line;
+	unsigned int ln = prg.prev_tok_line + prg.start_line;
 
-	if (ln < 0 || ln >= prg.line_numbers.size()) {
+	if (ln >= prg.line_numbers.size()) {
 		return ln;
 	}
 
@@ -357,7 +357,7 @@ bool process_includes(Program &prg)
 			code += std::string("\n");
 
 			int nlines = 2;
-			for (int i = 0; i < new_code.length(); i++) {
+			for (unsigned int i = 0; i < new_code.length(); i++) {
 				if (new_code[i] == '\n') {
 					nlines++;
 				}
@@ -606,7 +606,7 @@ void call_function(Program &prg, std::string function_name, std::vector<std::str
 		Variable result_bak = prg.result;
 		std::string name_bak = prg.name;
 		std::vector<Statement> program_bak = prg.program;
-		int pc_bak = prg.pc;
+		unsigned int pc_bak = prg.pc;
 
 		prg.p = 0;
 		prg.line = 1;
@@ -682,7 +682,7 @@ bool interpret(Program &prg)
 
 	Statement &s = prg.program[prg.pc];
 
-	int pc_bak = prg.pc;
+	unsigned int pc_bak = prg.pc;
 
 	library_func func = library[s.method];
 	ret = func(prg, s.data);
@@ -776,3 +776,4 @@ Program create_program(std::string code)
 }
 
 } // end namespace booboo
+
