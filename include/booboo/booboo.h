@@ -11,7 +11,7 @@ namespace booboo {
 struct Variable
 {
 	enum Variable_Type {
-		NUMBER,
+		NUMBER = 0,
 		STRING,
 		VECTOR,
 		USER
@@ -22,6 +22,7 @@ struct Variable
 	double n;
 	std::string s;
 	void *u;
+	std::vector<Variable> v;
 
 	std::string function;
 };
@@ -33,9 +34,25 @@ struct Label {
 	int pc;
 };
 
+struct Token {
+	enum Token_Type {
+		STRING = 0, // "string literal"
+		SYMBOL, // alphanumeric and underscores like variable names
+		SPECIAL, // special characters mostly
+		NUMBER
+	};
+
+	Token_Type type;
+
+	std::string s;
+	double n;
+
+	std::string token;
+};
+
 struct Statement {
 	int method;
-	std::vector<std::string> data;
+	std::vector<Token> data;
 };
 
 struct Program {
@@ -49,9 +66,10 @@ struct Program {
 
 	int prev_tok_p;
 	int prev_tok_line;
-	
-	std::map<std::string, Variable> variables;
-	std::stack< std::map<std::string, Variable> > variables_backup_stack;
+
+	std::vector<Variable> variables;
+	std::map<std::string, int> variables_map;
+	std::stack< std::map<int, Variable> > variables_backup_stack;
 	std::map<std::string, Program> functions;
 	std::map<std::string, Label> labels;
 
@@ -65,14 +83,13 @@ struct Program {
 	std::map<int, audio::MML *> mmls;
 	std::map<int, gfx::Image *> images;
 	std::map<int, gfx::TTF *> fonts;
-	std::map< int, std::vector<Variable> > vectors;
 	std::vector<int> line_numbers;
 
 	std::vector<Statement> program;
 	int pc;
 };
 
-typedef bool (*library_func)(Program &prg, std::vector<std::string> &v);
+typedef bool (*library_func)(Program &prg, std::vector<Token> &v);
 
 extern std::string reset_game_name;
 extern bool load_from_filesystem;
@@ -88,10 +105,9 @@ void call_function(Program &prg, std::string function_name, std::vector<std::str
 
 // These are for adding syntax
 void add_syntax(std::string name, library_func func);
-std::string token(Program &prg, bool add_lines = false);
+std::string token(Program &prg, Token::Token_Type &ret_type, bool add_lines = false);
 int get_line_num(Program &prg);
-Variable &find_variable(Program &prg, std::string name);
-std::vector<double> variable_names_to_numbers(Program &prg, std::vector<std::string> &strings);
+Variable &find_variable(Program &prg, int index);
 void set_string_or_number(Program &prg, std::string name, std::string value);
 void skip_whitespace(Program &prg, bool add_lines = false);
 std::string remove_quotes(std::string s);

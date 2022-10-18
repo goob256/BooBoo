@@ -44,9 +44,9 @@ image_load fire_img "misc/explosion.tga"
 image_load grass_img "misc/grass.tga"
 
 var vector board
-call > board start_board
+call start_board
 
-function set_board board x y value
+function set_board x y value
 {
 	var number index
 	= index y
@@ -64,7 +64,7 @@ function set_board board x y value
 :skip
 }
 
-function get_board board x y
+function get_board x y
 {
 	var number index
 	= index y
@@ -87,7 +87,7 @@ function get_board board x y
 
 function start_board
 {
-	var vector board
+	vector_clear board
 
 	var number count
 	= count width
@@ -114,7 +114,7 @@ function start_board
 	rand x 0 w
 	rand y 0 h
 
-	call set_board board x y 1
+	call set_board x y 1
 	= player_x x
 	= player_y y
 
@@ -123,7 +123,7 @@ function start_board
 	rand x 0 w
 	rand y 0 h
 	var number value
-	call > value get_board board x y
+	call > value get_board x y
 	? value 0
 	jne place_robot
 	; stay a little distance from the player
@@ -140,12 +140,10 @@ function start_board
 	; dx is now distance from player
 	? dx 8
 	jl place_robot
-	call set_board board x y 2
+	call set_board x y 2
 	+ i 1
 	? i num_robots
 	jl place_robot
-
-	return board
 }
 
 function draw
@@ -196,9 +194,6 @@ function draw
 	* yy rect_h
 
 	;image_draw grass_img 255 255 255 255 xx yy 0 0
-
-	? value 1
-	jl past_draw
 
 	var number image
 
@@ -359,21 +354,21 @@ function move_robots
 
 :done_move
 
-	;call set_board board x y 0
+	;call set_board x y 0
 	vector_set board i 0
 
 	var number value
-	call > value get_board board new_x new_y
+	call > value get_board new_x new_y
 
 	? value 0
 	jne crash
 
-	call set_board board new_x new_y 2
+	call set_board new_x new_y 2
 
 	goto continue2
 
 :crash
-	call set_board board new_x new_y 3
+	call set_board new_x new_y 3
 	mml_play crash_mml 1.0 0
 	? value 1
 	je game_over
@@ -466,7 +461,7 @@ function move_player l r u d
 	call move_robots
 
 	var number value
-	call > value get_board board player_x player_y
+	call > value get_board player_x player_y
 
 	? value 2
 	jl done
@@ -632,7 +627,7 @@ function cpu_input
 
 	var number value
 
-	call > value get_board board xx yy
+	call > value get_board xx yy
 
 	? value 0
 	jne remove
@@ -783,7 +778,7 @@ function run
 	jl finish
 
 	= gameover 0
-	call > board start_board
+	call start_board
 
 :lets_go
 

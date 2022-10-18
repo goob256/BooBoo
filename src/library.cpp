@@ -10,6 +10,59 @@ using namespace booboo;
 static std::map< std::string, double > cfg_numbers;
 static std::map< std::string, std::string > cfg_strings;
 
+static Variable &as_variable(Program &prg, Token &t)
+{
+	std::map<std::string, int>::iterator it;
+	it = prg.variables_map.find(t.s);
+	return prg.variables[(*it).second];
+}
+
+static double as_number(Program &prg, Token &t)
+{
+	if (t.type == Token::NUMBER) {
+		return t.n;
+	}
+	else if (t.type == Token::SYMBOL) {
+		std::map<std::string, int>::iterator it;
+		it = prg.variables_map.find(t.s);
+		Variable &v = prg.variables[(*it).second];
+		if (v.type == Variable::NUMBER) {
+			return v.n;
+		}
+		else {
+			return atof(v.s.c_str());
+		}
+	}
+	else {
+		return atof(t.s.c_str());
+	}
+}
+
+static std::string as_string(Program &prg, Token &t)
+{
+	if (t.type == Token::NUMBER) {
+		char buf[1000];
+		snprintf(buf, 1000, "%g", t.n);
+		return buf;
+	}
+	else if (t.type == Token::SYMBOL) {
+		std::map<std::string, int>::iterator it;
+		it = prg.variables_map.find(t.s);
+		Variable &v = prg.variables[(*it).second];
+		if (v.type == Variable::STRING) {
+			return v.s;
+		}
+		else {
+			char buf[1000];
+			snprintf(buf, 1000, "%g", v.n);
+			return buf;
+		}
+	}
+	else {
+		return t.s;
+	}
+}
+
 static std::string save_dir()
 {
 	std::string path;
@@ -89,58 +142,51 @@ static void save_cfg(std::string cfg_name)
 	fclose(f);
 }
 
-static bool breaker_reset(Program &prg, std::vector<std::string> &v)
+static bool breaker_reset(Program &prg, std::vector<Token> &v)
 {
-	std::string name = v[0];
+	std::string name = as_string(prg, v[0]);
 
-	std::string names;
-
-	if (name[0] == '"') {
-		names = remove_quotes(util::unescape_string(name));
-	}
-	else {
-		Variable &v1 = find_variable(prg, name);
-		if (v1.type == Variable::STRING) {
-			names = v1.s;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
-	}
-
-	reset_game_name = names;
+	reset_game_name = name;
 
 	return false;
 }
 
-static bool breaker_exit(Program &prg, std::vector<std::string> &v)
+static bool breaker_exit(Program &prg, std::vector<Token> &v)
 {
+	/*
 	std::string code = v[0];
 	std::vector<std::string> strings;
 	strings.reserve(1);
 	strings.push_back(code);
 	std::vector<double> values = variable_names_to_numbers(prg, strings);
 	return_code = values[0];
+	*/
+	return_code = as_number(prg, v[0]);
 	reset_game_name = "";
 	quit = true;
 	return false;
 }
 
-static bool breaker_return(Program &prg, std::vector<std::string> &v)
+static bool breaker_return(Program &prg, std::vector<Token> &v)
 {
-	std::string value = v[0];
-
-	if (value[0] == '-' || isdigit(value[0])) {
+	if (v[0].type == Token::NUMBER) {
 		prg.result.type = Variable::NUMBER;
-		prg.result.n = atof(value.c_str());
+		prg.result.n = v[0].n;
 	}
-	else if (value[0] == '"') {
-		prg.result.type = Variable::STRING;
-		prg.result.s = remove_quotes(util::unescape_string(value));
+	else if (v[0].type == Token::SYMBOL) {
+		std::map<std::string, int>::iterator it;
+		it = prg.variables_map.find(v[0].s);
+		if (it != prg.variables_map.end()) {
+			Variable &var = find_variable(prg, (*it).second);
+			prg.result = var;
+		}
+		else {
+			throw util::ParseError("Unknown var " + v[0].token);
+		}
 	}
 	else {
-		Variable &v1 = find_variable(prg, value);
-		prg.result = v1;
+		prg.result.type = Variable::STRING;
+		prg.result.s = v[0].s;
 	}
 
 	prg.result.name = "result";
@@ -148,12 +194,12 @@ static bool breaker_return(Program &prg, std::vector<std::string> &v)
 	return false;
 }
 
-static bool corefunc_var(Program &prg, std::vector<std::string> &v)
+static bool corefunc_var(Program &prg, std::vector<Token> &v)
 {
 	Variable var;
 
-	std::string type = v[0];
-	std::string name =  v[1];
+	std::string type = v[0].token;
+	std::string name =  v[1].token;
 
 	var.name = name;
 	var.function = prg.name;
@@ -166,318 +212,191 @@ static bool corefunc_var(Program &prg, std::vector<std::string> &v)
 	}
 	else if (type == "vector") {
 		var.type = Variable::VECTOR;
-		var.n = prg.vector_id++;
-		std::vector<Variable> vec;
-		prg.vectors[var.n] = vec;
 	}
 	else {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
-	std::map<std::string, Variable> &variables_backup = prg.variables_backup_stack.top();
-	std::map<std::string, Variable>::iterator it3;
-	if ((it3 = prg.variables.find(var.name)) != prg.variables.end()) {
-		if ((*it3).second.function != prg.name) {
-			variables_backup[var.name] = prg.variables[var.name];
+	std::map<std::string, int>::iterator it;
+	if ((it = prg.variables_map.find(var.name)) != prg.variables_map.end()) {
+		int i = (*it).second;
+		Variable &v = prg.variables[i];
+		if (v.function != prg.name) {
+			std::map<int, Variable> &variables_backup = prg.variables_backup_stack.top();
+			variables_backup[i] = v;
 		}
-	}
 
-	prg.variables[var.name] = var;
+		prg.variables[i] = var;
+	}
+	else {
+		prg.variables_map[var.name] = prg.variables.size();
+		prg.variables.push_back(var);
+	}
 
 	return true;
 }
 
-static bool corefunc_set(Program &prg, std::vector<std::string> &v)
+static bool corefunc_set(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string src = v[1];
+	//std::string dest = v[0];
+	//std::string src = v[1];
 
-	Variable &v1 = find_variable(prg, dest);
+	//Variable &v1 = find_variable(prg, dest);
 
-	if (src[0] == '-' || isdigit(src[0])) {
+	Variable &v1 = as_variable(prg, v[0]);
+
+	if (v[1].type == Token::NUMBER) {
 		if (v1.type == Variable::NUMBER) {
-			v1.n = atof(src.c_str());
+			v1.n = v[1].n;
 		}
 		else if (v1.type == Variable::STRING) {
-			v1.s = src;
+			char buf[1000];
+			snprintf(buf, 1000, "%g", v[1].n);
+			v1.s = buf;
 		}
 		else {
 			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 		}
 	}
-	else if (src[0] == '"') {
+	else if (v[1].type == Token::STRING || v[1].type == Token::SPECIAL) {
 		if (v1.type == Variable::NUMBER) {
-			v1.n = atof(remove_quotes(src).c_str());
+			v1.n = atof(v[1].s.c_str());
 		}
 		else if (v1.type == Variable::STRING) {
-			v1.s = remove_quotes(util::unescape_string(src));
+			v1.s = v[1].s;
 		}
 		else {
 			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 		}
 	}
 	else {
-		Variable &v2 = find_variable(prg, src);
+		std::map<std::string, int>::iterator it;
+		it = prg.variables_map.find(v[1].s);
+		if (it != prg.variables_map.end()) {
+			Variable &v2 = find_variable(prg, (*it).second);
 
-		if (v1.type == Variable::NUMBER && v2.type == Variable::NUMBER) {
-			v1.n = v2.n;
-		}
-		else if (v1.type == Variable::STRING && v2.type == Variable::NUMBER) {
-			v1.s = util::itos(v2.n);
-		}
-		else if (v1.type == Variable::STRING && v2.type == Variable::STRING) {
-			v1.s = v2.s;
-		}
-		else if (v1.type == Variable::VECTOR && v2.type == Variable::VECTOR) {
-			prg.vectors[(int)v1.n] = prg.vectors[(int)v2.n];
+			if (v1.type == Variable::NUMBER && v2.type == Variable::NUMBER) {
+				v1.n = v2.n;
+			}
+			else if (v1.type == Variable::STRING && v2.type == Variable::NUMBER) {
+				v1.s = util::itos(v2.n);
+			}
+			else if (v1.type == Variable::STRING && v2.type == Variable::STRING) {
+				v1.s = v2.s;
+			}
+			else if (v1.type == Variable::VECTOR && v2.type == Variable::VECTOR) {
+				v1.v = v2.v;
+			}
+			else {
+				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
+			}
 		}
 		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
+			throw util::ParseError("Uknown variable " + v[1].token);
 		}
 	}
 
 	return true;
 }
 
-static bool corefunc_add(Program &prg, std::vector<std::string> &v)
+static bool corefunc_add(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string src = v[1];
+	Variable &v1 = as_variable(prg, v[0]);
+	double d = as_number(prg, v[1]);
 
-	Variable &v1 = find_variable(prg, dest);
-
-	if (src[0] == '-' || isdigit(src[0])) {
-		if (v1.type == Variable::NUMBER) {
-			v1.n += atof(src.c_str());
-		}
-		else if (v1.type == Variable::STRING) {
-			v1.s += src;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
+	if (v1.type == Variable::NUMBER) {
+		v1.n += d;
 	}
-	else if (src[0] == '"') {
-		if (v1.type == Variable::NUMBER) {
-			v1.n += atof(remove_quotes(src).c_str());
-		}
-		else if (v1.type == Variable::STRING) {
-			v1.s += remove_quotes(util::unescape_string(src));
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
+	else if (v1.type == Variable::STRING) {
+		char buf[1000];
+		snprintf(buf, 1000, "%g", d);
+		v1.s += buf;
 	}
 	else {
-		Variable &v2 = find_variable(prg, src);
-
-		if (v1.type == Variable::NUMBER && v2.type == Variable::NUMBER) {
-			v1.n += v2.n;
-		}
-		else if (v1.type == Variable::STRING && v2.type == Variable::NUMBER) {
-			v1.s += util::itos(v2.n);
-		}
-		else if (v1.type == Variable::STRING && v2.type == Variable::STRING) {
-			v1.s += v2.s;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
-		}
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
 	return true;
 }
 
-static bool corefunc_subtract(Program &prg, std::vector<std::string> &v)
+static bool corefunc_subtract(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string src = v[1];
+	Variable &v1 = as_variable(prg, v[0]);
+	double d = as_number(prg, v[1]);
 
-	Variable &v1 = find_variable(prg, dest);
-
-	if (src[0] == '-' || isdigit(src[0])) {
-		if (v1.type == Variable::NUMBER) {
-			v1.n -= atof(src.c_str());
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
-	}
-	else if (src[0] == '"') {
-		if (v1.type == Variable::NUMBER) {
-			v1.n -= atof(remove_quotes(src).c_str());
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
+	if (v1.type == Variable::NUMBER) {
+		v1.n -= d;
 	}
 	else {
-		Variable &v2 = find_variable(prg, src);
-
-		if (v1.type == Variable::NUMBER && v2.type == Variable::NUMBER) {
-			v1.n -= v2.n;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
-		}
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
 	return true;
 }
 
-static bool corefunc_multiply(Program &prg, std::vector<std::string> &v)
+static bool corefunc_multiply(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string src = v[1];
+	Variable &v1 = as_variable(prg, v[0]);
+	double d = as_number(prg, v[1]);
 
-	Variable &v1 = find_variable(prg, dest);
-
-	if (src[0] == '-' || isdigit(src[0])) {
-		if (v1.type == Variable::NUMBER) {
-			v1.n *= atof(src.c_str());
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
-	}
-	else if (src[0] == '"') {
-		if (v1.type == Variable::NUMBER) {
-			v1.n *= atof(remove_quotes(src).c_str());
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
+	if (v1.type == Variable::NUMBER) {
+		v1.n *= d;
 	}
 	else {
-		Variable &v2 = find_variable(prg, src);
-
-		if (v1.type == Variable::NUMBER && v2.type == Variable::NUMBER) {
-			v1.n *= v2.n;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
-		}
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
 	return true;
 }
 
-static bool corefunc_divide(Program &prg, std::vector<std::string> &v)
+static bool corefunc_divide(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string src = v[1];
+	Variable &v1 = as_variable(prg, v[0]);
+	double d = as_number(prg, v[1]);
 
-	Variable &v1 = find_variable(prg, dest);
-
-	if (src[0] == '-' || isdigit(src[0])) {
-		if (v1.type == Variable::NUMBER) {
-			v1.n /= atof(src.c_str());
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
-	}
-	else if (src[0] == '"') {
-		if (v1.type == Variable::NUMBER) {
-			v1.n /= atof(remove_quotes(src).c_str());
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
+	if (v1.type == Variable::NUMBER) {
+		v1.n /= d;
 	}
 	else {
-		Variable &v2 = find_variable(prg, src);
-
-		if (v1.type == Variable::NUMBER && v2.type == Variable::NUMBER) {
-			v1.n /= v2.n;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
-		}
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
 	return true;
 }
 
-static bool corefunc_intmod(Program &prg, std::vector<std::string> &v)
+static bool corefunc_intmod(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string src = v[1];
+	Variable &v1 = as_variable(prg, v[0]);
+	int d = as_number(prg, v[1]);
 
-	Variable &v1 = find_variable(prg, dest);
-
-	if (src[0] == '-' || isdigit(src[0])) {
-		if (v1.type == Variable::NUMBER) {
-			v1.n = (int)v1.n % (int)atof(src.c_str());
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
-	}
-	else if (src[0] == '"') {
-		if (v1.type == Variable::NUMBER) {
-			v1.n = (int)v1.n % (int)atof(remove_quotes(src).c_str());
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
+	if (v1.type == Variable::NUMBER) {
+		v1.n = int(v1.n) % int(d);
 	}
 	else {
-		Variable &v2 = find_variable(prg, src);
-
-		if (v1.type == Variable::NUMBER && v2.type == Variable::NUMBER) {
-			v1.n = (int)v1.n % (int)v2.n;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
-		}
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
 	return true;
 }
 
-static bool corefunc_fmod(Program &prg, std::vector<std::string> &v)
+static bool corefunc_fmod(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string src = v[1];
+	Variable &v1 = as_variable(prg, v[0]);
+	double d = as_number(prg, v[1]);
 
-	Variable &v1 = find_variable(prg, dest);
-
-	if (src[0] == '-' || isdigit(src[0])) {
-		if (v1.type == Variable::NUMBER) {
-			v1.n = fmod(v1.n, atof(src.c_str()));
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
-	}
-	else if (src[0] == '"') {
-		if (v1.type == Variable::NUMBER) {
-			v1.n = fmod(v1.n, atof(remove_quotes(src).c_str()));
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
+	if (v1.type == Variable::NUMBER) {
+		v1.n = fmod(v1.n, d);
 	}
 	else {
-		Variable &v2 = find_variable(prg, src);
-
-		if (v1.type == Variable::NUMBER && v2.type == Variable::NUMBER) {
-			v1.n = fmod(v1.n, v2.n);
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
-		}
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
 	return true;
 }
 
-static bool corefunc_neg(Program &prg, std::vector<std::string> &v)
+static bool corefunc_neg(Program &prg, std::vector<Token> &v)
 {
-	std::string name = v[0];
-	
-	Variable &v1 = find_variable(prg, name);
+	Variable &v1 = as_variable(prg, v[0]);
 
 	if (v1.type == Variable::NUMBER) {
 		v1.n = -v1.n;
@@ -489,9 +408,9 @@ static bool corefunc_neg(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool corefunc_label(Program &prg, std::vector<std::string> &v)
+static bool corefunc_label(Program &prg, std::vector<Token> &v)
 {
-	std::string name = v[0];
+	std::string name = as_string(prg, v[0]);
 
 	if (name[0] != '_' && isalpha(name[0]) == false) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid label name on line " + util::itos(get_line_num(prg)));
@@ -509,9 +428,9 @@ static bool corefunc_label(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool corefunc_goto(Program &prg, std::vector<std::string> &v)
+static bool corefunc_goto(Program &prg, std::vector<Token> &v)
 {
-	std::string name = v[0];
+	std::string name = v[0].token;
 
 	std::map<std::string, Label>::iterator it = prg.labels.find(name);
 	if (it != prg.labels.end()) {
@@ -533,37 +452,34 @@ static bool corefunc_goto(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool corefunc_compare(Program &prg, std::vector<std::string> &v)
+static bool corefunc_compare(Program &prg, std::vector<Token> &v)
 {
-	std::string a = v[0];
-	std::string b = v[1];
-
 	bool a_string = false;
 	bool b_string = false;
 	std::string s1;
 	std::string s2;
 
-	if (a[0] == '"') {
+	if (v[0].type == Token::STRING || v[0].type == Token::SPECIAL) {
 		a_string = true;
-		s1 = remove_quotes(util::unescape_string(a));
+		s1 = v[0].s;
 	}
-	else if (a[0] == '_' || isalpha(a[0])) {
-		Variable &v = find_variable(prg, a);
-		if (v.type == Variable::STRING) {
+	else if (v[0].type == Token::SYMBOL) {
+		Variable &var = as_variable(prg, v[0]);
+		if (var.type == Variable::STRING) {
 			a_string = true;
-			s1 = v.s;
+			s1 = var.s;
 		}
 	}
-
-	if (b[0] == '"') {
+	
+	if (v[1].type == Token::STRING || v[1].type == Token::SPECIAL) {
 		b_string = true;
-		s2 = remove_quotes(util::unescape_string(b));
+		s2 = v[1].s;
 	}
-	else if (b[0] == '_' || isalpha(b[0])) {
-		Variable &v = find_variable(prg, b);
-		if (v.type == Variable::STRING) {
+	else if (v[1].type == Token::SYMBOL) {
+		Variable &var = as_variable(prg, v[1]);
+		if (var.type == Variable::STRING) {
 			b_string = true;
-			s2 = v.s;
+			s2 = var.s;
 		}
 	}
 	
@@ -576,16 +492,13 @@ static bool corefunc_compare(Program &prg, std::vector<std::string> &v)
 	}
 	// FIXME: if they're vectors or something then it should report an error
 	else {
-		std::vector<std::string> strings;
-		strings.reserve(2);
-		strings.push_back(a);
-		strings.push_back(b);
-		std::vector<double> values = variable_names_to_numbers(prg, strings);
+		double ad = as_number(prg, v[0]);
+		double bd = as_number(prg, v[1]);
 
-		if (values[0] < values[1]) {
+		if (ad < bd) {
 			prg.compare_flag = -1;
 		}
-		else if (values[0] == values[1]) {
+		else if (ad == bd) {
 			prg.compare_flag = 0;
 		}
 		else {
@@ -596,9 +509,9 @@ static bool corefunc_compare(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool corefunc_je(Program &prg, std::vector<std::string> &v)
+static bool corefunc_je(Program &prg, std::vector<Token> &v)
 {
-	std::string label = v[0];
+	std::string label = v[0].token;
 
 	if (prg.compare_flag == 0) {
 		std::map<std::string, Label>::iterator it = prg.labels.find(label);
@@ -613,9 +526,9 @@ static bool corefunc_je(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool corefunc_jne(Program &prg, std::vector<std::string> &v)
+static bool corefunc_jne(Program &prg, std::vector<Token> &v)
 {
-	std::string label = v[0];
+	std::string label = v[0].token;
 
 	if (prg.compare_flag != 0) {
 		std::map<std::string, Label>::iterator it = prg.labels.find(label);
@@ -630,9 +543,9 @@ static bool corefunc_jne(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool corefunc_jl(Program &prg, std::vector<std::string> &v)
+static bool corefunc_jl(Program &prg, std::vector<Token> &v)
 {
-	std::string label = v[0];
+	std::string label = v[0].token;
 
 	if (prg.compare_flag < 0) {
 		std::map<std::string, Label>::iterator it = prg.labels.find(label);
@@ -647,9 +560,9 @@ static bool corefunc_jl(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool corefunc_jle(Program &prg, std::vector<std::string> &v)
+static bool corefunc_jle(Program &prg, std::vector<Token> &v)
 {
-	std::string label = v[0];
+	std::string label = v[0].token;
 
 	if (prg.compare_flag <= 0) {
 		std::map<std::string, Label>::iterator it = prg.labels.find(label);
@@ -664,9 +577,9 @@ static bool corefunc_jle(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool corefunc_jg(Program &prg, std::vector<std::string> &v)
+static bool corefunc_jg(Program &prg, std::vector<Token> &v)
 {
-	std::string label = v[0];
+	std::string label = v[0].token;
 
 	if (prg.compare_flag > 0) {
 		std::map<std::string, Label>::iterator it = prg.labels.find(label);
@@ -681,9 +594,9 @@ static bool corefunc_jg(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool corefunc_jge(Program &prg, std::vector<std::string> &v)
+static bool corefunc_jge(Program &prg, std::vector<Token> &v)
 {
-	std::string label = v[0];
+	std::string label = v[0].token;
 
 	if (prg.compare_flag >= 0) {
 		std::map<std::string, Label>::iterator it = prg.labels.find(label);
@@ -698,19 +611,16 @@ static bool corefunc_jge(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool corefunc_call(Program &prg, std::vector<std::string> &v)
+static bool corefunc_call(Program &prg, std::vector<Token> &v)
 {
-	std::string tok2 = v[0];
+	std::string tok2 = v[0].token;
 	std::string function_name;
 	std::string result_name;
 	int _tok = 1;
 
 	if (tok2 == ">") {
-		result_name = v[_tok++];
-		function_name = v[_tok++];
-
-		// check for errors
-		find_variable(prg, result_name);
+		result_name = v[_tok++].token;
+		function_name = v[_tok++].token;
 	}
 	else {
 		function_name = tok2;
@@ -718,7 +628,7 @@ static bool corefunc_call(Program &prg, std::vector<std::string> &v)
 
 	std::vector<std::string> params;
 	for (int i = _tok; i < v.size(); i++) {
-		params.push_back(v[i]);
+		params.push_back(v[i].token);
 	}
 
 	call_function(prg, function_name, params, result_name);
@@ -726,7 +636,8 @@ static bool corefunc_call(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool corefunc_function(Program &prg, std::vector<std::string> &v)
+/*
+static bool corefunc_function(Program &prg, std::vector<Token> &v)
 {
 	int start_line = prg.line;
 	std::string name = v[0];
@@ -791,7 +702,7 @@ static bool corefunc_function(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool corefunc_comment(Program &prg, std::vector<std::string> &v)
+static bool corefunc_comment(Program &prg, std::vector<Token> &v)
 {
 	while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
 		prg.p++;
@@ -803,27 +714,30 @@ static bool corefunc_comment(Program &prg, std::vector<std::string> &v)
 
 	return true;
 }
+*/
 
-static bool corefunc_inspect(Program &prg, std::vector<std::string> &v)
+static bool corefunc_inspect(Program &prg, std::vector<Token> &v)
 {
-	std::string name = v[0];
-	
-	Variable &v1 = find_variable(prg, name);
-
 	char buf[1000];
 
-	if (name[0] == '-' || isdigit(name[0])) {
-		snprintf(buf, 1000, "%s", name.c_str());
+	if (v[0].type == Token::NUMBER) {
+		snprintf(buf, 1000, "%g", v[0].n);
 	}
-	else if (name[0] == '"') {
-		std::string s = remove_quotes(util::unescape_string(name));
-		snprintf(buf, 1000, "%s", s.c_str());
-	}
-	else if (v1.type == Variable::NUMBER) {
-		snprintf(buf, 1000, "%g", v1.n);
-	}
-	else if (v1.type == Variable::STRING) {
-		snprintf(buf, 1000, "\"%s\"", v1.s.c_str());
+	else if (v[0].type == Token::SYMBOL) {
+		std::map<std::string, int>::iterator it;
+		it = prg.variables_map.find(v[0].s);
+		if (it != prg.variables_map.end()) {
+			Variable &var = find_variable(prg, (*it).second);
+			if (var.type == Variable::NUMBER) {
+				snprintf(buf, 1000, "%g", var.n);
+			}
+			else if (var.type == Variable::STRING) {
+				snprintf(buf, 1000, "%s", var.s.c_str());
+			}
+			else if (var.type == Variable::VECTOR) {
+				snprintf(buf, 1000, "-vector-");
+			}
+		}
 	}
 	else {
 		strcpy(buf, "Unknown");
@@ -834,36 +748,20 @@ static bool corefunc_inspect(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool corefunc_string_format(Program &prg, std::vector<std::string> &v)
+static bool corefunc_string_format(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string fmt = v[1];
+	Variable &v1 = as_variable(prg, v[0]);
+	std::string fmt = as_string(prg, v[1]);
 	int _tok = 2;
 	
-	std::string fmts;
-
-	if (fmt[0] == '"') {
-		fmts = remove_quotes(util::unescape_string(fmt));
-	}
-	else {
-		Variable &v1 = find_variable(prg, fmt);
-
-		if (v1.type == Variable::STRING) {
-			fmts = v1.s;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
-	}
-
 	int prev = 0;
 	int arg_count = 0;
 
-	for (int i = 0; i < fmts.length(); i++) {
-		if (fmts[i] == '%' && prev != '%') {
+	for (int i = 0; i < fmt.length(); i++) {
+		if (fmt[i] == '%' && prev != '%') {
 			arg_count++;
 		}
-		prev = fmts[i];
+		prev = fmt[i];
 	}
 
 	std::string result;
@@ -872,17 +770,17 @@ static bool corefunc_string_format(Program &prg, std::vector<std::string> &v)
 
 	for (int arg = 0; arg < arg_count; arg++) {
 		int start = c;
-		while (c < fmts.length()) {
-			if (fmts[c] == '%' && prev != '%') {
+		while (c < fmt.length()) {
+			if (fmt[c] == '%' && prev != '%') {
 				break;
 			}
-			prev = fmts[c];
+			prev = fmt[c];
 			c++;
 		}
 
-		result += fmts.substr(start, c-start);
+		result += fmt.substr(start, c-start);
 
-		std::string param = v[_tok++];
+		std::string param = v[_tok++].token;
 
 		std::string val;
 
@@ -893,7 +791,7 @@ static bool corefunc_string_format(Program &prg, std::vector<std::string> &v)
 			val = remove_quotes(util::unescape_string(param));
 		}
 		else {
-			Variable &v1 = find_variable(prg, param);
+			Variable &v1 = as_variable(prg, v[_tok-1]);
 			if (v1.type == Variable::NUMBER) {
 				char buf[1000];
 				snprintf(buf, 1000, "%g", v1.n);
@@ -915,31 +813,22 @@ static bool corefunc_string_format(Program &prg, std::vector<std::string> &v)
 		c++;
 	}
 
-	if (c < fmts.length()) {
-		result += fmts.substr(c);
+	if (c < fmt.length()) {
+		result += fmt.substr(c);
 	}
 
-	Variable &v1 = find_variable(prg, dest);
 	v1.type = Variable::STRING;
 	v1.s = result;
 
 	return true;
 }
 
-static bool mathfunc_sin(Program &prg, std::vector<std::string> &v)
+static bool mathfunc_sin(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string vs = v[1];
-	
-	std::vector<std::string> strings;
-	strings.reserve(1);
-	strings.push_back(vs);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	Variable &v1 = find_variable(prg, dest);
+	Variable &v1 = as_variable(prg, v[0]);
 
 	if (v1.type == Variable::NUMBER) {
-		v1.n = sin(values[0]);
+		v1.n = sin(as_number(prg, v[1]));
 	}
 	else {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
@@ -948,20 +837,12 @@ static bool mathfunc_sin(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool mathfunc_cos(Program &prg, std::vector<std::string> &v)
+static bool mathfunc_cos(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string vs = v[1];
-	
-	std::vector<std::string> strings;
-	strings.reserve(1);
-	strings.push_back(vs);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	Variable &v1 = find_variable(prg, dest);
+	Variable &v1 = as_variable(prg, v[0]);
 
 	if (v1.type == Variable::NUMBER) {
-		v1.n = cos(values[0]);
+		v1.n = cos(as_number(prg, v[1]));
 	}
 	else {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
@@ -970,22 +851,12 @@ static bool mathfunc_cos(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool mathfunc_atan2(Program &prg, std::vector<std::string> &v)
+static bool mathfunc_atan2(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string vs1 = v[1];
-	std::string vs2 = v[2];
-	
-	std::vector<std::string> strings;
-	strings.reserve(2);
-	strings.push_back(vs1);
-	strings.push_back(vs2);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	Variable &v1 = find_variable(prg, dest);
+	Variable &v1 = as_variable(prg, v[0]);
 
 	if (v1.type == Variable::NUMBER) {
-		v1.n = atan2(values[0], values[1]);
+		v1.n = atan2(as_number(prg, v[1]), as_number(prg, v[2]));
 	}
 	else {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
@@ -994,20 +865,12 @@ static bool mathfunc_atan2(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool mathfunc_abs(Program &prg, std::vector<std::string> &v)
+static bool mathfunc_abs(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string vs = v[1];
-	
-	std::vector<std::string> strings;
-	strings.reserve(1);
-	strings.push_back(vs);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	Variable &v1 = find_variable(prg, dest);
+	Variable &v1 = as_variable(prg, v[0]);
 
 	if (v1.type == Variable::NUMBER) {
-		v1.n = abs(values[0]);
+		v1.n = fabs(as_number(prg, v[1]));
 	}
 	else {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
@@ -1016,22 +879,12 @@ static bool mathfunc_abs(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool mathfunc_pow(Program &prg, std::vector<std::string> &v)
+static bool mathfunc_pow(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string vs1 = v[1];
-	std::string vs2 = v[2];
-	
-	std::vector<std::string> strings;
-	strings.reserve(2);
-	strings.push_back(vs1);
-	strings.push_back(vs2);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	Variable &v1 = find_variable(prg, dest);
+	Variable &v1 = as_variable(prg, v[0]);
 
 	if (v1.type == Variable::NUMBER) {
-		v1.n = pow(values[0], values[1]);
+		v1.n = pow(as_number(prg, v[1]), as_number(prg, v[2]));
 	}
 	else {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
@@ -1040,20 +893,12 @@ static bool mathfunc_pow(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool mathfunc_sqrt(Program &prg, std::vector<std::string> &v)
+static bool mathfunc_sqrt(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string vs1 = v[1];
-	
-	std::vector<std::string> strings;
-	strings.reserve(1);
-	strings.push_back(vs1);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	Variable &v1 = find_variable(prg, dest);
+	Variable &v1 = as_variable(prg, v[0]);
 
 	if (v1.type == Variable::NUMBER) {
-		v1.n = sqrt(values[0]);
+		v1.n = sqrt(as_number(prg, v[1]));
 	}
 	else {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
@@ -1062,25 +907,18 @@ static bool mathfunc_sqrt(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool mathfunc_rand(Program &prg, std::vector<std::string> &v)
+static bool mathfunc_rand(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string min_incl = v[1];
-	std::string max_incl = v[2];
+	Variable &v1 = as_variable(prg, v[0]);
 
-	std::vector<std::string> strings;
-	strings.reserve(2);
-	strings.push_back(min_incl);
-	strings.push_back(max_incl);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	Variable &v1 = find_variable(prg, dest);
+	int min_incl = as_number(prg, v[1]);
+	int max_incl = as_number(prg, v[2]);
 
 	if (v1.type == Variable::NUMBER) {
-		v1.n = util::rand(values[0], values[1]);
+		v1.n = util::rand(min_incl, max_incl);
 	}
 	else if (v1.type == Variable::STRING) {
-		v1.s = util::itos(util::rand(values[0], values[1]));
+		v1.s = util::itos(util::rand(min_incl, max_incl));
 	}
 	else {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
@@ -1089,23 +927,12 @@ static bool mathfunc_rand(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool gfxfunc_clear(Program &prg, std::vector<std::string> &v)
+static bool gfxfunc_clear(Program &prg, std::vector<Token> &v)
 {
-	std::string r =  v[0];
-	std::string g =  v[1];
-	std::string b =  v[2];
-
-	std::vector<std::string> strings;
-	strings.reserve(3);
-	strings.push_back(r);
-	strings.push_back(g);
-	strings.push_back(b);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
 	SDL_Colour c;
-	c.r = values[0];
-	c.g = values[1];
-	c.b = values[2];
+	c.r = as_number(prg, v[0]);
+	c.g = as_number(prg, v[1]);
+	c.b = as_number(prg, v[2]);
 	c.a = 255;
 
 	gfx::clear(c);
@@ -1113,446 +940,220 @@ static bool gfxfunc_clear(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool primfunc_start_primitives(Program &prg, std::vector<std::string> &v)
+static bool primfunc_start_primitives(Program &prg, std::vector<Token> &v)
 {
 	gfx::draw_primitives_start();
 
 	return true;
 }
 
-static bool primfunc_end_primitives(Program &prg, std::vector<std::string> &v)
+static bool primfunc_end_primitives(Program &prg, std::vector<Token> &v)
 {
 	gfx::draw_primitives_end();
 
 	return true;
 }
 
-static bool primfunc_line(Program &prg, std::vector<std::string> &v)
+static bool primfunc_line(Program &prg, std::vector<Token> &v)
 {
-	std::string r =  v[0];
-	std::string g =  v[1];
-	std::string b =  v[2];
-	std::string a =  v[3];
-	std::string x =  v[4];
-	std::string y =  v[5];
-	std::string x2 =  v[6];
-	std::string y2 =  v[7];
-	std::string thickness = v[8];
-	
-	std::vector<std::string> strings;
-	strings.reserve(9);
-	strings.push_back(r);
-	strings.push_back(g);
-	strings.push_back(b);
-	strings.push_back(a);
-	strings.push_back(x);
-	strings.push_back(y);
-	strings.push_back(x2);
-	strings.push_back(y2);
-	strings.push_back(thickness);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
 	SDL_Colour c;
-	c.r = values[0];
-	c.g = values[1];
-	c.b = values[2];
-	c.a = values[3];
+	c.r = as_number(prg, v[0]);
+	c.g = as_number(prg, v[1]);
+	c.b = as_number(prg, v[2]);
+	c.a = as_number(prg, v[3]);
 
 	util::Point<float> p1, p2;
 
-	p1.x = values[4];
-	p1.y = values[5];
-	p2.x = values[6];
-	p2.y = values[7];
+	p1.x = as_number(prg, v[4]);
+	p1.y = as_number(prg, v[5]);
+	p2.x = as_number(prg, v[6]);
+	p2.y = as_number(prg, v[7]);
 
-	float thick = values[8];
+	float thick = as_number(prg, v[8]);
 
 	gfx::draw_line(c, p1, p2, thick);
 
 	return true;
 }
 
-static bool primfunc_filled_triangle(Program &prg, std::vector<std::string> &v)
+static bool primfunc_filled_triangle(Program &prg, std::vector<Token> &v)
 {
-	std::string r1 =  v[0];
-	std::string g1 =  v[1];
-	std::string b1 =  v[2];
-	std::string a1 =  v[3];
-	std::string r2 =  v[4];
-	std::string g2 =  v[5];
-	std::string b2 =  v[6];
-	std::string a2 =  v[7];
-	std::string r3 =  v[8];
-	std::string g3 =  v[9];
-	std::string b3 =  v[10];
-	std::string a3 =  v[11];
-	std::string x =  v[12];
-	std::string y =  v[13];
-	std::string x2 =  v[14];
-	std::string y2 =  v[15];
-	std::string x3 =  v[16];
-	std::string y3 =  v[17];
-	
-	std::vector<std::string> strings;
-	strings.reserve(18);
-	strings.push_back(r1);
-	strings.push_back(g1);
-	strings.push_back(b1);
-	strings.push_back(a1);
-	strings.push_back(r2);
-	strings.push_back(g2);
-	strings.push_back(b2);
-	strings.push_back(a2);
-	strings.push_back(r3);
-	strings.push_back(g3);
-	strings.push_back(b3);
-	strings.push_back(a3);
-	strings.push_back(x);
-	strings.push_back(y);
-	strings.push_back(x2);
-	strings.push_back(y2);
-	strings.push_back(x3);
-	strings.push_back(y3);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
 	SDL_Colour c[3];
-	c[0].r = values[0];
-	c[0].g = values[1];
-	c[0].b = values[2];
-	c[0].a = values[3];
-	c[1].r = values[4];
-	c[1].g = values[5];
-	c[1].b = values[6];
-	c[1].a = values[7];
-	c[2].r = values[8];
-	c[2].g = values[9];
-	c[2].b = values[10];
-	c[2].a = values[11];
+	c[0].r = as_number(prg, v[0]);
+	c[0].g = as_number(prg, v[1]);
+	c[0].b = as_number(prg, v[2]);
+	c[0].a = as_number(prg, v[3]);
+	c[1].r = as_number(prg, v[4]);
+	c[1].g = as_number(prg, v[5]);
+	c[1].b = as_number(prg, v[6]);
+	c[1].a = as_number(prg, v[7]);
+	c[2].r = as_number(prg, v[8]);
+	c[2].g = as_number(prg, v[9]);
+	c[2].b = as_number(prg, v[10]);
+	c[2].a = as_number(prg, v[11]);
 
 	util::Point<float> p1, p2, p3;
 
-	p1.x = values[12];
-	p1.y = values[13];
-	p2.x = values[14];
-	p2.y = values[15];
-	p3.x = values[16];
-	p3.y = values[17];
+	p1.x = as_number(prg, v[12]);
+	p1.y = as_number(prg, v[13]);
+	p2.x = as_number(prg, v[14]);
+	p2.y = as_number(prg, v[15]);
+	p3.x = as_number(prg, v[16]);
+	p3.y = as_number(prg, v[17]);
 
 	gfx::draw_filled_triangle(c, p1, p2, p3);
 
 	return true;
 }
 
-static bool primfunc_rectangle(Program &prg, std::vector<std::string> &v)
+static bool primfunc_rectangle(Program &prg, std::vector<Token> &v)
 {
-	std::string r =  v[0];
-	std::string g =  v[1];
-	std::string b =  v[2];
-	std::string a =  v[3];
-	std::string x =  v[4];
-	std::string y =  v[5];
-	std::string w =  v[6];
-	std::string h =  v[7];
-	std::string thickness =  v[8];
-	
-	std::vector<std::string> strings;
-	strings.reserve(9);
-	strings.push_back(r);
-	strings.push_back(g);
-	strings.push_back(b);
-	strings.push_back(a);
-	strings.push_back(x);
-	strings.push_back(y);
-	strings.push_back(w);
-	strings.push_back(h);
-	strings.push_back(thickness);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
 	SDL_Colour c;
-	c.r = values[0];
-	c.g = values[1];
-	c.b = values[2];
-	c.a = values[3];
+	c.r = as_number(prg, v[0]);
+	c.g = as_number(prg, v[1]);
+	c.b = as_number(prg, v[2]);
+	c.a = as_number(prg, v[3]);
 
 	util::Point<float> p;
 	util::Size<float> sz;
 
-	p.x = values[4];
-	p.y = values[5];
-	sz.w = values[6];
-	sz.h = values[7];
+	p.x = as_number(prg, v[4]);
+	p.y = as_number(prg, v[5]);
+	sz.w = as_number(prg, v[6]);
+	sz.h = as_number(prg, v[7]);
 
-	float thick = values[8];
+	float thick = as_number(prg, v[8]);
 
 	gfx::draw_rectangle(c, p, sz, thick);
 
 	return true;
 }
 
-static bool primfunc_filled_rectangle(Program &prg, std::vector<std::string> &v)
+static bool primfunc_filled_rectangle(Program &prg, std::vector<Token> &v)
 {
-	std::string r1 =  v[0];
-	std::string g1 =  v[1];
-	std::string b1 =  v[2];
-	std::string a1 =  v[3];
-	std::string r2 =  v[4];
-	std::string g2 =  v[5];
-	std::string b2 =  v[6];
-	std::string a2 =  v[7];
-	std::string r3 =  v[8];
-	std::string g3 =  v[9];
-	std::string b3 =  v[10];
-	std::string a3 =  v[11];
-	std::string r4 =  v[12];
-	std::string g4 =  v[13];
-	std::string b4 =  v[14];
-	std::string a4 =  v[15];
-	std::string x =  v[16];
-	std::string y =  v[17];
-	std::string w =  v[18];
-	std::string h =  v[19];
-	
-	std::vector<std::string> strings;
-	strings.reserve(20);
-	strings.push_back(r1);
-	strings.push_back(g1);
-	strings.push_back(b1);
-	strings.push_back(a1);
-	strings.push_back(r2);
-	strings.push_back(g2);
-	strings.push_back(b2);
-	strings.push_back(a2);
-	strings.push_back(r3);
-	strings.push_back(g3);
-	strings.push_back(b3);
-	strings.push_back(a3);
-	strings.push_back(r4);
-	strings.push_back(g4);
-	strings.push_back(b4);
-	strings.push_back(a4);
-	strings.push_back(x);
-	strings.push_back(y);
-	strings.push_back(w);
-	strings.push_back(h);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
 	SDL_Colour c[4];
-	c[0].r = values[0];
-	c[0].g = values[1];
-	c[0].b = values[2];
-	c[0].a = values[3];
-	c[1].r = values[4];
-	c[1].g = values[5];
-	c[1].b = values[6];
-	c[1].a = values[7];
-	c[2].r = values[8];
-	c[2].g = values[9];
-	c[2].b = values[10];
-	c[2].a = values[11];
-	c[3].r = values[12];
-	c[3].g = values[13];
-	c[3].b = values[14];
-	c[3].a = values[15];
+	c[0].r = as_number(prg, v[0]);
+	c[0].g = as_number(prg, v[1]);
+	c[0].b = as_number(prg, v[2]);
+	c[0].a = as_number(prg, v[3]);
+	c[1].r = as_number(prg, v[4]);
+	c[1].g = as_number(prg, v[5]);
+	c[1].b = as_number(prg, v[6]);
+	c[1].a = as_number(prg, v[7]);
+	c[2].r = as_number(prg, v[8]);
+	c[2].g = as_number(prg, v[9]);
+	c[2].b = as_number(prg, v[10]);
+	c[2].a = as_number(prg, v[11]);
+	c[3].r = as_number(prg, v[12]);
+	c[3].g = as_number(prg, v[13]);
+	c[3].b = as_number(prg, v[14]);
+	c[3].a = as_number(prg, v[15]);
 
 	util::Point<float> p;
 
-	p.x = values[16];
-	p.y = values[17];
+	p.x = as_number(prg, v[16]);
+	p.y = as_number(prg, v[17]);
 
 	util::Size<float> sz;
 
-	sz.w = values[18];
-	sz.h = values[19];
+	sz.w = as_number(prg, v[18]);
+	sz.h = as_number(prg, v[19]);
 
 	gfx::draw_filled_rectangle(c, p, sz);
 
 	return true;
 }
 
-static bool primfunc_ellipse(Program &prg, std::vector<std::string> &v)
+static bool primfunc_ellipse(Program &prg, std::vector<Token> &v)
 {
-	std::string r = v[0];
-	std::string g = v[1];
-	std::string b = v[2];
-	std::string a = v[3];
-	std::string x = v[4];
-	std::string y = v[5];
-	std::string rx = v[6];
-	std::string ry = v[7];
-	std::string thickness = v[8];
-	std::string sections = v[9];
-	
-	std::vector<std::string> strings;
-	strings.reserve(10);
-	strings.push_back(r);
-	strings.push_back(g);
-	strings.push_back(b);
-	strings.push_back(a);
-	strings.push_back(x);
-	strings.push_back(y);
-	strings.push_back(rx);
-	strings.push_back(ry);
-	strings.push_back(thickness);
-	strings.push_back(sections);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
 	SDL_Colour c;
-	c.r = values[0];
-	c.g = values[1];
-	c.b = values[2];
-	c.a = values[3];
+	c.r = as_number(prg, v[0]);
+	c.g = as_number(prg, v[1]);
+	c.b = as_number(prg, v[2]);
+	c.a = as_number(prg, v[3]);
 
 	util::Point<float> p;
 
-	p.x = values[4];
-	p.y = values[5];
+	p.x = as_number(prg, v[4]);
+	p.y = as_number(prg, v[5]);
 
-	float _rx = values[6];
-	float _ry = values[7];
-	float thick = values[8];
-	float _sections = values[9];
+	float _rx = as_number(prg, v[6]);
+	float _ry = as_number(prg, v[7]);
+	float thick = as_number(prg, v[8]);
+	float _sections = as_number(prg, v[9]);
 
 	gfx::draw_ellipse(c, p, _rx, _ry, thick, _sections);
 
 	return true;
 }
 
-static bool primfunc_filled_ellipse(Program &prg, std::vector<std::string> &v)
+static bool primfunc_filled_ellipse(Program &prg, std::vector<Token> &v)
 {
-	std::string r = v[0];
-	std::string g = v[1];
-	std::string b = v[2];
-	std::string a = v[3];
-	std::string x = v[4];
-	std::string y = v[5];
-	std::string rx = v[6];
-	std::string ry = v[7];
-	std::string sections = v[8];
-	
-	std::vector<std::string> strings;
-	strings.reserve(9);
-	strings.push_back(r);
-	strings.push_back(g);
-	strings.push_back(b);
-	strings.push_back(a);
-	strings.push_back(x);
-	strings.push_back(y);
-	strings.push_back(rx);
-	strings.push_back(ry);
-	strings.push_back(sections);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
 	SDL_Colour c;
-	c.r = values[0];
-	c.g = values[1];
-	c.b = values[2];
-	c.a = values[3];
+	c.r = as_number(prg, v[0]);
+	c.g = as_number(prg, v[1]);
+	c.b = as_number(prg, v[2]);
+	c.a = as_number(prg, v[3]);
 
 	util::Point<float> p;
 
-	p.x = values[4];
-	p.y = values[5];
+	p.x = as_number(prg, v[4]);
+	p.y = as_number(prg, v[5]);
 
-	float _rx = values[6];
-	float _ry = values[7];
-	float _sections = values[8];
+	float _rx = as_number(prg, v[6]);
+	float _ry = as_number(prg, v[7]);
+	float _sections = as_number(prg, v[8]);
 
 	gfx::draw_filled_ellipse(c, p, _rx, _ry, _sections);
 
 	return true;
 }
 
-static bool primfunc_circle(Program &prg, std::vector<std::string> &v)
+static bool primfunc_circle(Program &prg, std::vector<Token> &v)
 {
-	std::string r = v[0];
-	std::string g = v[1];
-	std::string b = v[2];
-	std::string a = v[3];
-	std::string x = v[4];
-	std::string y = v[5];
-	std::string radius = v[6];
-	std::string thickness = v[7];
-	std::string sections = v[8];
-	
-	std::vector<std::string> strings;
-	strings.reserve(9);
-	strings.push_back(r);
-	strings.push_back(g);
-	strings.push_back(b);
-	strings.push_back(a);
-	strings.push_back(x);
-	strings.push_back(y);
-	strings.push_back(radius);
-	strings.push_back(thickness);
-	strings.push_back(sections);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
 	SDL_Colour c;
-	c.r = values[0];
-	c.g = values[1];
-	c.b = values[2];
-	c.a = values[3];
+	c.r = as_number(prg, v[0]);
+	c.g = as_number(prg, v[1]);
+	c.b = as_number(prg, v[2]);
+	c.a = as_number(prg, v[3]);
 
 	util::Point<float> p;
 
-	p.x = values[4];
-	p.y = values[5];
-	float _r = values[6];
-	float thick = values[7];
-	int _sections = values[8];
+	p.x = as_number(prg, v[4]);
+	p.y = as_number(prg, v[5]);
+	float _r = as_number(prg, v[6]);
+	float thick = as_number(prg, v[7]);
+	int _sections = as_number(prg, v[8]);
 
 	gfx::draw_circle(c, p, _r, thick, _sections);
 
 	return true;
 }
 
-static bool primfunc_filled_circle(Program &prg, std::vector<std::string> &v)
+static bool primfunc_filled_circle(Program &prg, std::vector<Token> &v)
 {
-	std::string r = v[0];
-	std::string g = v[1];
-	std::string b = v[2];
-	std::string a = v[3];
-	std::string x = v[4];
-	std::string y = v[5];
-	std::string radius = v[6];
-	std::string sections = v[7];
-	
-	std::vector<std::string> strings;
-	strings.reserve(8);
-	strings.push_back(r);
-	strings.push_back(g);
-	strings.push_back(b);
-	strings.push_back(a);
-	strings.push_back(x);
-	strings.push_back(y);
-	strings.push_back(radius);
-	strings.push_back(sections);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
 	SDL_Colour c;
-	c.r = values[0];
-	c.g = values[1];
-	c.b = values[2];
-	c.a = values[3];
+	c.r = as_number(prg, v[0]);
+	c.g = as_number(prg, v[1]);
+	c.b = as_number(prg, v[2]);
+	c.a = as_number(prg, v[3]);
 
 	util::Point<float> p;
 
-	p.x = values[4];
-	p.y = values[5];
-	float _r = values[6];
-	int _sections = values[7];
+	p.x = as_number(prg, v[4]);
+	p.y = as_number(prg, v[5]);
+	float _r = as_number(prg, v[6]);
+	int _sections = as_number(prg, v[7]);
 
 	gfx::draw_filled_circle(c, p, _r, _sections);
 
 	return true;
 }
 
-static bool mmlfunc_create(Program &prg, std::vector<std::string> &v)
+static bool mmlfunc_create(Program &prg, std::vector<Token> &v)
 {
-	std::string var = v[0];
-	std::string str = v[1];
-
-	Variable &v1 = find_variable(prg, var);
+	Variable &v1 = as_variable(prg, v[0]);
+	std::string str = as_string(prg, v[1]);
 
 	if (v1.type == Variable::NUMBER) {
 		v1.n = prg.mml_id;
@@ -1564,23 +1165,8 @@ static bool mmlfunc_create(Program &prg, std::vector<std::string> &v)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
-	std::string strs;
-
-	if (str[0] == '"') {
-		strs = remove_quotes(util::unescape_string(str));
-	}
-	else {
-		Variable &v1 = find_variable(prg, str);
-		if (v1.type == Variable::STRING) {
-			strs = v1.s;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
-	}
-
-	Uint8 *bytes = (Uint8 *)strs.c_str();
-	SDL_RWops *file = SDL_RWFromMem(bytes, strs.length());
+	Uint8 *bytes = (Uint8 *)str.c_str();
+	SDL_RWops *file = SDL_RWFromMem(bytes, str.length());
 	audio::MML *mml = new audio::MML(file);
 	//SDL_RWclose(file);
 
@@ -1589,12 +1175,10 @@ static bool mmlfunc_create(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool mmlfunc_load(Program &prg, std::vector<std::string> &v)
+static bool mmlfunc_load(Program &prg, std::vector<Token> &v)
 {
-	std::string var = v[0];
-	std::string name = v[1];
-
-	Variable &v1 = find_variable(prg, var);
+	Variable &v1 = as_variable(prg, v[0]);
+	std::string name = as_string(prg, v[1]);
 
 	if (v1.type == Variable::NUMBER) {
 		v1.n = prg.mml_id;
@@ -1613,56 +1197,42 @@ static bool mmlfunc_load(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool mmlfunc_play(Program &prg, std::vector<std::string> &v)
+static bool mmlfunc_play(Program &prg, std::vector<Token> &v)
 {
-	std::string id = v[0];
-	std::string volume = v[1];
-	std::string loop = v[2];
+	int id = as_number(prg, v[0]);
+	float volume = as_number(prg, v[1]);
+	bool loop = as_number(prg, v[2]);
 
-	std::vector<std::string> strings;
-	strings.reserve(3);
-	strings.push_back(id);
-	strings.push_back(volume);
-	strings.push_back(loop);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	if (values[0] < 0 || values[0] >= prg.mmls.size()) {
+	if (id < 0 || id >= prg.mmls.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid MML on line " + util::itos(get_line_num(prg)));
 	}
 
-	audio::MML *mml = prg.mmls[values[0]];
+	audio::MML *mml = prg.mmls[id];
 
-	mml->play(values[1], values[2] == 0 ? false : true);
+	mml->play(volume, loop);
 
 	return true;
 }
 
-static bool mmlfunc_stop(Program &prg, std::vector<std::string> &v)
+static bool mmlfunc_stop(Program &prg, std::vector<Token> &v)
 {
-	std::string id = v[0];
+	int id = as_number(prg, v[0]);
 
-	std::vector<std::string> strings;
-	strings.reserve(1);
-	strings.push_back(id);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	if (values[0] < 0 || values[0] >= prg.mmls.size()) {
+	if (id < 0 || id >= prg.mmls.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid MML on line " + util::itos(get_line_num(prg)));
 	}
 
-	audio::MML *mml = prg.mmls[values[0]];
+	audio::MML *mml = prg.mmls[id];
 
 	mml->stop();
 
 	return true;
 }
 
-static bool imagefunc_load(Program &prg, std::vector<std::string> &v)
+static bool imagefunc_load(Program &prg, std::vector<Token> &v)
 {
-	std::string var = v[0];
-	std::string name = v[1];
-
-	Variable &v1 = find_variable(prg, var);
+	Variable &v1 = as_variable(prg, v[0]);
+	std::string name = as_string(prg, v[1]);
 
 	if (v1.type == Variable::NUMBER) {
 		v1.n = prg.image_id;
@@ -1681,237 +1251,170 @@ static bool imagefunc_load(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool imagefunc_draw(Program &prg, std::vector<std::string> &v)
+static bool imagefunc_draw(Program &prg, std::vector<Token> &v)
 {
-	std::string id = v[0];
-	std::string r = v[1];
-	std::string g = v[2];
-	std::string b = v[3];
-	std::string a = v[4];
-	std::string x = v[5];
-	std::string y = v[6];
-	std::string flip_h = v[7];
-	std::string flip_v = v[8];
+	double id = as_number(prg, v[0]);
+	double r = as_number(prg, v[1]);
+	double g = as_number(prg, v[2]);
+	double b = as_number(prg, v[3]);
+	double a = as_number(prg, v[4]);
+	double x = as_number(prg, v[5]);
+	double y = as_number(prg, v[6]);
+	double flip_h = as_number(prg, v[7]);
+	double flip_v = as_number(prg, v[8]);
 
-	std::vector<std::string> strings;
-	strings.reserve(9);
-	strings.push_back(id);
-	strings.push_back(r);
-	strings.push_back(g);
-	strings.push_back(b);
-	strings.push_back(a);
-	strings.push_back(x);
-	strings.push_back(y);
-	strings.push_back(flip_h);
-	strings.push_back(flip_v);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-	
-	if (values[0] < 0 || values[0] >= prg.images.size()) {
+	if (id < 0 || id >= prg.images.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + util::itos(get_line_num(prg)));
 	}
 
-	gfx::Image *img = prg.images[values[0]];
+	gfx::Image *img = prg.images[id];
 
 	SDL_Colour c;
-	c.r = values[1];
-	c.g = values[2];
-	c.b = values[3];
-	c.a = values[4];
+	c.r = r;
+	c.g = g;
+	c.b = b;
+	c.a = a;
 
 	int flags = 0;
-	if (values[7] != 0.0) {
+	if (flip_h != 0.0) {
 		flags |= gfx::Image::FLIP_H;
 	}
-	if (values[8] != 0.0) {
+	if (flip_v != 0.0) {
 		flags |= gfx::Image::FLIP_V;
 	}
 
-	img->draw_tinted(c, util::Point<float>(values[5], values[6]), flags);
+	img->draw_tinted(c, util::Point<float>(x, y), flags);
 
 	return true;
 }
 
-static bool imagefunc_stretch_region(Program &prg, std::vector<std::string> &v)
+static bool imagefunc_stretch_region(Program &prg, std::vector<Token> &v)
 {
-	std::string id = v[0];
-	std::string r = v[1];
-	std::string g = v[2];
-	std::string b = v[3];
-	std::string a = v[4];
-	std::string sx = v[5];
-	std::string sy = v[6];
-	std::string sw = v[7];
-	std::string sh = v[8];
-	std::string dx = v[9];
-	std::string dy = v[10];
-	std::string dw = v[11];
-	std::string dh = v[12];
-	std::string flip_h = v[13];
-	std::string flip_v = v[14];
-
-	std::vector<std::string> strings;
-	strings.reserve(15);
-	strings.push_back(id);
-	strings.push_back(r);
-	strings.push_back(g);
-	strings.push_back(b);
-	strings.push_back(a);
-	strings.push_back(sx);
-	strings.push_back(sy);
-	strings.push_back(sw);
-	strings.push_back(sh);
-	strings.push_back(dx);
-	strings.push_back(dy);
-	strings.push_back(dw);
-	strings.push_back(dh);
-	strings.push_back(flip_h);
-	strings.push_back(flip_v);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
+	double id = as_number(prg, v[0]);
+	double r = as_number(prg, v[1]);
+	double g = as_number(prg, v[2]);
+	double b = as_number(prg, v[3]);
+	double a = as_number(prg, v[4]);
+	double sx = as_number(prg, v[5]);
+	double sy = as_number(prg, v[6]);
+	double sw = as_number(prg, v[7]);
+	double sh = as_number(prg, v[8]);
+	double dx = as_number(prg, v[9]);
+	double dy = as_number(prg, v[10]);
+	double dw = as_number(prg, v[11]);
+	double dh = as_number(prg, v[12]);
+	double flip_h = as_number(prg, v[13]);
+	double flip_v = as_number(prg, v[14]);
 	
-	if (values[0] < 0 || values[0] >= prg.images.size()) {
+	if (id < 0 || id >= prg.images.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + util::itos(get_line_num(prg)));
 	}
 
-	gfx::Image *img = prg.images[values[0]];
+	gfx::Image *img = prg.images[id];
 
 	SDL_Colour c;
-	c.r = values[1];
-	c.g = values[2];
-	c.b = values[3];
-	c.a = values[4];
+	c.r = r;
+	c.g = g;
+	c.b = b;
+	c.a = a;
 
 	int flags = 0;
-	if (values[13] != 0.0) {
+	if (flip_h != 0.0) {
 		flags |= gfx::Image::FLIP_H;
 	}
-	if (values[14] != 0.0) {
+	if (flip_v != 0.0) {
 		flags |= gfx::Image::FLIP_V;
 	}
 
-	img->stretch_region_tinted(c, util::Point<float>(values[5], values[6]), util::Size<float>(values[7], values[8]), util::Point<float>(values[9], values[10]), util::Size<float>(values[11], values[12]), flags);
+	img->stretch_region_tinted(c, util::Point<float>(sx, sy), util::Size<float>(sw, sh), util::Point<float>(dx, dy), util::Size<float>(dw, dh), flags);
 
 	return true;
 }
 
-static bool imagefunc_draw_rotated_scaled(Program &prg, std::vector<std::string> &v)
+static bool imagefunc_draw_rotated_scaled(Program &prg, std::vector<Token> &v)
 {
-	std::string id = v[0];
-	std::string r = v[1];
-	std::string g = v[2];
-	std::string b = v[3];
-	std::string a = v[4];
-	std::string cx = v[5];
-	std::string cy = v[6];
-	std::string x = v[7];
-	std::string y = v[8];
-	std::string angle = v[9];
-	std::string scale_x = v[10];
-	std::string scale_y = v[11];
-	std::string flip_h = v[12];
-	std::string flip_v = v[13];
+	double id = as_number(prg, v[0]);
+	double r = as_number(prg, v[1]);
+	double g = as_number(prg, v[2]);
+	double b = as_number(prg, v[3]);
+	double a = as_number(prg, v[4]);
+	double cx = as_number(prg, v[5]);
+	double cy = as_number(prg, v[6]);
+	double x = as_number(prg, v[7]);
+	double y = as_number(prg, v[8]);
+	double angle = as_number(prg, v[9]);
+	double scale_x = as_number(prg, v[10]);
+	double scale_y = as_number(prg, v[11]);
+	double flip_h = as_number(prg, v[12]);
+	double flip_v = as_number(prg, v[13]);
 
-	std::vector<std::string> strings;
-	strings.reserve(14);
-	strings.push_back(id);
-	strings.push_back(r);
-	strings.push_back(g);
-	strings.push_back(b);
-	strings.push_back(a);
-	strings.push_back(cx);
-	strings.push_back(cy);
-	strings.push_back(x);
-	strings.push_back(y);
-	strings.push_back(angle);
-	strings.push_back(scale_x);
-	strings.push_back(scale_y);
-	strings.push_back(flip_h);
-	strings.push_back(flip_v);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-	
-	if (values[0] < 0 || values[0] >= prg.images.size()) {
+	if (id < 0 || id >= prg.images.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + util::itos(get_line_num(prg)));
 	}
 
-	gfx::Image *img = prg.images[values[0]];
+	gfx::Image *img = prg.images[id];
 
 	SDL_Colour c;
-	c.r = values[1];
-	c.g = values[2];
-	c.b = values[3];
-	c.a = values[4];
+	c.r = r;
+	c.g = g;
+	c.b = b;
+	c.a = a;
 
 	int flags = 0;
-	if (values[12] != 0.0) {
+	if (flip_h != 0.0) {
 		flags |= gfx::Image::FLIP_H;
 	}
-	if (values[13] != 0.0) {
+	if (flip_v != 0.0) {
 		flags |= gfx::Image::FLIP_V;
 	}
 
-	img->draw_tinted_rotated_scaledxy(c, util::Point<float>(values[5], values[6]), util::Point<float>(values[7], values[8]), values[9], values[10], values[11]);
+	img->draw_tinted_rotated_scaledxy(c, util::Point<float>(cx, cy), util::Point<float>(x, y), angle, scale_x, scale_y, flags);
 
 	return true;
 }
 
-static bool imagefunc_start(Program &prg, std::vector<std::string> &v)
+static bool imagefunc_start(Program &prg, std::vector<Token> &v)
 {
-	std::string img = v[0];
+	double img = as_number(prg, v[0]);
 
-	std::vector<std::string> strings;
-	strings.reserve(1);
-	strings.push_back(img);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	if (prg.images.find(values[0]) == prg.images.end()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Unknown image \"" + img + "\" on line " + util::itos(get_line_num(prg)));
+	if (prg.images.find(img) == prg.images.end()) {
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Unknown image on line " + util::itos(get_line_num(prg)));
 	}
 
-	gfx::Image *image = prg.images[values[0]];
+	gfx::Image *image = prg.images[img];
 
 	image->start_batch();
 
 	return true;
 }
 
-static bool imagefunc_end(Program &prg, std::vector<std::string> &v)
+static bool imagefunc_end(Program &prg, std::vector<Token> &v)
 {
-	std::string img = v[0];
+	double img = as_number(prg, v[0]);
 
-	std::vector<std::string> strings;
-	strings.reserve(1);
-	strings.push_back(img);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	if (prg.images.find(values[0]) == prg.images.end()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Unknown image \"" + img + "\" on line " + util::itos(get_line_num(prg)));
+	if (prg.images.find(img) == prg.images.end()) {
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Unknown image on line " + util::itos(get_line_num(prg)));
 	}
 
-	gfx::Image *image = prg.images[values[0]];
+	gfx::Image *image = prg.images[img];
 
 	image->end_batch();
 
 	return true;
 }
 
-static bool imagefunc_size(Program &prg, std::vector<std::string> &v)
+static bool imagefunc_size(Program &prg, std::vector<Token> &v)
 {
-	std::string id = v[0];
-	std::string dest1 = v[1];
-	std::string dest2 = v[2];
+	double id = as_number(prg, v[0]);
 
-	std::vector<std::string> strings;
-	strings.reserve(1);
-	strings.push_back(id);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
+	Variable &v1 = as_variable(prg, v[1]);
+	Variable &v2 = as_variable(prg, v[2]);
 	
-	if (prg.images.find(values[0]) == prg.images.end()) {
+	if (prg.images.find(id) == prg.images.end()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid image on line " + util::itos(get_line_num(prg)));
 	}
 
-	gfx::Image *img = prg.images[values[0]];
-
-	Variable &v1 = find_variable(prg, dest1);
-	Variable &v2 = find_variable(prg, dest2);
+	gfx::Image *img = prg.images[id];
 
 	if (v1.type == Variable::NUMBER) {
 		v1.n = img->size.w;
@@ -1929,14 +1432,13 @@ static bool imagefunc_size(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool fontfunc_load(Program &prg, std::vector<std::string> &v)
+static bool fontfunc_load(Program &prg, std::vector<Token> &v)
 {
-	std::string var = v[0];
-	std::string name = v[1];
-	std::string size = v[2];
-	std::string smooth = v[3];
+	std::string name = as_string(prg, v[1]);
+	int size = as_number(prg, v[2]);
+	bool smooth = as_number(prg, v[3]);
 
-	Variable &v1 = find_variable(prg, var);
+	Variable &v1 = as_variable(prg, v[0]);
 
 	if (v1.type == Variable::NUMBER) {
 		v1.n = prg.font_id;
@@ -1948,115 +1450,51 @@ static bool fontfunc_load(Program &prg, std::vector<std::string> &v)
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
-	std::vector<std::string> strings;
-	strings.reserve(2);
-	strings.push_back(size);
-	strings.push_back(smooth);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	gfx::TTF *font = new gfx::TTF(remove_quotes(util::unescape_string(name)), values[0], 256);
-	font->set_smooth(values[1]);
+	gfx::TTF *font = new gfx::TTF(remove_quotes(util::unescape_string(name)), size, 256);
+	font->set_smooth(smooth);
 
 	prg.fonts[prg.font_id++] = font;
 
 	return true;
 }
 
-static bool fontfunc_draw(Program &prg, std::vector<std::string> &v)
+static bool fontfunc_draw(Program &prg, std::vector<Token> &v)
 {
-	std::string id = v[0];
-	std::string r = v[1];
-	std::string g = v[2];
-	std::string b = v[3];
-	std::string a = v[4];
-	std::string text = v[5];
-	std::string x = v[6];
-	std::string y = v[7];
+	double id = as_number(prg, v[0]);
+	double r = as_number(prg, v[1]);
+	double g = as_number(prg, v[2]);
+	double b = as_number(prg, v[3]);
+	double a = as_number(prg, v[4]);
+	std::string text = as_string(prg, v[5]);
+	double x = as_number(prg, v[6]);
+	double y = as_number(prg, v[7]);
 
-	std::vector<std::string> strings;
-	strings.reserve(7);
-	strings.push_back(id);
-	strings.push_back(r);
-	strings.push_back(g);
-	strings.push_back(b);
-	strings.push_back(a);
-	strings.push_back(x);
-	strings.push_back(y);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	if (values[0] < 0 || values[0] >= prg.fonts.size()) {
+	if (id < 0 || id >= prg.fonts.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid Font on line " + util::itos(get_line_num(prg)));
 	}
 
-	gfx::TTF *font = prg.fonts[values[0]];
+	gfx::TTF *font = prg.fonts[id];
 
 	SDL_Colour c;
-	c.r = values[1];
-	c.g = values[2];
-	c.b = values[3];
-	c.a = values[4];
+	c.r = r;
+	c.g = g;
+	c.b = b;
+	c.a = a;
 
-	std::string txt;
-
-	if (text[0] == '"') {
-		txt = remove_quotes(util::unescape_string(text));
-	}
-	else {
-		Variable &v1 = find_variable(prg, text);
-		if (v1.type == Variable::NUMBER) {
-			char buf[1000];
-			snprintf(buf, 1000, "%g", v1.n);
-			txt = buf;
-		}
-		else if (v1.type == Variable::STRING) {
-			txt = v1.s;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Unknown variable \"" + text + "\" on line " + util::itos(get_line_num(prg)));
-		}
-	}
-
-	font->draw(c, txt, util::Point<float>(values[5], values[6]));
+	font->draw(c, text, util::Point<float>(x, y));
 
 	return true;
 }
 
-static bool fontfunc_width(Program &prg, std::vector<std::string> &v)
+static bool fontfunc_width(Program &prg, std::vector<Token> &v)
 {
-	std::string id = v[0];
-	std::string dest = v[1];
-	std::string text = v[2];
+	double id = as_number(prg, v[0]);
+	Variable &v1 = as_variable(prg, v[1]);
+	std::string text = as_string(prg, v[2]);
 	
-	std::vector<std::string> strings;
-	strings.reserve(1);
-	strings.push_back(id);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
+	gfx::TTF *font = prg.fonts[id];
 
-	std::string txt;
-
-	if (text[0] == '"') {
-		txt = remove_quotes(util::unescape_string(text));
-	}
-	else {
-		Variable &v1 = find_variable(prg, text);
-		if (v1.type == Variable::NUMBER) {
-			char buf[1000];
-			snprintf(buf, 1000, "%g", v1.n);
-			txt = buf;
-		}
-		else if (v1.type == Variable::STRING) {
-			txt = v1.s;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Unknown variable \"" + dest + "\" on line " + util::itos(get_line_num(prg)));
-		}
-	}
-
-	gfx::TTF *font = prg.fonts[values[0]];
-
-	int w = font->get_text_width(txt);
-
-	Variable &v1 = find_variable(prg, dest);
+	int w = font->get_text_width(text);
 
 	if (v1.type == Variable::NUMBER) {
 		v1.n = w;
@@ -2068,21 +1506,14 @@ static bool fontfunc_width(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool fontfunc_height(Program &prg, std::vector<std::string> &v)
+static bool fontfunc_height(Program &prg, std::vector<Token> &v)
 {
-	std::string id = v[0];
-	std::string dest = v[1];
+	double id = as_number(prg, v[0]);
+	Variable &v1 = as_variable(prg, v[1]);
 	
-	std::vector<std::string> strings;
-	strings.reserve(1);
-	strings.push_back(id);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	gfx::TTF *font = prg.fonts[values[0]];
+	gfx::TTF *font = prg.fonts[id];
 
 	int h = font->get_height();
-
-	Variable &v1 = find_variable(prg, dest);
 
 	if (v1.type == Variable::NUMBER) {
 		v1.n = h;
@@ -2096,7 +1527,9 @@ static bool fontfunc_height(Program &prg, std::vector<std::string> &v)
 
 void set_string_or_number(Program &prg, std::string name, double value)
 {
-	Variable &v1 = find_variable(prg, name);
+	std::map<std::string, int>::iterator it = prg.variables_map.find(name);
+
+	Variable &v1 = prg.variables[(*it).second];
 
 	if (v1.type == Variable::NUMBER) {
 		v1.n = value;
@@ -2106,62 +1539,31 @@ void set_string_or_number(Program &prg, std::string name, double value)
 	}
 }
 
-static bool joyfunc_poll(Program &prg, std::vector<std::string> &v)
+static bool joyfunc_poll(Program &prg, std::vector<Token> &v)
 {
-	std::string num = v[0];
-	std::string x1 = v[1];
-	std::string y1 = v[2];
-	std::string x2 = v[3];
-	std::string y2 = v[4];
-	std::string x3 = v[5];
-	std::string y3 = v[6];
-	std::string l = v[7];
-	std::string r = v[8];
-	std::string u = v[9];
-	std::string d = v[10];
-	std::string a = v[11];
-	std::string b = v[12];
-	std::string x = v[13];
-	std::string y = v[14];
-	std::string lb = v[15];
-	std::string rb = v[16];
-	std::string ls = v[17];
-	std::string rs = v[18];
-	std::string back = v[19];
-	std::string start = v[20];
+	double num = as_number(prg, v[0]);
+	std::string x1 = v[1].token;
+	std::string y1 = v[2].token;
+	std::string x2 = v[3].token;
+	std::string y2 = v[4].token;
+	std::string x3 = v[5].token;
+	std::string y3 = v[6].token;
+	std::string l = v[7].token;
+	std::string r = v[8].token;
+	std::string u = v[9].token;
+	std::string d = v[10].token;
+	std::string a = v[11].token;
+	std::string b = v[12].token;
+	std::string x = v[13].token;
+	std::string y = v[14].token;
+	std::string lb = v[15].token;
+	std::string rb = v[16].token;
+	std::string ls = v[17].token;
+	std::string rs = v[18].token;
+	std::string back = v[19].token;
+	std::string start = v[20].token;
 
-	std::vector<std::string> strings;
-	strings.reserve(1);
-	strings.push_back(num);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	std::vector<std::string> names;
-	names.push_back(x1);
-	names.push_back(y1);
-	names.push_back(x2);
-	names.push_back(y2);
-	names.push_back(l);
-	names.push_back(r);
-	names.push_back(u);
-	names.push_back(d);
-	names.push_back(a);
-	names.push_back(b);
-	names.push_back(x);
-	names.push_back(y);
-	names.push_back(lb);
-	names.push_back(rb);
-	names.push_back(back);
-	names.push_back(start);
-	names.push_back(x3);
-	names.push_back(y3);
-	names.push_back(ls);
-	names.push_back(rs);
-
-	for (size_t i = 0; i < names.size(); i++) {
-		find_variable(prg, names[i]);
-	}
-
-	SDL_JoystickID id = input::get_controller_id(values[0]);
+	SDL_JoystickID id = input::get_controller_id(num);
 	SDL_GameController *gc = input::get_sdl_gamecontroller(id);
 	bool connected = gc != nullptr;
 
@@ -2286,11 +1688,9 @@ static bool joyfunc_poll(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool joyfunc_count(Program &prg, std::vector<std::string> &v)
+static bool joyfunc_count(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	
-	Variable &v1 = find_variable(prg, dest);
+	Variable &v1 = as_variable(prg, v[0]);
 
 	if (v1.type == Variable::NUMBER) {
 		v1.n = input::get_num_joysticks();
@@ -2302,70 +1702,40 @@ static bool joyfunc_count(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool vectorfunc_add(Program &prg, std::vector<std::string> &v)
+static bool vectorfunc_add(Program &prg, std::vector<Token> &v)
 {
-	std::string id = v[0];
-	std::string value = v[1];
-
-	std::vector<std::string> strings;
-	strings.reserve(1);
-	strings.push_back(id);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + util::itos(get_line_num(prg)));
-	}
-	/*
-	if (values[0] < 0 || values[0] >= prg.vectors.size()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + util::itos(get_line_num(prg)));
-	}
-	*/
-
-	std::vector<Variable> &vec = prg.vectors[values[0]];
+	Variable &id = as_variable(prg, v[0]);
 
 	Variable var;
 
-	if (value[0] == '"') {
-		var.type = Variable::STRING;
-		var.function = prg.name;
-		var.name = "-constant-";
-		var.s = remove_quotes(util::unescape_string(value));
-	}
-	else if (value[0] == '-' || isdigit(value[0])) {
+	if (v[1].type == Token::NUMBER) {
 		var.type = Variable::NUMBER;
 		var.function = prg.name;
 		var.name = "-constant-";
-		var.n = atof(value.c_str());
+		var.n = v[1].n;
+	}
+	else if (v[1].type == Token::SYMBOL) {
+		var = as_variable(prg, v[1]);
 	}
 	else {
-		var = find_variable(prg, value);
+		var.type = Variable::STRING;
+		var.function = prg.name;
+		var.name = "-constant-";
+		var.s = v[1].s;
 	}
 
-	vec.push_back(var);
+	id.v.push_back(var);
 
 	return true;
 }
 
-static bool vectorfunc_size(Program &prg, std::vector<std::string> &v)
+static bool vectorfunc_size(Program &prg, std::vector<Token> &v)
 {
-	std::string id = v[0];
-	std::string dest = v[1];
-
-	std::vector<std::string> strings;
-	strings.reserve(1);
-	strings.push_back(id);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-	
-	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + util::itos(get_line_num(prg)));
-	}
-
-	std::vector<Variable> &vec = prg.vectors[values[0]];
-
-	Variable &v1 = find_variable(prg, dest);
+	Variable &id = as_variable(prg, v[0]);
+	Variable &v1 = as_variable(prg, v[1]);
 
 	if (v1.type == Variable::NUMBER) {
-		v1.n = vec.size();
+		v1.n = id.v.size();
 	}
 	else {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
@@ -2374,182 +1744,122 @@ static bool vectorfunc_size(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool vectorfunc_set(Program &prg, std::vector<std::string> &v)
+static bool vectorfunc_set(Program &prg, std::vector<Token> &v)
 {
-	std::string id = v[0];
-	std::string index = v[1];
-	std::string value = v[2];
-
-	std::vector<std::string> strings;
-	strings.reserve(2);
-	strings.push_back(id);
-	strings.push_back(index);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
+	Variable &id = as_variable(prg, v[0]);
+	double index = as_number(prg, v[1]);
 	
-	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + util::itos(get_line_num(prg)));
-	}
-
-	std::vector<Variable> &vec = prg.vectors[values[0]];
-
-	if (values[1] < 0 || values[1] >= vec.size()) {
+	if (index < 0 || index >= id.v.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + util::itos(get_line_num(prg)));
 	}
 
 	Variable var;
 
-	if (value[0] == '"') {
-		var.type = Variable::STRING;
-		var.function = prg.name;
-		var.name = "-constant-";
-		var.s = remove_quotes(util::unescape_string(value));
-	}
-	else if (value[0] == '-' || isdigit(value[0])) {
+	if (v[2].type == Token::NUMBER) {
 		var.type = Variable::NUMBER;
 		var.function = prg.name;
 		var.name = "-constant-";
-		var.n = atof(value.c_str());
+		var.n = v[2].n;
+	}
+	else if (v[2].type == Token::SYMBOL) {
+		var = as_variable(prg, v[2]);
 	}
 	else {
-		var = find_variable(prg, value);
+		var.type = Variable::STRING;
+		var.function = prg.name;
+		var.name = "-constant-";
+		var.s = v[2].s;
 	}
 
-	vec[values[1]] = var;
+	id.v[index] = var;
 
 	return true;
 }
 
-static bool vectorfunc_insert(Program &prg, std::vector<std::string> &v)
+static bool vectorfunc_insert(Program &prg, std::vector<Token> &v)
 {
-	std::string id = v[0];
-	std::string index = v[1];
-	std::string value = v[2];
+	Variable &id = as_variable(prg, v[0]);
+	double index = as_number(prg, v[1]);
 
-	std::vector<std::string> strings;
-	strings.reserve(2);
-	strings.push_back(id);
-	strings.push_back(index);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-	
-	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + util::itos(get_line_num(prg)));
-	}
-
-	std::vector<Variable> &vec = prg.vectors[values[0]];
-
-	if (values[1] < 0 || values[1] > vec.size()) {
+	if (index < 0 || index > id.v.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + util::itos(get_line_num(prg)));
 	}
 
 	Variable var;
 
-	if (value[0] == '"') {
-		var.type = Variable::STRING;
-		var.function = prg.name;
-		var.name = "-constant-";
-		var.s = remove_quotes(util::unescape_string(value));
-	}
-	else if (value[0] == '-' || isdigit(value[0])) {
+	if (v[2].type == Token::NUMBER) {
 		var.type = Variable::NUMBER;
 		var.function = prg.name;
 		var.name = "-constant-";
-		var.n = atof(value.c_str());
+		var.n = v[2].n;
+	}
+	else if (v[2].type == Token::SYMBOL) {
+		var = as_variable(prg, v[2]);
 	}
 	else {
-		var = find_variable(prg, value);
+		var.type = Variable::STRING;
+		var.function = prg.name;
+		var.name = "-constant-";
+		var.s = v[2].s;
 	}
 
-	vec.insert(vec.begin()+values[1], var);
+	id.v.insert(id.v.begin()+index, var);
 
 	return true;
 }
 
-static bool vectorfunc_get(Program &prg, std::vector<std::string> &v)
+static bool vectorfunc_get(Program &prg, std::vector<Token> &v)
 {
-	std::string id = v[0];
-	std::string dest = v[1];
-	std::string index = v[2];
+	Variable &id = as_variable(prg, v[0]);
+	Variable &v1 = as_variable(prg, v[1]);
+	double index = as_number(prg, v[2]);
 
-	std::vector<std::string> strings;
-	strings.reserve(2);
-	strings.push_back(id);
-	strings.push_back(index);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + util::itos(get_line_num(prg)));
-	}
-
-	std::vector<Variable> &vec = prg.vectors[values[0]];
-
-	if (values[1] < 0 || values[1] >= vec.size()) {
+	if (index < 0 || index >= id.v.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + util::itos(get_line_num(prg)));
 	}
-
-	Variable &v1 = find_variable(prg, dest);
 
 	std::string bak = v1.name;
 	std::string bak2 = v1.function;
-	v1 = vec[values[1]];
+	v1 = id.v[index];
 	v1.name = bak;
 	v1.function = bak2;
 
 	return true;
 }
 
-static bool vectorfunc_erase(Program &prg, std::vector<std::string> &v)
+static bool vectorfunc_erase(Program &prg, std::vector<Token> &v)
 {
-	std::string id = v[0];
-	std::string index = v[1];
+	Variable &id = as_variable(prg, v[0]);
+	double index = as_number(prg, v[1]);
 
-	std::vector<std::string> strings;
-	strings.reserve(2);
-	strings.push_back(id);
-	strings.push_back(index);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	if (prg.vectors.find(values[0]) == prg.vectors.end()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid vector on line " + util::itos(get_line_num(prg)));
-	}
-
-	std::vector<Variable> &vec = prg.vectors[values[0]];
-
-	if (values[1] < 0 || values[1] >= vec.size()) {
+	if (index < 0 || index >= id.v.size()) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + util::itos(get_line_num(prg)));
 	}
 
-	vec.erase(vec.begin() + int(values[1]));
+	id.v.erase(id.v.begin() + int(index));
 
 	return true;
 }
 
-static bool cfgfunc_load(Program &prg, std::vector<std::string> &v)
+static bool vectorfunc_clear(Program &prg, std::vector<Token> &v)
+{
+	Variable &id = as_variable(prg, v[0]);
+
+	id.v.clear();
+
+	return true;
+}
+
+static bool cfgfunc_load(Program &prg, std::vector<Token> &v)
 {
 	cfg_numbers.clear();
 	cfg_strings.clear();
 
-	std::string found = v[0];
-	std::string cfg_name = v[1];
+	Variable &v1 = as_variable(prg, v[0]);
+	std::string cfg_name = as_string(prg, v[1]);
 
-	std::string cfg_names;
-
-	if (cfg_name[0] == '"') {
-		cfg_names = remove_quotes(util::unescape_string(cfg_name));
-	}
-	else  {
-		Variable &v1 = find_variable(prg, cfg_name);
-		if (v1.type == Variable::STRING) {
-			cfg_names = v1.s;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
-	}
-
-	bool found_cfg = load_cfg(cfg_names);
+	bool found_cfg = load_cfg(cfg_name);
 	
-	Variable &v1 = find_variable(prg, found);
-
 	if (v1.type == Variable::NUMBER) {
 		v1.n = found_cfg;
 	}
@@ -2560,192 +1870,76 @@ static bool cfgfunc_load(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool cfgfunc_save(Program &prg, std::vector<std::string> &v)
+static bool cfgfunc_save(Program &prg, std::vector<Token> &v)
 {
-	std::string cfg_name = v[0];
+	std::string cfg_name = as_string(prg, v[0]);
 
-	std::string cfg_names;
-
-	if (cfg_name[0] == '"') {
-		cfg_names = remove_quotes(util::unescape_string(cfg_name));
-	}
-	else  {
-		Variable &v1 = find_variable(prg, cfg_name);
-		if (v1.type == Variable::STRING) {
-			cfg_names = v1.s;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
-	}
-
-	save_cfg(cfg_names);
+	save_cfg(cfg_name);
 
 	return true;
 }
 
-static bool cfgfunc_get_number(Program &prg, std::vector<std::string> &v)
+static bool cfgfunc_get_number(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string name = v[1];
-
-	std::string names;
-
-	if (name[0] == '"') {
-		names = remove_quotes(util::unescape_string(name));
-	}
-	else  {
-		Variable &v1 = find_variable(prg, name);
-		if (v1.type == Variable::STRING) {
-			names = v1.s;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
-	}
-
-	Variable &v1 = find_variable(prg, dest);
+	Variable &v1 = as_variable(prg, v[0]);
+	std::string name = as_string(prg, v[1]);
 
 	if (v1.type != Variable::NUMBER) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
-	v1.n = cfg_numbers[names];
+	v1.n = cfg_numbers[name];
 
 	return true;
 }
 
-static bool cfgfunc_get_string(Program &prg, std::vector<std::string> &v)
+static bool cfgfunc_get_string(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string name = v[1];
-
-	std::string names;
-
-	if (name[0] == '"') {
-		names = remove_quotes(util::unescape_string(name));
-	}
-	else  {
-		Variable &v1 = find_variable(prg, name);
-		if (v1.type == Variable::STRING) {
-			names = v1.s;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
-	}
-
-	Variable &v1 = find_variable(prg, dest);
+	Variable &v1 = as_variable(prg, v[0]);
+	std::string name = as_string(prg, v[1]);
 
 	if (v1.type != Variable::STRING) {
 		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
 	}
 
-	v1.s = cfg_strings[names];
+	v1.s = cfg_strings[name];
 
 	return true;
 }
 
-static bool cfgfunc_set_number(Program &prg, std::vector<std::string> &v)
+static bool cfgfunc_set_number(Program &prg, std::vector<Token> &v)
 {
-	std::string name = v[0];
-	std::string value = v[1];
+	std::string name = as_string(prg, v[0]);
+	double value = as_number(prg, v[1]);
 
-	std::string names;
-
-	if (name[0] == '"') {
-		names = remove_quotes(util::unescape_string(name));
-	}
-	else  {
-		Variable &v1 = find_variable(prg, name);
-		if (v1.type == Variable::STRING) {
-			names = v1.s;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
-	}
-
-	std::vector<std::string> strings;
-	strings.reserve(1);
-	strings.push_back(value);
-	std::vector<double> values = variable_names_to_numbers(prg, strings);
-
-	cfg_numbers[names] = values[0];
+	cfg_numbers[name] = value;
 
 	return true;
 }
 
-static bool cfgfunc_set_string(Program &prg, std::vector<std::string> &v)
+static bool cfgfunc_set_string(Program &prg, std::vector<Token> &v)
 {
-	std::string name = v[0];
-	std::string value = v[1];
+	std::string name = as_string(prg, v[0]);
+	std::string value = as_string(prg, v[1]);
 
-	std::string names;
-
-	if (name[0] == '"') {
-		names = remove_quotes(util::unescape_string(name));
-	}
-	else  {
-		Variable &v1 = find_variable(prg, name);
-		if (v1.type == Variable::STRING) {
-			names = v1.s;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
-	}
-
-	std::string values;
-
-	if (value[0] == '"') {
-		values = remove_quotes(util::unescape_string(value));
-	}
-	else  {
-		Variable &v1 = find_variable(prg, value);
-		if (v1.type == Variable::STRING) {
-			values = v1.s;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
-	}
-
-	cfg_strings[names] = values;
+	cfg_strings[name] = value;
 
 	return true;
 }
 
-static bool cfgfunc_number_exists(Program &prg, std::vector<std::string> &v)
+static bool cfgfunc_number_exists(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string name = v[1];
-
-	std::string names;
-
-	if (name[0] == '"') {
-		names = remove_quotes(util::unescape_string(name));
-	}
-	else  {
-		Variable &v1 = find_variable(prg, name);
-		if (v1.type == Variable::STRING) {
-			names = v1.s;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
-	}
+	Variable &v1 = as_variable(prg, v[0]);
+	std::string name = as_string(prg, v[1]);
 
 	int found_n;
 
-	if (cfg_numbers.find(names) == cfg_numbers.end()) {
+	if (cfg_numbers.find(name) == cfg_numbers.end()) {
 		found_n = 0;
 	}
 	else {
 		found_n = 1;
 	}
-
-	Variable &v1 = find_variable(prg, dest);
 
 	if (v1.type == Variable::NUMBER) {
 		v1.n = found_n;
@@ -2757,36 +1951,19 @@ static bool cfgfunc_number_exists(Program &prg, std::vector<std::string> &v)
 	return true;
 }
 
-static bool cfgfunc_string_exists(Program &prg, std::vector<std::string> &v)
+static bool cfgfunc_string_exists(Program &prg, std::vector<Token> &v)
 {
-	std::string dest = v[0];
-	std::string name = v[1];
-
-	std::string names;
-
-	if (name[0] == '"') {
-		names = remove_quotes(util::unescape_string(name));
-	}
-	else  {
-		Variable &v1 = find_variable(prg, name);
-		if (v1.type == Variable::STRING) {
-			names = v1.s;
-		}
-		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-		}
-	}
+	Variable &v1 = as_variable(prg, v[0]);
+	std::string name = as_string(prg, v[1]);
 
 	int found_n;
 
-	if (cfg_strings.find(names) == cfg_strings.end()) {
+	if (cfg_strings.find(name) == cfg_strings.end()) {
 		found_n = 0;
 	}
 	else {
 		found_n = 1;
 	}
-
-	Variable &v1 = find_variable(prg, dest);
 
 	if (v1.type == Variable::NUMBER) {
 		v1.n = found_n;
@@ -2827,8 +2004,8 @@ void start()
 	add_syntax("jg", corefunc_jg);
 	add_syntax("jge", corefunc_jge);
 	add_syntax("call", corefunc_call);
-	add_syntax("function", corefunc_function);
-	add_syntax(";", corefunc_comment);
+	//add_syntax("function", corefunc_function);
+	//add_syntax(";", corefunc_comment);
 	add_syntax("inspect", corefunc_inspect);
 	add_syntax("string_format", corefunc_string_format);
 	add_syntax("sin", mathfunc_sin);
@@ -2872,6 +2049,7 @@ void start()
 	add_syntax("vector_insert", vectorfunc_insert);
 	add_syntax("vector_get", vectorfunc_get);
 	add_syntax("vector_erase", vectorfunc_erase);
+	add_syntax("vector_clear", vectorfunc_clear);
 	add_syntax("cfg_load", cfgfunc_load);
 	add_syntax("cfg_save", cfgfunc_save);
 	add_syntax("cfg_get_number", cfgfunc_get_number);

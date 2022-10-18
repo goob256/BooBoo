@@ -97,6 +97,8 @@ else() # Linux
 	if(DEMO)
 		set(FLAGS "${FLAGS} -DDEMO")
 	endif()
+	#set(FLAGS "${FLAGS} -g -pg -fsanitize=address")
+	#set(LFLAGS "${LFLAGS} -g -pg -fsanitize=address")
 	set_target_properties("booboo" PROPERTIES COMPILE_FLAGS "${FLAGS}")
 	set_target_properties("booboo" PROPERTIES LINK_FLAGS "${LFLAGS}")
 	set_target_properties("booboo" PROPERTIES OUTPUT_NAME "BooBoo")

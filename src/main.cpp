@@ -1,4 +1,5 @@
 //#define LUA_BENCH
+//#define LUA_BENCH2
 //#define CPP_BENCH
 //#define CPP_BENCH2
 //#define DUMP
@@ -24,7 +25,7 @@ char **orig_argv;
 std::string extra_args;
 std::string extra_args_orig;
 
-#ifdef LUA_BENCH
+#if defined LUA_BENCH || defined LUA_BENCH2
 extern "C" {
 #include <lua5.2/lua.h>
 #include <lua5.2/lauxlib.h>
@@ -33,6 +34,57 @@ extern "C" {
 
 lua_State *lua_state;
 std::vector<gfx::Image *> lua_images;
+
+void dump_lua_stack(lua_State *l)
+{
+        int i;
+        int top = lua_gettop(l);
+	char buf[1000];
+
+        snprintf(buf, 1000, "--- stack ---\n");
+	printf(buf);
+        snprintf(buf, 1000, "top=%u   ...   ", top);
+	printf(buf);
+
+        for (i = 1; i <= top; i++) {  /* repeat for each level */
+                int t = lua_type(l, i);
+                switch (t) {
+
+                case LUA_TSTRING:  /* strings */
+                        snprintf(buf, 1000, "`%s'", lua_tostring(l, i));
+			printf(buf);
+                        break;
+
+                case LUA_TBOOLEAN:  /* booleans */
+                        snprintf(buf, 1000, lua_toboolean(l, i) ? "true" : "false");
+			printf(buf);
+                        break;
+
+                case LUA_TNUMBER:  /* numbers */
+                        snprintf(buf, 1000, "%g", lua_tonumber(l, i));
+			printf(buf);
+                        break;
+
+                case LUA_TTABLE:   /* table */
+                        snprintf(buf, 1000, "table");
+			printf(buf);
+                        break;
+
+                default:  /* other values */
+                        snprintf(buf, 1000, "%s", lua_typename(l, t));
+			printf(buf);
+                        break;
+
+                }
+                snprintf(buf, 1000, "  ");  /* put a separator */
+        }
+        snprintf(buf, 1000, "\n");  /* end the listing */
+	printf(buf);
+
+        snprintf(buf, 1000, "-------------\n");
+	printf(buf);
+}
+
 
 /*
  * Call a Lua function, leaving the results on the stack.
@@ -82,12 +134,67 @@ endwhile:
 
 	/* do the call */
 	nres = strlen(sig);  /* number of expected results */
-	lua_pcall(lua_state, narg, nres, 0);
+	if (lua_pcall(lua_state, narg, nres, 0) != 0) {
+		dump_lua_stack(lua_state);
+	}
 
 	va_end(vl);
 }
 
 extern "C" {
+
+static int c_start_primitives(lua_State *stack)
+{
+	gfx::draw_primitives_start();
+	return 0;
+}
+
+static int c_end_primitives(lua_State *stack)
+{
+	gfx::draw_primitives_end();
+	return 0;
+}
+
+static int c_filled_circle(lua_State *stack)
+{
+	int r = lua_tonumber(stack, 1);
+	int g = lua_tonumber(stack, 2);
+	int b = lua_tonumber(stack, 3);
+	int a = lua_tonumber(stack, 4);
+	float x = lua_tonumber(stack, 5);
+	float y = lua_tonumber(stack, 6);
+	float radius = lua_tonumber(stack, 7);
+	int sections = lua_tonumber(stack, 8);
+
+	SDL_Color c;
+	c.r = r;
+	c.g = g;
+	c.b = b;
+	c.a = a;
+
+	util::Point<float> p(x, y);
+
+	gfx::draw_filled_circle(c, p, radius, sections);
+
+	return 0;
+}
+
+static int c_clear(lua_State *stack)
+{
+	int r = lua_tonumber(stack, 1);
+	int g = lua_tonumber(stack, 2);
+	int b = lua_tonumber(stack, 3);
+
+	SDL_Color c;
+	c.r = r;
+	c.g = g;
+	c.b = b;
+	c.a = 255;
+
+	gfx::clear(c);
+
+	return 0;
+}
 
 static int c_load_image(lua_State *stack)
 {
@@ -183,6 +290,10 @@ void init_lua()
 		lua_pushcfunction(lua_state, c_ ## name); \
 		lua_setglobal(lua_state, #name);
 
+	REGISTER_FUNCTION(clear);
+	REGISTER_FUNCTION(start_primitives);
+	REGISTER_FUNCTION(end_primitives);
+	REGISTER_FUNCTION(filled_circle);
 	REGISTER_FUNCTION(load_image);
 	REGISTER_FUNCTION(image_size);
 	REGISTER_FUNCTION(image_draw);
@@ -192,9 +303,15 @@ void init_lua()
 
 	#undef REGISTER_FUNCION
 
+#ifdef LUA_BENCH
 	std::string program = util::load_text_from_filesystem("benchmark.lua");
+#else
+	std::string program = util::load_text_from_filesystem("benchmark2.lua");
+#endif
 	luaL_loadstring(lua_state, program.c_str());
-	lua_pcall(lua_state, 0, 0, 0);
+	if (lua_pcall(lua_state, 0, 0, 0) != 0) {
+		dump_lua_stack(lua_state);
+	}
 }
 #endif
 
@@ -316,7 +433,7 @@ void draw_all()
 
 	gfx::set_cull_mode(gfx::NO_FACE);
 	
-#ifdef LUA_BENCH
+#if defined LUA_BENCH || defined LUA_BENCH2
 	call_lua(lua_state, "draw", "");
 #elif defined CPP_BENCH2
 	SDL_Colour c;
@@ -455,7 +572,11 @@ static void loop()
 			TGUI_Event *event = shim::handle_event(&sdl_event);
 			handle_event(event);
 
+#if defined LUA_BENCH2
+			call_lua(lua_state, "run", "");
+#else
 			booboo::call_function(prg, "run", std::vector<std::string>(), "");
+#endif
 
 			if (booboo::reset_game_name != "") {
 				quit = true;
@@ -722,7 +843,7 @@ again:
 	while (booboo::interpret(prg)) {
 	}
 
-#ifdef LUA_BENCH
+#if defined LUA_BENCH || defined LUA_BENCH2
 	init_lua();
 #elif defined CPP_BENCH
 	grass = new gfx::Image("misc/grass.tga");
@@ -733,9 +854,9 @@ again:
 	printf("main:\n");
 	for (size_t i = 0; i < prg.program.size(); i++) {
 		booboo::Statement &s = prg.program[i];
-		printf("%s ", s.method.c_str());
+		printf("%d ", s.method);
 		for (size_t j = 0; j < s.data.size(); j++) {
-			printf("%s ", s.data[j].c_str());
+			printf("%s ", s.data[j].token.c_str());
 		}
 		printf("\n");
 	}
@@ -750,9 +871,9 @@ again:
 		printf("%s:\n", (*it).first.c_str());
 		for (size_t i = 0; i < prg.program.size(); i++) {
 			booboo::Statement &s = prg.program[i];
-			printf("%s ", s.method.c_str());
+			printf("%d ", s.method);
 			for (size_t j = 0; j < s.data.size(); j++) {
-				printf("%s ", s.data[j].c_str());
+				printf("%s ", s.data[j].token.c_str());
 			}
 			printf("\n");
 		}
@@ -784,6 +905,7 @@ again:
 	}
 	catch (util::Error &e) {
 		gui::fatalerror("ERROR", e.error_message.c_str(), gui::OK, true);
+		printf("%s\n", e.error_message.c_str());
 	}
 
 	return booboo::return_code;

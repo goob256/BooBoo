@@ -56,6 +56,7 @@ int get_line_num(Program &prg)
 	return prg.line_numbers[ln];
 }
 
+/*
 Variable &find_variable(Program &prg, std::string name)
 {
 	std::map< std::string, Variable >::iterator it;
@@ -68,31 +69,11 @@ Variable &find_variable(Program &prg, std::string name)
 
 	return (*it).second;
 }
+*/
 
-std::vector<double> variable_names_to_numbers(Program &prg, std::vector<std::string> &strings)
+Variable &find_variable(Program &prg, int index)
 {
-	std::vector<double> values;
-
-	for (size_t i = 0; i < strings.size(); i++) {
-		if (strings[i].length() > 0 && strings[i][0] == '-' || isdigit(strings[i][0])) {
-			values.push_back(atof(strings[i].c_str()));
-		}
-		else {
-			Variable &v1 = find_variable(prg, strings[i]);
-
-			if (v1.type == Variable::NUMBER || v1.type == Variable::VECTOR) {
-				values.push_back(v1.n);
-			}
-			else if (v1.type == Variable::STRING) {
-				values.push_back(atof(v1.s.c_str()));
-			}
-			else {
-				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-			}
-		}
-	}
-
-	return values;
+	return prg.variables[index];
 }
 
 static std::string tokenfunc_add(booboo::Program &prg)
@@ -209,7 +190,7 @@ static std::string tokenfunc_comment(booboo::Program &prg)
 	return ";";
 }
 
-std::string token(Program &prg, bool add_lines)
+std::string token(Program &prg, Token::Token_Type &ret_type, bool add_lines)
 {
 	prg.prev_tok_p = prg.p;
 	prg.prev_tok_line = prg.line;
@@ -224,17 +205,13 @@ std::string token(Program &prg, bool add_lines)
 	char s[2];
 	s[1] = 0;
 
-	std::map<char, token_func>::iterator it = token_map.find(prg.code[prg.p]);
-	if (it != token_map.end()) {
-		return (*it).second(prg);
-	}
-
-	if (isdigit(prg.code[prg.p])) {
-		while (prg.p < prg.code.length() && (isdigit(prg.code[prg.p]) || prg.code[prg.p] == '.')) {
+	if ((prg.p < prg.code.length()-1 && prg.code[prg.p] == '-' && isdigit(prg.code[prg.p+1])) || isdigit(prg.code[prg.p])) {
+		while (prg.p < prg.code.length() && (isdigit(prg.code[prg.p]) || prg.code[prg.p] == '.' || prg.code[prg.p] == '-')) {
 			s[0] = prg.code[prg.p];
 			tok += s;
 			prg.p++;
 		}
+		ret_type = Token::NUMBER;
 		return tok;
 	}
 	else if (isalpha(prg.code[prg.p]) || prg.code[prg.p] == '_') {
@@ -243,11 +220,23 @@ std::string token(Program &prg, bool add_lines)
 			tok += s;
 			prg.p++;
 		}
+		ret_type = Token::SYMBOL;
 		return tok;
 	}
-	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Parse error on line " + util::itos(prg.line+prg.start_line) + " (pc=" + util::itos(prg.p) + ", tok=\"" + tok + "\")");
+
+	if (prg.code[prg.p] == '"') {
+		ret_type = Token::STRING;
 	}
+	else {
+		ret_type = Token::SPECIAL;
+	}
+
+	std::map<char, token_func>::iterator it = token_map.find(prg.code[prg.p]);
+	if (it != token_map.end()) {
+		return (*it).second(prg);
+	}
+
+	throw util::ParseError(std::string(__FUNCTION__) + ": " + "Parse error on line " + util::itos(prg.line+prg.start_line) + " (pc=" + util::itos(prg.p) + ", tok=\"" + tok + "\")");
 
 	return "";
 }
@@ -263,7 +252,9 @@ std::map<std::string, Label> process_labels(Program prg)
 	prg.prev_tok_line = 1;
 	int pc = 0;
 
-	while ((tok = token(prg)) != "") {
+	Token::Token_Type tt;
+
+	while ((tok = token(prg, tt)) != "") {
 		if (tok == ";") {
 			while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
 				prg.p++;
@@ -274,7 +265,7 @@ std::map<std::string, Label> process_labels(Program prg)
 			}
 		}
 		else if (tok == "function") {
-			while ((tok = token(prg)) != "") {
+			while ((tok = token(prg, tt)) != "") {
 				if (tok == ";") {
 					while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
 						prg.p++;
@@ -290,7 +281,7 @@ std::map<std::string, Label> process_labels(Program prg)
 			}
 		}
 		else if (tok == ":") {
-			std::string name = token(prg);
+			std::string name = token(prg, tt);
 
 			if (name == "") {
 				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected label parameters on line " + util::itos(get_line_num(prg)));
@@ -334,7 +325,9 @@ bool process_includes(Program &prg)
 	int prev = prg.p;
 	int start = 0;
 
-	while ((tok = token(prg, true)) != "") {
+	Token::Token_Type tt;
+
+	while ((tok = token(prg, tt, true)) != "") {
 		if (tok == ";") {
 			while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
 				prg.p++;
@@ -346,7 +339,7 @@ bool process_includes(Program &prg)
 			}
 		}
 		else if (tok == "include") {
-			std::string name = token(prg);
+			std::string name = token(prg, tt);
 
 			if (name == "") {
 				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected include parameters on line " + util::itos(get_line_num(prg)));
@@ -408,8 +401,9 @@ static void compile(Program &prg)
 	int line_bak = prg.line;
 
 	std::string tok;
+	Token::Token_Type tt;
 
-	while ((tok = token(prg, false)) != "") {
+	while ((tok = token(prg, tt, false)) != "") {
 		if (tok == ";") {
 			while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
 				prg.p++;
@@ -420,7 +414,7 @@ static void compile(Program &prg)
 			}
 		}
 		else if (tok == "function") {
-			while ((tok = token(prg)) != "") {
+			while ((tok = token(prg, tt)) != "") {
 				if (tok == ";") {
 					while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
 						prg.p++;
@@ -437,7 +431,7 @@ static void compile(Program &prg)
 		}
 		else if (tok == ":") {
 			// skip labels
-			token(prg, false);
+			token(prg, tt, false);
 		}
 		else if (library_map.find(tok) != library_map.end()) {
 			Statement s;
@@ -448,7 +442,20 @@ static void compile(Program &prg)
 			throw util::ParseError("Expected keyword");
 		}
 		else {
-			prg.program[prg.program.size()-1].data.push_back(tok);
+			Token t;
+			t.token = tok;
+			t.type = tt;
+			switch (tt) {
+				case Token::STRING:
+				case Token::SPECIAL:
+				case Token::SYMBOL:
+					t.s = remove_quotes(util::unescape_string(tok));
+					break;
+				case Token::NUMBER:
+					t.n = atof(tok.c_str());
+					break;
+			}
+			prg.program[prg.program.size()-1].data.push_back(t);
 		}
 	}
 
@@ -469,7 +476,9 @@ void process_functions(Program &prg)
 	prg.line_numbers.clear();
 	//prg.line_numbers.push_back(prg.line);
 
-	while ((tok = token(prg, true)) != "") {
+	Token::Token_Type tt;
+
+	while ((tok = token(prg, tt, true)) != "") {
 		if (tok == ";") {
 			while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
 				prg.p++;
@@ -482,7 +491,7 @@ void process_functions(Program &prg)
 		}
 		else if (tok == "function") {
 			int start_line = prg.line;
-			std::string name = token(prg);
+			std::string name = token(prg, tt);
 			int save = get_line_num(prg);
 
 			if (name == "") {
@@ -493,7 +502,7 @@ void process_functions(Program &prg)
 			
 			std::string tok2;
 
-			while ((tok2 = token(prg)) != "") {
+			while ((tok2 = token(prg, tt)) != "") {
 				if (tok2 == "{") {
 					break;
 				}
@@ -516,7 +525,7 @@ void process_functions(Program &prg)
 			int save_p = prg.p;
 			int end_p = prg.p;
 
-			while ((tok2 = token(prg)) != "") {
+			while ((tok2 = token(prg, tt)) != "") {
 				if (tok2 == "}") {
 					break;
 				}
@@ -555,24 +564,6 @@ void process_functions(Program &prg)
 	prg.prev_tok_line = 1;
 }
 
-static void set_string_or_number(Program &prg, std::string name, double value)
-{
-	Variable &v1 = find_variable(prg, name);
-
-	if (v1.type == Variable::NUMBER) {
-		v1.n = value;
-	}
-	else if (v1.type == Variable::STRING)
-	{
-		char buf[1000];
-		snprintf(buf, 1000, "%g", value);
-		v1.s = buf;
-	}
-	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
-	}
-}
-
 void call_function(Program &prg, std::string function_name, std::vector<std::string> params, std::string result_name)
 {
 	int _tok = 0;
@@ -581,7 +572,7 @@ void call_function(Program &prg, std::string function_name, std::vector<std::str
 	if (it != prg.functions.end()) {
 		Program &func = (*it).second;
 
-		std::map<std::string, Variable> tmp;
+		std::map<int, Variable> tmp;
 		prg.variables_backup_stack.push(tmp);
 
 		for (size_t j = 0; j < func.parameters.size(); j++) {
@@ -593,27 +584,32 @@ void call_function(Program &prg, std::string function_name, std::vector<std::str
 			
 			Variable var;
 
-			var.function = function_name;
-
 			if (param[0] == '-' || isdigit(param[0])) {
 				var.name = func.parameters[j];
 				var.type = Variable::NUMBER;
 				var.n = atof(param.c_str());
 			}
 			else {
-				Variable &v1 = find_variable(prg, param);
+				std::map<std::string, int>::iterator it = prg.variables_map.find(param);
+				Variable &v1 = find_variable(prg, (*it).second);
 				var = v1;
 				var.name = func.parameters[j];
 			}
 			// FIXME: "strings"
+			
+			var.function = function_name;
 
-			std::map<std::string, Variable> &variables_backup = prg.variables_backup_stack.top();
-			std::map<std::string, Variable>::iterator it3;
-			if ((it3 = prg.variables.find(var.name)) != prg.variables.end()) {
-				variables_backup[var.name] = prg.variables[var.name];
+			std::map<std::string, int>::iterator it3 = prg.variables_map.find(var.name);
+			if (it3 != prg.variables_map.end()) {
+				std::map<int, Variable> &variables_backup = prg.variables_backup_stack.top();
+				int i = (*it3).second;
+				variables_backup[i] = prg.variables[i];
+				prg.variables[i] = var;
 			}
-
-			prg.variables[var.name] = var;
+			else {
+				prg.variables_map[var.name] = prg.variables.size();
+				prg.variables.push_back(var);
+			}
 		}
 
 		std::string code_bak = prg.code;
@@ -652,39 +648,44 @@ void call_function(Program &prg, std::string function_name, std::vector<std::str
 		prg.name = name_bak;
 		prg.program = program_bak;
 		prg.pc = pc_bak;
+		
+		std::map<int, Variable> &variables_backup = prg.variables_backup_stack.top();
 
-		for (std::map<std::string, Variable>::iterator it = prg.variables.begin(); it != prg.variables.end();) {
-			if ((*it).second.function == function_name) {
-				it = prg.variables.erase(it);
+		while (prg.variables.size() > 0 && prg.variables[prg.variables.size()-1].function == function_name) {
+			int i = prg.variables.size()-1;
+			if (variables_backup.find(i) == variables_backup.end()) {
+				std::map<std::string, int>::iterator it = prg.variables_map.find(prg.variables[i].name);
+				if (it != prg.variables_map.end()) {
+					prg.variables_map.erase(it);
+				}
+				prg.variables.erase(prg.variables.begin()+i);
 			}
 			else {
-				it++;
+				break;
 			}
 		}
 
-		std::map<std::string, Variable> &variables_backup = prg.variables_backup_stack.top();
-		for (std::map<std::string, Variable>::iterator it = variables_backup.begin(); it != variables_backup.end(); it++) {
-			prg.variables[(*it).first] = (*it).second;
+		std::map<int, Variable>::iterator it;
+		for (it = variables_backup.begin(); it != variables_backup.end(); it++) {
+			int i = (*it).first;
+			Variable &v = (*it).second;
+			prg.variables[i] = v;
+			prg.variables_map[v.name] = i;
 		}
+
 		prg.variables_backup_stack.pop();
 
 
 		if (result_name != "") {
-			for (std::map<std::string, Variable>::iterator it = prg.variables.begin(); it != prg.variables.end(); it++) {
-				Variable &v = (*it).second;
-				if (result_name == (*it).first) {
-					std::string bak = v.name;
-					std::string bak2 = v.function;
-					v = prg.result;
-					v.name = bak;
-					v.function = bak2;
-					/*
-					if (prg.variables[i].type == Variable::VECTOR && prg.result.type == Variable::VECTOR) {
-						prg.vectors[(int)prg.variables[i].n] = prg.vectors[(int)p.result.n];
-					}
-					*/
-					break;
-				}
+			std::map<std::string, int>::iterator it;
+			it = prg.variables_map.find(result_name);
+			if (it != prg.variables_map.end()) {
+				Variable &v = prg.variables[(*it).second];
+				std::string bak = v.name;
+				std::string bak2 = v.function;
+				v = prg.result;
+				v.name = bak;
+				v.function = bak2;
 			}
 		}
 
@@ -732,7 +733,6 @@ void destroy_program(Program &prg)
 	prg.mmls.clear();
 	prg.images.clear();
 	prg.fonts.clear();
-	prg.vectors.clear();
 
 	prg.variables.clear();
 	prg.functions.clear();
@@ -789,7 +789,7 @@ Program create_program(std::string code)
 	prg.labels = process_labels(prg);
 	process_functions(prg);
 		
-	std::map<std::string, Variable> tmp;
+	std::map<int, Variable> tmp;
 	prg.variables_backup_stack.push(tmp);
 
 	compile(prg);
