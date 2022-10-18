@@ -25,9 +25,11 @@ std::string extra_args;
 std::string extra_args_orig;
 
 #ifdef LUA_BENCH
+extern "C" {
 #include <lua5.2/lua.h>
 #include <lua5.2/lauxlib.h>
 #include <lua5.2/lualib.h>
+}
 
 lua_State *lua_state;
 std::vector<gfx::Image *> lua_images;
