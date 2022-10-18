@@ -286,8 +286,6 @@ std::map<std::string, Label> process_labels(Program prg)
 
 			Label l;
 			l.name = name;
-			l.p = prg.p;
-			l.line = prg.line;
 			l.pc = pc;
 
 			labels[name] = l;
@@ -757,7 +755,6 @@ Program create_program(std::string code)
 	prg.mml_id = 0;
 	prg.image_id = 0;
 	prg.font_id = 0;
-	prg.vector_id = 0;
 	prg.line = 1;
 	prg.line_numbers.clear();
 	prg.start_line = 0;

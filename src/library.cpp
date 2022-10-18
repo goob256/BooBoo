@@ -406,8 +406,6 @@ static bool corefunc_label(Program &prg, std::vector<Token> &v)
 
 	Label l;
 	l.name = name;
-	l.p = prg.p;
-	l.line = prg.line;
 	l.pc = prg.pc;
 	
 	//prg.labels.push_back(l);
@@ -423,8 +421,6 @@ static bool corefunc_goto(Program &prg, std::vector<Token> &v)
 	std::map<std::string, Label>::iterator it = prg.labels.find(name);
 	if (it != prg.labels.end()) {
 		Label &l = (*it).second;
-		prg.p = l.p;
-		prg.line = l.line;
 		prg.pc = l.pc;
 	}
 
@@ -505,8 +501,6 @@ static bool corefunc_je(Program &prg, std::vector<Token> &v)
 		std::map<std::string, Label>::iterator it = prg.labels.find(label);
 		if (it != prg.labels.end()) {
 			Label &l = (*it).second;
-			prg.p = l.p;
-			prg.line = l.line;
 			prg.pc = l.pc;
 		}
 	}
@@ -522,8 +516,6 @@ static bool corefunc_jne(Program &prg, std::vector<Token> &v)
 		std::map<std::string, Label>::iterator it = prg.labels.find(label);
 		if (it != prg.labels.end()) {
 			Label &l = (*it).second;
-			prg.p = l.p;
-			prg.line = l.line;
 			prg.pc = l.pc;
 		}
 	}
@@ -539,8 +531,6 @@ static bool corefunc_jl(Program &prg, std::vector<Token> &v)
 		std::map<std::string, Label>::iterator it = prg.labels.find(label);
 		if (it != prg.labels.end()) {
 			Label &l = (*it).second;
-			prg.p = l.p;
-			prg.line = l.line;
 			prg.pc = l.pc;
 		}
 	}
@@ -556,8 +546,6 @@ static bool corefunc_jle(Program &prg, std::vector<Token> &v)
 		std::map<std::string, Label>::iterator it = prg.labels.find(label);
 		if (it != prg.labels.end()) {
 			Label &l = (*it).second;
-			prg.p = l.p;
-			prg.line = l.line;
 			prg.pc = l.pc;
 		}
 	}
@@ -573,8 +561,6 @@ static bool corefunc_jg(Program &prg, std::vector<Token> &v)
 		std::map<std::string, Label>::iterator it = prg.labels.find(label);
 		if (it != prg.labels.end()) {
 			Label &l = (*it).second;
-			prg.p = l.p;
-			prg.line = l.line;
 			prg.pc = l.pc;
 		}
 	}
@@ -590,8 +576,6 @@ static bool corefunc_jge(Program &prg, std::vector<Token> &v)
 		std::map<std::string, Label>::iterator it = prg.labels.find(label);
 		if (it != prg.labels.end()) {
 			Label &l = (*it).second;
-			prg.p = l.p;
-			prg.line = l.line;
 			prg.pc = l.pc;
 		}
 	}

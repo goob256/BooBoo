@@ -13,15 +13,13 @@ struct Variable
 	enum Variable_Type {
 		NUMBER = 0,
 		STRING,
-		VECTOR,
-		USER
+		VECTOR
 	} type;
 
 	std::string name;
 
 	double n;
 	std::string s;
-	void *u;
 	std::vector<Variable> v;
 
 	std::string function;
@@ -29,8 +27,6 @@ struct Variable
 
 struct Label {
 	std::string name;
-	int p;
-	int line;
 	int pc;
 };
 
@@ -60,10 +56,11 @@ struct Program {
 	int compare_flag;
 	
 	std::string code;
+
+	// This needs fixin'
 	int p;
 	int line;
 	int start_line;
-
 	int prev_tok_p;
 	int prev_tok_line;
 
@@ -78,7 +75,6 @@ struct Program {
 	int mml_id;
 	int image_id;
 	int font_id;
-	int vector_id;
 	std::map<int, audio::MML *> mmls;
 	std::map<int, gfx::Image *> images;
 	std::map<int, gfx::TTF *> fonts;
