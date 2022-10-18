@@ -762,6 +762,9 @@ int main(int argc, char **argv)
 
 	start();
 
+	shim::devsettings_num_rows = (shim::screen_size.h-16)/shim::font->get_height();
+	shim::devsettings_max_width = shim::screen_size.w-10;
+
 	std::string fn;
 
 	for (int i = 1; i < argc; i++) {
