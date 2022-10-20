@@ -103,6 +103,10 @@ string_format
 	format strings with replacements
 	e.g. string_format dest "I'm % years old" age
 
+delay
+	delay an amount of milliseconds
+	e.g. delay 1000
+
 reset
 	load a different BooBoo script
 	e.g. reset "next_slide.boo"
@@ -146,6 +150,10 @@ rand
 clear
 	clear the screen
 	e.g. clear r g b
+
+flip
+	flip the backbuffer to the screen
+	e.g. flip
 
 start_primitives
 	batch primitives for speed

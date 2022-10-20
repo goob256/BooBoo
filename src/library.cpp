@@ -766,6 +766,13 @@ static bool corefunc_string_format(Program &prg, std::vector<Token> &v)
 	return true;
 }
 
+static bool corefunc_delay(Program &prg, std::vector<Token> &v)
+{
+	int millis = (int)as_number(prg, v[0]);
+	SDL_Delay(millis);
+	return true;
+}
+
 static bool mathfunc_sin(Program &prg, std::vector<Token> &v)
 {
 	Variable &v1 = as_variable(prg, v[0]);
@@ -879,6 +886,13 @@ static bool gfxfunc_clear(Program &prg, std::vector<Token> &v)
 	c.a = 255;
 
 	gfx::clear(c);
+
+	return true;
+}
+
+static bool gfxfunc_flip(Program &prg, std::vector<Token> &v)
+{
+	gfx::flip();
 
 	return true;
 }
@@ -1954,6 +1968,7 @@ void start()
 	//add_syntax(";", corefunc_comment);
 	add_syntax("inspect", corefunc_inspect);
 	add_syntax("string_format", corefunc_string_format);
+	add_syntax("delay", corefunc_delay);
 	add_syntax("sin", mathfunc_sin);
 	add_syntax("cos", mathfunc_cos);
 	add_syntax("atan2", mathfunc_atan2);
@@ -1962,6 +1977,7 @@ void start()
 	add_syntax("sqrt", mathfunc_sqrt);
 	add_syntax("rand", mathfunc_rand);
 	add_syntax("clear", gfxfunc_clear);
+	add_syntax("flip", gfxfunc_flip);
 	add_syntax("start_primitives", primfunc_start_primitives);
 	add_syntax("end_primitives", primfunc_end_primitives);
 	add_syntax("line", primfunc_line);
