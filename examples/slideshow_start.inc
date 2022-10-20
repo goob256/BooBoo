@@ -1,10 +1,10 @@
-var number __do_slideshow__
+number __do_slideshow__
 = __do_slideshow__ 1
-var number __slideshow_delay__
+number __slideshow_delay__
 = __slideshow_delay__ 600
-var number __count__
+number __count__
 = __count__ 0
-var number __success__
+number __success__
 cfg_load __success__ "com.b1stable.slideshow"
 ? __success__ 0
 je __create__

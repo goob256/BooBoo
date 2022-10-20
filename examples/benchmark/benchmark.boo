@@ -1,33 +1,33 @@
-var number grass
+number grass
 image_load grass "misc/grass.tga"
-var number robot
+number robot
 image_load robot "misc/robot.tga"
-var number img_w
-var number img_h
+number img_w
+number img_h
 image_size grass img_w img_h
 
 function draw
 {
-	var number w
+	number w
 	= w 640
 	/ w img_w
-	var number h
+	number h
 	= h 360
 	/ h img_h
 
 	image_start grass
 
-	var number y
+	number y
 	= y 0
 
 :loop_y
-	var number x
+	number x
 	= x 0
 :loop_x
-	var number xx
+	number xx
 	= xx x
 	* xx img_w
-	var number yy
+	number yy
 	= yy y
 	* yy img_h
 	image_draw grass 255 255 255 255 xx yy 0 0
@@ -44,10 +44,10 @@ function draw
 	- w 1
 	- h 1
 :loop_robot
-	var number xx
+	number xx
 	rand xx 0 w
 	* xx img_w
-	var number yy
+	number yy
 	rand yy 0 h
 	* yy img_h
 	image_draw robot 255 255 255 255 xx yy 0 0

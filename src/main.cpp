@@ -1,7 +1,7 @@
 //#define LUA_BENCH
 //#define LUA_BENCH2
 //#define CPP_BENCH
-//#define CPP_BENCH2
+#define CPP_BENCH2
 //#define DUMP
 
 #include <shim4/shim4.h>
@@ -469,7 +469,8 @@ void draw_all()
 		robot->draw(util::Point<float>(x*robot->size.w, y*robot->size.h));
 	}
 #else
-	booboo::call_function(prg, "draw", std::vector<std::string>(), "");
+	booboo::Variable result;
+	booboo::call_function(prg, "draw", std::vector<booboo::Token>(), result);
 #endif
 
 	gfx::draw_guis();
@@ -574,7 +575,8 @@ static void loop()
 #if defined LUA_BENCH2
 			call_lua(lua_state, "run", "");
 #else
-			booboo::call_function(prg, "run", std::vector<std::string>(), "");
+			booboo::Variable result;
+			booboo::call_function(prg, "run", std::vector<booboo::Token>(), result);
 #endif
 
 			if (booboo::reset_game_name != "") {
@@ -891,7 +893,8 @@ again:
 		go();
 	}
 
-	booboo::call_function(prg, "end", std::vector<std::string>(), "");
+	booboo::Variable result;
+	booboo::call_function(prg, "end", std::vector<booboo::Token>(), result);
 
 	booboo::destroy_program(prg);
 
@@ -907,7 +910,6 @@ again:
 	}
 	catch (util::Error &e) {
 		gui::fatalerror("ERROR", e.error_message.c_str(), gui::OK, true);
-		printf("%s\n", e.error_message.c_str());
 	}
 
 	return booboo::return_code;

@@ -1,31 +1,31 @@
-var string reset_game_name
+string reset_game_name
 = reset_game_name "secret.boo"
 include "slideshow_start.inc"
 
-var number score1
+number score1
 = score1 0
-var number score2
+number score2
 = score2 0
 
 function rand_speed
 {
-	var number f
+	number f
 	rand f 0 1000
 	/ f 1000.0
 	* f 5.0
 	return f
 }
 
-var number next_cpu1_speed_update
+number next_cpu1_speed_update
 rand next_cpu1_speed_update 0 100
-var number cpu1_speed
-call > cpu1_speed rand_speed
-var number next_cpu2_speed_update
+number cpu1_speed
+call_result cpu1_speed rand_speed
+number next_cpu2_speed_update
 rand next_cpu2_speed_update 0 100
-var number cpu2_speed
-call > cpu2_speed rand_speed
+number cpu2_speed
+call_result cpu2_speed rand_speed
 
-var number success
+number success
 cfg_load success "com.b1stable.pong"
 ? success 0
 je create
@@ -37,20 +37,20 @@ cfg_set_number "score1" score1
 cfg_set_number "score2" score2
 :done_cfg
 
-var number font
+number font
 font_load font "font.ttf" 48 1
 
-var number paddle1
-var number paddle2
-var number ball_x
-var number ball_y
-var number prev_ball_x
-var number prev_ball_y
-var number ball_vx
-var number ball_vy
-var number ball_radius
-var number paddle_w
-var number paddle_h
+number paddle1
+number paddle2
+number ball_x
+number ball_y
+number prev_ball_x
+number prev_ball_y
+number ball_vx
+number ball_vy
+number ball_radius
+number paddle_w
+number paddle_h
 
 = ball_radius 10
 = paddle1 180
@@ -58,12 +58,12 @@ var number paddle_h
 = paddle_w 20
 = paddle_h 50
 
-var number half
+number half
 = half paddle_h
 / half 2
 
-var number wall_sfx
-var number point_sfx
+number wall_sfx
+number point_sfx
 mml_load wall_sfx "sfx/wall.mml"
 mml_load point_sfx "sfx/point.mml"
 
@@ -74,7 +74,7 @@ function reset_ball
 	= prev_ball_x 320
 	= prev_ball_y 180
 
-	var number r
+	number r
 	rand r 0 1
 	? r 0
 	je left
@@ -96,7 +96,7 @@ function reset_ball
 
 function run
 {
-	var number nj
+	number nj
 	joystick_count nj
 
 	include "poll_joystick.inc"
@@ -110,7 +110,7 @@ function run
 	jl done_joy
 	* joy_y1 5.0
 	+ paddle1 joy_y1
-	var number bot
+	number bot
 	= bot 360
 	- bot half
 	? paddle1 bot
@@ -133,7 +133,7 @@ function run
 	? ball_vx 0
 	jge done_cpu1
 
-	var number diff
+	number diff
 	= diff paddle1
 	- diff ball_y
 	? diff 0
@@ -155,7 +155,7 @@ function run
 :move_down1
 
 	+ paddle1 cpu1_speed
-	var number bott
+	number bott
 	= bott 360
 	- bott half
 	? paddle1 bott
@@ -176,7 +176,7 @@ function run
 	jl done_joy2
 	* joy_y1 5.0
 	+ paddle2 joy_y1
-	var number bot
+	number bot
 	= bot 360
 	- bot half
 	? paddle2 bot
@@ -200,7 +200,7 @@ function run
 	? ball_vx 0
 	jle done_cpu
 
-	var number diff
+	number diff
 	= diff paddle2
 	- diff ball_y
 	? diff 0
@@ -222,7 +222,7 @@ function run
 :move_down
 
 	+ paddle2 cpu2_speed
-	var number bott
+	number bott
 	= bott 360
 	- bott half
 	? paddle2 bott
@@ -241,7 +241,7 @@ function run
 
 :no_point2
 
-	var number right
+	number right
 	= right 640
 	- right ball_radius
 	? ball_x right
@@ -263,7 +263,7 @@ function run
 
 :no_bounce_top
 
-	var number bottom
+	number bottom
 	= bottom 360
 	- bottom ball_radius
 	? ball_y bottom
@@ -275,9 +275,9 @@ function run
 
 :no_bounce_bottom
 
-	var number paddle_top
-	var number paddle_bottom
-	var number paddle_x
+	number paddle_top
+	number paddle_bottom
+	number paddle_x
 
 	= paddle_top paddle1
 	- paddle_top half
@@ -347,14 +347,14 @@ function run
 	? next_cpu1_speed_update 0
 	jge test2
 	rand next_cpu1_speed_update 0 100
-	call > cpu1_speed rand_speed
+	call_result cpu1_speed rand_speed
 
 :test2
 	- next_cpu2_speed_update 1
 	? next_cpu2_speed_update 0
 	jge slideshow
 	rand next_cpu2_speed_update 0 100
-	call > cpu2_speed rand_speed
+	call_result cpu2_speed rand_speed
 
 :slideshow
 	include "slideshow_logic.inc"
@@ -364,13 +364,13 @@ function draw
 {
 	clear 0 0 0
 
-	var number y
+	number y
 	= y paddle1
 	- y half
 
 	filled_rectangle 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 paddle_w y paddle_w paddle_h
 
-	var number x
+	number x
 	= x 640
 	- x paddle_w
 	- x paddle_w
@@ -380,10 +380,10 @@ function draw
 
 	filled_rectangle 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 x y paddle_w paddle_h
 
-	var number bx
-	var number by
-	var number bw
-	var number bh
+	number bx
+	number by
+	number bw
+	number bh
 	= bx ball_x
 	- bx ball_radius
 	= by ball_y
@@ -393,29 +393,29 @@ function draw
 
 	filled_rectangle 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 bx by bw bw
 
-	var number x1
-	var number x2
+	number x1
+	number x2
 	= x1 320
 	- x1 32
 	= x2 320
 	+ x2 32
 	
-	var string text1
-	var string text2
+	string text1
+	string text2
 	string_format text1 "%" score1
 	string_format text2 "%" score2
 
-	var number w1
-	var number w2
+	number w1
+	number w2
 
 	font_width font w1 text1
 	font_width font w2 text2
 
 	- x1 w1
 
-	var number y
+	number y
 	= y 360
-	var number fh
+	number fh
 	font_height font fh
 	- y fh
 	- y 8

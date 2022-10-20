@@ -1,15 +1,15 @@
-var string reset_game_name
+string reset_game_name
 = reset_game_name "clock.boo"
 include "slideshow_start.inc"
 
-var number size
+number size
 = size 8
 
-var vector fonts
+vector fonts
 
 :font_loads
 
-var number f
+number f
 
 font_load f "font.ttf" size 0
 
@@ -20,20 +20,20 @@ vector_add fonts f
 ? size 64
 jle font_loads
 
-var number half_x
+number half_x
 = half_x 320
 
-var string text
+string text
 = text "THE SNEAKY LITTLE CAT"
 
-var number loops
+number loops
 = loops 0
 
 function draw
 {
 	clear 255 255 255
 
-	var number l
+	number l
 	= l loops
 	/ l 5
 	% l 9
@@ -41,23 +41,23 @@ function draw
 	? l 0
 	je no_draw
 
-	var number y
+	number y
 	= y 16
 
-	var number x
-	var number w
+	number x
+	number w
 
-	var number i
+	number i
 	= i 0
 :draw_line
 	= x half_x
-	var number f
+	number f
 	vector_get fonts f i
 	font_width f w text
 	/ w 2
 	- x w
 	font_draw f 0 0 0 255 text x y
-	var number fh
+	number fh
 	font_height f fh
 	+ y fh
 	+ y 5

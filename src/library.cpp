@@ -12,7 +12,7 @@ static std::map< std::string, std::string > cfg_strings;
 
 static Variable &as_variable(Program &prg, Token &t)
 {
-	return prg.variables[t.s];
+	return prg.variables[t.i];
 }
 
 static double as_number(Program &prg, Token &t)
@@ -21,7 +21,7 @@ static double as_number(Program &prg, Token &t)
 		return t.n;
 	}
 	else if (t.type == Token::SYMBOL) {
-		Variable &v = prg.variables[t.s];
+		Variable &v = prg.variables[t.i];
 		if (v.type == Variable::NUMBER) {
 			return v.n;
 		}
@@ -42,7 +42,7 @@ static std::string as_string(Program &prg, Token &t)
 		return buf;
 	}
 	else if (t.type == Token::SYMBOL) {
-		Variable &v = prg.variables[t.s];
+		Variable &v = prg.variables[t.i];
 		if (v.type == Variable::STRING) {
 			return v.s;
 		}
@@ -55,6 +55,16 @@ static std::string as_string(Program &prg, Token &t)
 	else {
 		return t.s;
 	}
+}
+
+static int as_label(Program &prg, Token &t)
+{
+	return prg.variables[t.i].n;
+}
+
+static int as_function(Program &prg, Token &t)
+{
+	return prg.variables[t.i].n;
 }
 
 static std::string save_dir()
@@ -168,14 +178,7 @@ static bool breaker_return(Program &prg, std::vector<Token> &v)
 		prg.result.n = v[0].n;
 	}
 	else if (v[0].type == Token::SYMBOL) {
-		std::map<std::string, Variable>::iterator it;
-		it = prg.variables.find(v[0].s);
-		if (it != prg.variables.end()) {
-			prg.result = (*it).second;
-		}
-		else {
-			throw util::ParseError("Unknown var " + v[0].token);
-		}
+		prg.result = prg.variables[v[0].i];
 	}
 	else {
 		prg.result.type = Variable::STRING;
@@ -187,6 +190,7 @@ static bool breaker_return(Program &prg, std::vector<Token> &v)
 	return false;
 }
 
+/*
 static bool corefunc_var(Program &prg, std::vector<Token> &v)
 {
 	Variable var;
@@ -223,14 +227,35 @@ static bool corefunc_var(Program &prg, std::vector<Token> &v)
 
 	return true;
 }
+*/
+
+static bool corefunc_number(Program &prg, std::vector<Token> &v)
+{
+	return true;
+}
+
+static bool corefunc_string(Program &prg, std::vector<Token> &v)
+{
+	return true;
+}
+
+static bool corefunc_vector(Program &prg, std::vector<Token> &v)
+{
+	prg.variables[v[0].i].v.clear();
+	return true;
+}
+
+static bool corefunc_int(Program &prg, std::vector<Token> &v)
+{
+	Variable &v1 = as_variable(prg, v[0]);
+
+	v1.n = (int)v1.n;
+
+	return true;
+}
 
 static bool corefunc_set(Program &prg, std::vector<Token> &v)
 {
-	//std::string dest = v[0];
-	//std::string src = v[1];
-
-	//Variable &v1 = find_variable(prg, dest);
-
 	Variable &v1 = as_variable(prg, v[0]);
 
 	if (v[1].type == Token::NUMBER) {
@@ -258,29 +283,22 @@ static bool corefunc_set(Program &prg, std::vector<Token> &v)
 		}
 	}
 	else {
-		std::map<std::string, Variable>::iterator it;
-		it = prg.variables.find(v[1].s);
-		if (it != prg.variables.end()) {
-			Variable &v2 = (*it).second;
+		Variable &v2 = prg.variables[v[1].i];
 
-			if (v1.type == Variable::NUMBER && v2.type == Variable::NUMBER) {
-				v1.n = v2.n;
-			}
-			else if (v1.type == Variable::STRING && v2.type == Variable::NUMBER) {
-				v1.s = util::itos(v2.n);
-			}
-			else if (v1.type == Variable::STRING && v2.type == Variable::STRING) {
-				v1.s = v2.s;
-			}
-			else if (v1.type == Variable::VECTOR && v2.type == Variable::VECTOR) {
-				v1.v = v2.v;
-			}
-			else {
-				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
-			}
+		if (v1.type == Variable::NUMBER && v2.type == Variable::NUMBER) {
+			v1.n = v2.n;
+		}
+		else if (v1.type == Variable::STRING && v2.type == Variable::NUMBER) {
+			v1.s = util::itos(v2.n);
+		}
+		else if (v1.type == Variable::STRING && v2.type == Variable::STRING) {
+			v1.s = v2.s;
+		}
+		else if (v1.type == Variable::VECTOR && v2.type == Variable::VECTOR) {
+			v1.v = v2.v;
 		}
 		else {
-			throw util::ParseError("Uknown variable " + v[1].token);
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
 		}
 	}
 
@@ -356,7 +374,7 @@ static bool corefunc_intmod(Program &prg, std::vector<Token> &v)
 {
 	Variable &v1 = as_variable(prg, v[0]);
 	int d = as_number(prg, v[1]);
-
+	
 	if (v1.type == Variable::NUMBER) {
 		v1.n = int(v1.n) % int(d);
 	}
@@ -418,22 +436,7 @@ static bool corefunc_label(Program &prg, std::vector<Token> &v)
 
 static bool corefunc_goto(Program &prg, std::vector<Token> &v)
 {
-	std::string name = v[0].token;
-
-	std::map<std::string, Label>::iterator it = prg.labels.find(name);
-	if (it != prg.labels.end()) {
-		Label &l = (*it).second;
-		prg.pc = l.pc;
-	}
-
-	/*
-	for (size_t i = 0; i < prg.labels.size(); i++) {
-		if (prg.labels[i].name == name) {
-			prg.p = prg.labels[i].p;
-			prg.line = prg.labels[i].line;
-		}
-	}
-	*/
+	prg.pc = as_label(prg, v[0]);
 
 	return true;
 }
@@ -497,14 +500,8 @@ static bool corefunc_compare(Program &prg, std::vector<Token> &v)
 
 static bool corefunc_je(Program &prg, std::vector<Token> &v)
 {
-	std::string label = v[0].token;
-
 	if (prg.compare_flag == 0) {
-		std::map<std::string, Label>::iterator it = prg.labels.find(label);
-		if (it != prg.labels.end()) {
-			Label &l = (*it).second;
-			prg.pc = l.pc;
-		}
+		prg.pc = as_label(prg, v[0]);
 	}
 
 	return true;
@@ -512,14 +509,8 @@ static bool corefunc_je(Program &prg, std::vector<Token> &v)
 
 static bool corefunc_jne(Program &prg, std::vector<Token> &v)
 {
-	std::string label = v[0].token;
-
 	if (prg.compare_flag != 0) {
-		std::map<std::string, Label>::iterator it = prg.labels.find(label);
-		if (it != prg.labels.end()) {
-			Label &l = (*it).second;
-			prg.pc = l.pc;
-		}
+		prg.pc = as_label(prg, v[0]);
 	}
 
 	return true;
@@ -527,14 +518,8 @@ static bool corefunc_jne(Program &prg, std::vector<Token> &v)
 
 static bool corefunc_jl(Program &prg, std::vector<Token> &v)
 {
-	std::string label = v[0].token;
-
 	if (prg.compare_flag < 0) {
-		std::map<std::string, Label>::iterator it = prg.labels.find(label);
-		if (it != prg.labels.end()) {
-			Label &l = (*it).second;
-			prg.pc = l.pc;
-		}
+		prg.pc = as_label(prg, v[0]);
 	}
 
 	return true;
@@ -542,14 +527,8 @@ static bool corefunc_jl(Program &prg, std::vector<Token> &v)
 
 static bool corefunc_jle(Program &prg, std::vector<Token> &v)
 {
-	std::string label = v[0].token;
-
 	if (prg.compare_flag <= 0) {
-		std::map<std::string, Label>::iterator it = prg.labels.find(label);
-		if (it != prg.labels.end()) {
-			Label &l = (*it).second;
-			prg.pc = l.pc;
-		}
+		prg.pc = as_label(prg, v[0]);
 	}
 
 	return true;
@@ -557,14 +536,8 @@ static bool corefunc_jle(Program &prg, std::vector<Token> &v)
 
 static bool corefunc_jg(Program &prg, std::vector<Token> &v)
 {
-	std::string label = v[0].token;
-
 	if (prg.compare_flag > 0) {
-		std::map<std::string, Label>::iterator it = prg.labels.find(label);
-		if (it != prg.labels.end()) {
-			Label &l = (*it).second;
-			prg.pc = l.pc;
-		}
+		prg.pc = as_label(prg, v[0]);
 	}
 
 	return true;
@@ -572,14 +545,8 @@ static bool corefunc_jg(Program &prg, std::vector<Token> &v)
 
 static bool corefunc_jge(Program &prg, std::vector<Token> &v)
 {
-	std::string label = v[0].token;
-
 	if (prg.compare_flag >= 0) {
-		std::map<std::string, Label>::iterator it = prg.labels.find(label);
-		if (it != prg.labels.end()) {
-			Label &l = (*it).second;
-			prg.pc = l.pc;
-		}
+		prg.pc = as_label(prg, v[0]);
 	}
 
 	return true;
@@ -587,25 +554,31 @@ static bool corefunc_jge(Program &prg, std::vector<Token> &v)
 
 static bool corefunc_call(Program &prg, std::vector<Token> &v)
 {
-	std::string tok2 = v[0].token;
-	std::string function_name;
-	std::string result_name;
-	int _tok = 1;
+	int function = as_function(prg, v[0]);
 
-	if (tok2 == ">") {
-		result_name = v[_tok++].token;
-		function_name = v[_tok++].token;
-	}
-	else {
-		function_name = tok2;
+	std::vector<Token> params;
+	for (size_t i = 1; i < v.size(); i++) {
+		params.push_back(v[i]);
 	}
 
-	std::vector<std::string> params;
-	for (size_t i = _tok; i < v.size(); i++) {
-		params.push_back(v[i].token);
+	Variable result;
+
+	call_function(prg, function, params, result);
+
+	return true;
+}
+
+static bool corefunc_call_result(Program &prg, std::vector<Token> &v)
+{
+	Variable &result = as_variable(prg, v[0]);
+	int function = as_function(prg, v[1]);
+
+	std::vector<Token> params;
+	for (size_t i = 2; i < v.size(); i++) {
+		params.push_back(v[i]);
 	}
 
-	call_function(prg, function_name, params, result_name);
+	call_function(prg, function, params, result);
 
 	return true;
 }
@@ -698,19 +671,15 @@ static bool corefunc_inspect(Program &prg, std::vector<Token> &v)
 		snprintf(buf, 1000, "%g", v[0].n);
 	}
 	else if (v[0].type == Token::SYMBOL) {
-		std::map<std::string, Variable>::iterator it;
-		it = prg.variables.find(v[0].s);
-		if (it != prg.variables.end()) {
-			Variable &var = (*it).second;
-			if (var.type == Variable::NUMBER) {
-				snprintf(buf, 1000, "%g", var.n);
-			}
-			else if (var.type == Variable::STRING) {
-				snprintf(buf, 1000, "%s", var.s.c_str());
-			}
-			else if (var.type == Variable::VECTOR) {
-				snprintf(buf, 1000, "-vector-");
-			}
+		Variable &var = prg.variables[v[0].i];
+		if (var.type == Variable::NUMBER) {
+			snprintf(buf, 1000, "%g", var.n);
+		}
+		else if (var.type == Variable::STRING) {
+			snprintf(buf, 1000, "%s", var.s.c_str());
+		}
+		else if (var.type == Variable::VECTOR) {
+			snprintf(buf, 1000, "-vector-");
 		}
 	}
 	else {
@@ -1499,11 +1468,9 @@ static bool fontfunc_height(Program &prg, std::vector<Token> &v)
 	return true;
 }
 
-void set_string_or_number(Program &prg, std::string name, double value)
+void set_string_or_number(Program &prg, int index, double value)
 {
-	std::map<std::string, Variable>::iterator it = prg.variables.find(name);
-
-	Variable &v1 = (*it).second;
+	Variable &v1 = prg.variables[index];
 
 	if (v1.type == Variable::NUMBER) {
 		v1.n = value;
@@ -1516,26 +1483,26 @@ void set_string_or_number(Program &prg, std::string name, double value)
 static bool joyfunc_poll(Program &prg, std::vector<Token> &v)
 {
 	double num = as_number(prg, v[0]);
-	std::string x1 = v[1].token;
-	std::string y1 = v[2].token;
-	std::string x2 = v[3].token;
-	std::string y2 = v[4].token;
-	std::string x3 = v[5].token;
-	std::string y3 = v[6].token;
-	std::string l = v[7].token;
-	std::string r = v[8].token;
-	std::string u = v[9].token;
-	std::string d = v[10].token;
-	std::string a = v[11].token;
-	std::string b = v[12].token;
-	std::string x = v[13].token;
-	std::string y = v[14].token;
-	std::string lb = v[15].token;
-	std::string rb = v[16].token;
-	std::string ls = v[17].token;
-	std::string rs = v[18].token;
-	std::string back = v[19].token;
-	std::string start = v[20].token;
+	int x1 = v[1].i;
+	int y1 = v[2].i;
+	int x2 = v[3].i;
+	int y2 = v[4].i;
+	int x3 = v[5].i;
+	int y3 = v[6].i;
+	int l = v[7].i;
+	int r = v[8].i;
+	int u = v[9].i;
+	int d = v[10].i;
+	int a = v[11].i;
+	int b = v[12].i;
+	int x = v[13].i;
+	int y = v[14].i;
+	int lb = v[15].i;
+	int rb = v[16].i;
+	int ls = v[17].i;
+	int rs = v[18].i;
+	int back = v[19].i;
+	int start = v[20].i;
 
 	SDL_JoystickID id = input::get_controller_id(num);
 	SDL_GameController *gc = input::get_sdl_gamecontroller(id);
@@ -1959,7 +1926,11 @@ void start()
 	add_syntax("exit", breaker_exit);
 	add_syntax("return", breaker_return);
 
-	add_syntax("var", corefunc_var);
+	//add_syntax("var", corefunc_var);
+	add_syntax("number", corefunc_number);
+	add_syntax("string", corefunc_string);
+	add_syntax("vector", corefunc_vector);
+	add_syntax("int", corefunc_int);
 	add_syntax("=", corefunc_set);
 	add_syntax("+", corefunc_add);
 	add_syntax("-", corefunc_subtract);
@@ -1978,6 +1949,7 @@ void start()
 	add_syntax("jg", corefunc_jg);
 	add_syntax("jge", corefunc_jge);
 	add_syntax("call", corefunc_call);
+	add_syntax("call_result", corefunc_call_result);
 	//add_syntax("function", corefunc_function);
 	//add_syntax(";", corefunc_comment);
 	add_syntax("inspect", corefunc_inspect);

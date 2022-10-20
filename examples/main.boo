@@ -1,6 +1,6 @@
 include "slideshow_start.inc"
 
-var vector programs
+vector programs
 vector_add programs "blip.boo"
 vector_add programs "clock.boo"
 vector_add programs "gameover.boo"
@@ -10,26 +10,26 @@ vector_add programs "secret.boo"
 vector_add programs "sine.boo"
 vector_add programs "sneaky.boo"
 vector_add programs "walk.boo"
-var number size
+number size
 vector_size programs size
 
-var number sel
+number sel
 = sel 0
 
-var number font
+number font
 font_load font "font.ttf" 16 0
-var number font_size
+number font_size
 font_height font font_size
 
-var number delay
+number delay
 = delay 0
 
 function draw_menu
 {
-	var number y
+	number y
 	= y 10
 
-	var number i
+	number i
 	= i 0
 
 :loop
@@ -37,7 +37,7 @@ function draw_menu
 	jne not_selected
 	filled_rectangle 255 0 255 255 255 0 255 255 255 0 255 255 255 0 255 255 0 y 640 font_size
 :not_selected
-	var string text
+	string text
 	vector_get programs text i
 	font_draw font 255 255 0 255 text 20 y
 	+ y font_size
@@ -50,23 +50,23 @@ function draw_menu
 	filled_rectangle 255 0 255 255 255 0 255 255 255 0 255 255 255 0 255 255 0 y 640 font_size
 
 :no_sel2
-	var number yy
+	number yy
 	= yy y
 	+ yy 2
-	var number sz
+	number sz
 	= sz font_size
 	- sz 4
 	rectangle 255 255 0 255 22 yy sz sz 1
 	? __do_slideshow__ 0
 	je skip
-	var number x1
+	number x1
 	= x1 22
-	var number y1
+	number y1
 	= y1 yy
-	var number x2
+	number x2
 	= x2 x1
 	+ x2 sz
-	var number y2
+	number y2
 	= y2 y1
 	+ y2 sz
 	line 255 255 0 255 x1 y1 x2 y2 1
@@ -82,13 +82,13 @@ function draw
 
 	call draw_menu
 
-	var number nj
+	number nj
 	joystick_count nj
-	var string s
+	string s
 	string_format s "% Joystick(s) Connected" nj
-	var number y
+	number y
 	= y 360
-	var number h
+	number h
 	font_height font h
 	- y h
 	- y 10
@@ -112,7 +112,7 @@ function run
 	= delay 10
 	? sel 0
 	jge end_up_down
-	var number sz
+	number sz
 	vector_size programs sz
 	= sel sz
 	goto end_up_down
@@ -124,7 +124,7 @@ function run
 
 	+ sel 1
 	= delay 10
-	var number sz
+	number sz
 	vector_size programs sz
 	? sel sz
 	jle no_d
@@ -137,14 +137,14 @@ function run
 	? joy_a 0
 	je finish
 
-	var number sz
+	number sz
 	vector_size programs sz
 	? sel sz
 	jl run_program
 	goto toggle
 
 :run_program
-	var string program
+	string program
 	vector_get programs program sel
 	reset program
 	goto finish

@@ -1,18 +1,18 @@
-var string reset_game_name
+string reset_game_name
 = reset_game_name "pong.boo"
 include "slideshow_start.inc"
 
-var number music
+number music
 mml_load music "music/gameover.mml"
 mml_play music 1.0 1
 
-var number guy
-var number glasses
+number guy
+number glasses
 
 image_load guy "misc/guy.png"
 image_load glasses "misc/glasses.png"
 
-var number y
+number y
 = y 0
 
 function run
@@ -25,7 +25,7 @@ function draw
 {
 	image_draw guy 255 255 255 255 0 0 0 0
 
-	var number yy
+	number yy
 	= yy y
 	% yy 180
 	- yy 100

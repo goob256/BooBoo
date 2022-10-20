@@ -1,15 +1,15 @@
-var number music
+number music
 mml_load music "music/secret.mml"
 mml_play music 1.0 1
 
-var string reset_game_name
+string reset_game_name
 = reset_game_name "sine.boo"
 include "slideshow_start.inc"
 
-var number hidden
+number hidden
 = hidden 1
 
-var number font
+number font
 font_load font "font.ttf" 128 1
 
 function run
@@ -32,7 +32,7 @@ function draw
 {
 	clear 255 0 0
 
-	var string secret
+	string secret
 	? hidden 0
 	jne shhh
 	= secret "BOOBOO";
@@ -41,10 +41,10 @@ function draw
 	= secret "******";
 :done_secret
 
-	var number x
-	var number y
-	var number tw
-	var number fh
+	number x
+	number y
+	number tw
+	number fh
 
 	font_width font tw secret
 	font_height font fh

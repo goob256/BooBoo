@@ -1,10 +1,10 @@
-var string reset_game_name
+string reset_game_name
 = reset_game_name "robots.boo"
 include "slideshow_start.inc"
 
 function draw_at r g b x radius
 {
-	var number f
+	number f
 	= f x
 	/ f 640
 	* f 3.14159
@@ -19,7 +19,7 @@ function draw
 {
 	clear 0 0 0
 
-	var number xx
+	number xx
 	= xx 0
 
 	start_primitives
@@ -30,7 +30,7 @@ function draw
 	? xx 640
 	jl loop
 
-	var number tmp
+	number tmp
 	= tmp x
 	% tmp 640
 
@@ -45,5 +45,5 @@ function run
 	include "slideshow_logic.inc"
 }
 
-var number x
+number x
 = x 0

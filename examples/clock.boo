@@ -1,11 +1,11 @@
-var string reset_game_name
+string reset_game_name
 = reset_game_name "blip.boo"
 include "slideshow_start.inc"
 
-var number ticks
+number ticks
 = ticks 0
 
-var number success
+number success
 cfg_load success "com.b1stable.clock"
 ? success 0
 je create
@@ -25,13 +25,13 @@ function draw
 {
 	clear 255 255 255
 
-	var number ninety
+	number ninety
 	= ninety 3.14159
 	/ ninety 2
 
-	var number angle
-	var number angle2
-	var number angle3
+	number angle
+	number angle2
+	number angle3
 
 	= angle ticks
 	/ angle 60
@@ -52,8 +52,8 @@ function draw
 	* angle3 3.14159
 	- angle3 ninety
 
-	var number x
-	var number y
+	number x
+	number y
 
 	cos x angle2
 	* x 85
@@ -64,14 +64,14 @@ function draw
 
 	line 0 0 0 255 x y 320 180 5 ; minute hand
 	
-	var number a1
-	var number a2
-	var number x1
-	var number y1
-	var number x2
-	var number y2
-	var number x3
-	var number y3
+	number a1
+	number a2
+	number x1
+	number y1
+	number x2
+	number y2
+	number x3
+	number y3
 
 	cos x1 angle2
 	* x1 5
@@ -98,7 +98,7 @@ function draw
 
 	filled_triangle 0 0 0 255 0 0 0 255 0 0 0 255 x1 y1 x2 y2 x3 y3 ; minute hand point
 
-	var number a2
+	number a2
 	= a2 angle2
 	+ a2 3.14159
 	cos x a2
@@ -164,7 +164,7 @@ function draw
 
 	line 255 0 0 255 x y 320 180 2 ; second hand
 
-	var number a2
+	number a2
 	= a2 angle
 	+ a2 3.14159
 	cos x a2

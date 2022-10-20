@@ -1,87 +1,87 @@
-var number crash_mml
+number crash_mml
 mml_create crash_mml "A @TYPE1 a16"
 
-var string reset_game_name
+string reset_game_name
 = reset_game_name "walk.boo"
 include "slideshow_start.inc"
 
-var number width
+number width
 = width 32
-var number height
+number height
 = height 18
-var number rect_w
+number rect_w
 = rect_w 640
 / rect_w width
-var number rect_h
+number rect_h
 = rect_h 360
 / rect_h height
-var number num_robots
+number num_robots
 = num_robots 16
-var number player_x
-var number player_y
-var number old_l
-var number old_r
-var number old_u
-var number old_d
+number player_x
+number player_y
+number old_l
+number old_r
+number old_u
+number old_d
 = old_l 0
 = old_r 0
 = old_u 0
 = old_d 0
-var number tick
+number tick
 = tick 0
-var number next_cpu_move
+number next_cpu_move
 = next_cpu_move 60
-var number gameover
+number gameover
 = gameover 0
-var number gameover_start
-var number robot_img
-var number dog_img
-var number fire_img
-var number grass_img
+number gameover_start
+number robot_img
+number dog_img
+number fire_img
+number grass_img
 image_load robot_img "misc/robot.tga"
 image_load dog_img "misc/dog.tga"
 image_load fire_img "misc/explosion.tga"
 image_load grass_img "misc/grass.tga"
 
-var vector board
+vector board
 call start_board
 
 function set_board x y value
 {
-	var number index
+	number index
 	= index y
 	* index width
 	+ index x
 	? index 0
-	jl skip
-	var number size
+	jl skip1
+	number size
 	vector_size board size
 	? index size
-	jge skip
+	jge skip1
 
 	vector_set board index value
 
-:skip
+:skip1
 }
 
 function get_board x y
 {
-	var number index
+	number index
 	= index y
 	* index width
 	+ index x
 	? index 0
-	jl skip
-	var number size
+	jl skip2
+	number size
 	vector_size board size
 	? index size
-	jge skip
+	jge skip2
 
-	var number ret
+	number ret
 	vector_get board ret index
 	return ret
 
-:skip
+:skip2
 	return 0
 }
 
@@ -89,11 +89,11 @@ function start_board
 {
 	vector_clear board
 
-	var number count
+	number count
 	= count width
 	* count height
 
-	var number i
+	number i
 	= i 0
 :fill_board
 	vector_add board 0
@@ -103,12 +103,12 @@ function start_board
 
 	; position player
 
-	var number x
-	var number y
-	var number w
+	number x
+	number y
+	number w
 	= w width
 	- w 1
-	var number h
+	number h
 	= h height
 	- h 1
 	rand x 0 w
@@ -122,13 +122,13 @@ function start_board
 :place_robot
 	rand x 0 w
 	rand y 0 h
-	var number value
-	call > value get_board x y
+	number value
+	call_result value get_board x y
 	? value 0
 	jne place_robot
 	; stay a little distance from the player
-	var number dx
-	var number dy
+	number dx
+	number dy
 	= dx player_x
 	- dx x
 	= dy player_y
@@ -148,15 +148,15 @@ function start_board
 
 function draw
 {
-	var number x
-	var number y
+	number x
+	number y
 
-	var number xx
-	var number yy
+	number xx
+	number yy
 
 	image_start grass_img
 
-	var number index
+	number index
 	= index 0
 
 	= y 0
@@ -185,7 +185,7 @@ function draw
 :loop_y1
 	= x 0
 :loop_x1
-	var number value
+	number value
 	vector_get board value index
 
 	= xx x
@@ -195,14 +195,14 @@ function draw
 
 	;image_draw grass_img 255 255 255 255 xx yy 0 0
 
-	var number image
+	number image
 
 	? value 1
 	je player
 	? value 2
 	je robot
 	? value 3
-	je crash
+	je crash1
 
 	goto past_draw
 
@@ -213,7 +213,7 @@ function draw
 :robot
 	= image robot_img
 	goto done_image
-:crash
+:crash1
 	= image fire_img
 
 :done_image
@@ -234,21 +234,17 @@ function draw
 
 function move_robots
 {
-	var number i
-	var number size
+	number size
 	vector_size board size
-	var number x
-	= x 0
-	var number y
-	= y 0
 
-	var vector robot_indices
-	var number nbots
+	vector robot_indices
+	number nbots
 	= nbots 0
 
+	number i
 	= i 0
 :find_robots
-	var number value
+	number value
 	vector_get board value i
 	? value 2
 	jne next_robot
@@ -260,49 +256,39 @@ function move_robots
 	jl find_robots
 
 	? nbots 0
-	jne verify
+	jne top3
 
 	= gameover 1
 	= gameover_start tick
 
-	goto finish
+	goto finish1
 
-:verify
+:top3
 	= i 0
-:top
-	var number found
-	= found 0
+:top1
+	number index
+	vector_get robot_indices index i
 
-	var number j
-	= j 0
-:next_match
-	var number value
-	vector_get robot_indices value j
-	? value i
-	jne not_a_match
-	= found 1
-	goto done_checking
-:not_a_match
-	+ j 1
-	? j nbots
-	jl next_match
-:done_checking
+	number x
+	= x index
+	% x width
+	number y
+	= y index
+	/ y width
+	int y
 
-	? found 0
-	je continue2
-
-	var number value
-	vector_get board value i
+	number value
+	vector_get board value index
 
 	? value 2
-	jne continue2
+	jne continue
 
-	var number dx
-	var number dy
-	var number dir_x
-	var number dir_y
-	var number dx_abs
-	var number dy_abs
+	number dx
+	number dy
+	number dir_x
+	number dir_y
+	number dx_abs
+	number dy_abs
 
 	= dir_x 0
 	= dir_y 0
@@ -338,9 +324,9 @@ function move_robots
 
 :done_y
 
-	var number new_x
+	number new_x
 	= new_x x
-	var number new_y
+	number new_y
 	= new_y y
 
 	? dx_abs dy_abs
@@ -354,25 +340,24 @@ function move_robots
 
 :done_move
 
-	;call set_board x y 0
-	vector_set board i 0
+	vector_set board index 0
 
-	var number value
-	call > value get_board new_x new_y
+	number value
+	call_result value get_board new_x new_y
 
 	? value 0
-	jne crash
+	jne crash2
 
 	call set_board new_x new_y 2
 
-	goto continue2
+	goto continue
 
-:crash
+:crash2
 	call set_board new_x new_y 3
 	mml_play crash_mml 1.0 0
 	? value 1
 	je game_over
-	goto continue2
+	goto continue
 
 :game_over
 	? gameover 1
@@ -381,24 +366,17 @@ function move_robots
 	= gameover_start tick
 :dont_set
 
-:continue2
-
-	+ x 1
-	? x width
-	jne continue
-	= x 0
-	+ y 1
 :continue
 	+ i 1
-	? i size
-	jl top
+	? i nbots
+	jl top1
 
-:finish
+:finish1
 }
 
 function move_player l r u d
 {
-	var number index
+	number index
 	= index player_y
 	* index width
 	+ index player_x
@@ -408,9 +386,9 @@ function move_player l r u d
 
 	- player_x 1
 	? player_x 0
-	jge finish
+	jge finish2
 	= player_x 0
-	goto finish
+	goto finish2
 
 :next1
 
@@ -419,10 +397,10 @@ function move_player l r u d
 
 	+ player_x 1
 	? player_x width
-	jl finish
+	jl finish2
 	= player_x width
 	- player_x 1
-	goto finish
+	goto finish2
 
 
 :next2
@@ -432,25 +410,25 @@ function move_player l r u d
 
 	- player_y 1
 	? player_y 0
-	jge finish
+	jge finish2
 	= player_y 0
-	goto finish
+	goto finish2
 
 
 
 :next3
 
 	? d 0
-	je finish
+	je finish2
 
 	+ player_y 1
 	? player_y height
-	jl finish
+	jl finish2
 	= player_y height
 	- player_y 1
-	goto finish
+	goto finish2
 
-:finish
+:finish2
 
 	vector_set board index 0
 
@@ -460,8 +438,8 @@ function move_player l r u d
 
 	call move_robots
 
-	var number value
-	call > value get_board player_x player_y
+	number value
+	call_result value get_board player_x player_y
 
 	? value 2
 	jl done
@@ -486,10 +464,10 @@ function joystick_input
 :do_input
 	include "poll_joystick.inc"
 
-	var number bak_l
-	var number bak_r
-	var number bak_u
-	var number bak_d
+	number bak_l
+	number bak_r
+	number bak_u
+	number bak_d
 	= bak_l joy_l
 	= bak_r joy_r
 	= bak_u joy_u
@@ -541,12 +519,12 @@ function joystick_input
 	jne move
 	? joy_d 0
 	jne move
-	goto finish
+	goto finish3
 
 :move
 	call move_player joy_l joy_r joy_u joy_d
 	
-:finish
+:finish3
 	= old_l bak_l
 	= old_r bak_r
 	= old_u bak_u
@@ -557,18 +535,18 @@ function cpu_input
 {
 	; make vectors of the positions to the four cardinal directions of the player
 
-	var number bak_x
-	var number bak_y
+	number bak_x
+	number bak_y
 	= bak_x player_x
 	= bak_y player_y
 
-	var number dx
-	var number dy
+	number dx
+	number dy
 
-	var number x
-	var number y
-	var vector vx
-	var vector vy
+	number x
+	number y
+	vector vx
+	vector vy
 	
 	= x player_x
 	+ x -1
@@ -602,16 +580,16 @@ function cpu_input
 	vector_add vx x
 	vector_add vy y
 
-	var number i
+	number i
 
-	var number removed
+	number removed
 
 	= i 0
-:top
+:top2
 	= removed 0
 
-	var number xx
-	var number yy
+	number xx
+	number yy
 
 	vector_get vx xx i
 	vector_get vy yy i
@@ -625,9 +603,9 @@ function cpu_input
 	? yy height
 	jge remove
 
-	var number value
+	number value
 
-	call > value get_board xx yy
+	call_result value get_board xx yy
 
 	? value 0
 	jne remove
@@ -644,12 +622,12 @@ function cpu_input
 	je no_inc
 	+ i 1
 :no_inc
-	var number size
+	number size
 	vector_size vx size
 	? i size
-	jl top
+	jl top2
 
-	var number size
+	number size
 	vector_size vx size
 
 	? size 0
@@ -657,9 +635,9 @@ function cpu_input
 
 	; move toward centre, nothing else to do
 
-	var number w
+	number w
 	= w width
-	var number h
+	number h
 	= h height
 	/ w 2
 	/ h 2
@@ -683,22 +661,22 @@ function cpu_input
 	goto do_move
 
 :pick_random
-	var number r
-	var number size
+	number r
+	number size
 	vector_size vx size
 	- size 1
 	rand r 0 size
 
-	var number xx
-	var number yy
+	number xx
+	number yy
 
 	vector_get vx xx r
 	vector_get vy yy r
 
-	var number l
-	var number r
-	var number u
-	var number d
+	number l
+	number r
+	number u
+	number d
 	= l 0
 	= r 0
 	= u 0
@@ -732,18 +710,16 @@ function cpu_input
 :do_move
 
 	call move_player l r u d
-	
-:finish
 }
 
 function run
 {
 	+ tick 1
 
-	var number sz
+	number sz
 	vector_size board sz
-	var number i
-	var number count
+	number i
+	number count
 	= count 0
 	= i 0
 
@@ -751,7 +727,7 @@ function run
 	je next
 
 :loop_top
-	var number value
+	number value
 	vector_get board value i
 	? value 2
 	jne another
@@ -770,19 +746,19 @@ function run
 	? gameover 1
 	jne lets_go
 
-	var number t
+	number t
 	= t tick
 	- t gameover_start
 
 	? t 180
-	jl finish
+	jl finish4
 
 	= gameover 0
 	call start_board
 
 :lets_go
 
-	var number nj
+	number nj
 	joystick_count nj
 
 	? nj 0
@@ -790,18 +766,18 @@ function run
 
 	call joystick_input
 
-	goto finish
+	goto finish4
 
 :cpu
 	? gameover 0
-	jne finish
+	jne finish4
 
 	? next_cpu_move tick
-	jge finish
+	jge finish4
 	= next_cpu_move tick
 	+ next_cpu_move 60
 	call cpu_input
 
-:finish
+:finish4
 	include "slideshow_logic.inc"
 }
