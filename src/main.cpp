@@ -1,7 +1,7 @@
 //#define LUA_BENCH
 //#define LUA_BENCH2
 //#define CPP_BENCH
-#define CPP_BENCH2
+//#define CPP_BENCH2
 //#define DUMP
 
 #include <shim4/shim4.h>
