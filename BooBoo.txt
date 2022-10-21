@@ -85,7 +85,7 @@ jg
 call
 	call a function (two variations)
 	no result: call func param1 param2
-	with result: call > dest myfunc param1 param2 param3
+	with result: call_result dest myfunc param1 param2 param3
 
 function
 	define a function. after function comes the function name, followed by variables, then {, then the function body, and finally }
