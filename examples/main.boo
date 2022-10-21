@@ -21,8 +21,8 @@ font_load font "font.ttf" 16 0
 number font_size
 font_height font font_size
 
-number delay
-= delay 0
+number del
+= del 0
 
 function draw_menu
 {
@@ -97,9 +97,9 @@ function draw
 
 function run
 {
-	? delay 0
+	? del 0
 	je do_joy
-	- delay 1
+	- del 1
 	goto finish
 
 :do_joy
@@ -109,7 +109,7 @@ function run
 	je no_u
 
 	- sel 1
-	= delay 10
+	= del 10
 	? sel 0
 	jge end_up_down
 	number sz
@@ -123,7 +123,7 @@ function run
 	je no_d
 
 	+ sel 1
-	= delay 10
+	= del 10
 	number sz
 	vector_size programs sz
 	? sel sz
@@ -153,11 +153,11 @@ function run
 	? __do_slideshow__ 0
 	je set_1
 	= __do_slideshow__ 0
-	= delay 10
+	= del 10
 	goto finish
 :set_1
 	= __do_slideshow__ 1
-	= delay 10
+	= del 10
 	goto finish
 
 :finish
