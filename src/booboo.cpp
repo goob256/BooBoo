@@ -15,14 +15,11 @@ std::string reset_game_name;
 bool load_from_filesystem;
 int return_code;
 
-void skip_whitespace(Program &prg, bool add_lines)
+void skip_whitespace(Program &prg)
 {
 	while (prg.p < prg.code.length() && isspace(prg.code[prg.p])) {
 		if (prg.code[prg.p] == '\n') {
 			prg.line++;
-			if (add_lines) {
-				//prg.line_numbers.push_back(prg.line);
-			}
 		}
 		prg.p++;
 	}
@@ -47,13 +44,7 @@ std::string remove_quotes(std::string s)
 
 int get_line_num(Program &prg)
 {
-	unsigned int ln = prg.prev_tok_line + prg.start_line;
-
-	if (ln >= prg.line_numbers.size()) {
-		return ln;
-	}
-
-	return prg.line_numbers[ln];
+	return prg.line_numbers[prg.pc];
 }
 
 static std::string tokenfunc_add(booboo::Program &prg)
@@ -170,12 +161,12 @@ static std::string tokenfunc_comment(booboo::Program &prg)
 	return ";";
 }
 
-std::string token(Program &prg, Token::Token_Type &ret_type, bool add_lines)
+std::string token(Program &prg, Token::Token_Type &ret_type)
 {
 	prg.prev_tok_p = prg.p;
 	prg.prev_tok_line = prg.line;
 
-	skip_whitespace(prg, add_lines);
+	skip_whitespace(prg);
 
 	if (prg.p >= prg.code.length()) {
 		return "";
@@ -241,7 +232,7 @@ bool process_includes(Program &prg)
 
 	Token::Token_Type tt;
 
-	while ((tok = token(prg, tt, true)) != "") {
+	while ((tok = token(prg, tt)) != "") {
 		if (tok == ";") {
 			while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
 				prg.p++;
@@ -279,17 +270,6 @@ bool process_includes(Program &prg)
 			code += new_code;
 			code += std::string("\n");
 
-			int nlines = 2;
-			for (unsigned int i = 0; i < new_code.length(); i++) {
-				if (new_code[i] == '\n') {
-					nlines++;
-				}
-			}
-
-			for (int i = 0; i < nlines; i++) {
-				//prg.line_numbers.push_back(i+1);
-			}
-
 			start = prg.p;
 
 			ret = true;
@@ -325,7 +305,7 @@ static void compile(Program &prg, Pass pass)
 	int var_i = 0;
 	int func_i = 0;
 
-	while ((tok = token(prg, tt, false)) != "") {
+	while ((tok = token(prg, tt)) != "") {
 		if (tok == ";") {
 			while (prg.p < prg.code.length() && prg.code[prg.p] != '\n') {
 				prg.p++;
@@ -398,6 +378,10 @@ static void compile(Program &prg, Pass pass)
 					Statement s;
 					s.method = library_map[tok];
 					func.program.push_back(s);
+					if (pass == PASS2) {
+						prg.line_numbers.push_back(prg.line);
+						prg.pc++;
+					}
 					//if (std::find(new_vars.begin(), new_vars.end(), tok2) == new_vars.end()) {
 						if (prg.variables_map.find(tok2) != prg.variables_map.end()) {
 							backup[tok2] = prg.variables_map[tok2];
@@ -434,6 +418,10 @@ static void compile(Program &prg, Pass pass)
 					Statement s;
 					s.method = library_map[tok];
 					func.program.push_back(s);
+					if (pass == PASS2) {
+						prg.line_numbers.push_back(prg.line);
+						prg.pc++;
+					}
 				}
 				else if (is_param) {
 					if (prg.variables_map.find(tok) != prg.variables_map.end()) {
@@ -465,6 +453,9 @@ static void compile(Program &prg, Pass pass)
 							break;
 						case Token::SYMBOL:
 							t.s = remove_quotes(util::unescape_string(tok));
+							if (pass == PASS2 && prg.variables_map.find(t.s) == prg.variables_map.end()) {
+								throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid variable name " + tok + " on line " + util::itos(get_line_num(prg)));
+							}
 							if (pass == PASS2) {
 								t.i = prg.variables_map[t.s];
 							}
@@ -506,6 +497,10 @@ static void compile(Program &prg, Pass pass)
 			Statement s;
 			s.method = library_map[tok];
 			prg.program.push_back(s);
+			if (pass == PASS2) {
+				prg.line_numbers.push_back(prg.line);
+				prg.pc++;
+			}
 			prg.variables_map[tok2] = var_i++;
 			Variable v;
 			v.name = tok2;
@@ -532,6 +527,10 @@ static void compile(Program &prg, Pass pass)
 			Statement s;
 			s.method = library_map[tok];
 			prg.program.push_back(s);
+			if (pass == PASS2) {
+				prg.line_numbers.push_back(prg.line);
+				prg.pc++;
+			}
 		}
 		else if (prg.program.size() == 0) {
 			throw util::ParseError("Expected keyword");
@@ -547,6 +546,9 @@ static void compile(Program &prg, Pass pass)
 					break;
 				case Token::SYMBOL:
 					t.s = remove_quotes(util::unescape_string(tok));
+					if (pass == PASS2 && prg.variables_map.find(t.s) == prg.variables_map.end()) {
+						throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid variable name " + tok + " on line " + util::itos(get_line_num(prg)));
+					}
 					if (pass == PASS2) {
 						t.i = prg.variables_map[t.s];
 					}
@@ -768,6 +770,12 @@ Program create_program(std::string code)
 	*/
 
 	compile(prg, PASS2);
+	
+	prg.p = 0;
+	prg.prev_tok_p = 0;
+	prg.line = 1;
+	prg.prev_tok_line = 1;
+	prg.start_line = 0;
 
 #ifdef DEBUG
 	int index = 0;

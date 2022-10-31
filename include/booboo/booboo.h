@@ -80,9 +80,9 @@ struct Program {
 	std::map<int, audio::MML *> mmls;
 	std::map<int, gfx::Image *> images;
 	std::map<int, gfx::TTF *> fonts;
-	std::vector<int> line_numbers;
 
 	std::vector<Statement> program;
+	std::vector<int> line_numbers;
 	unsigned int pc;
 };
 
@@ -103,10 +103,10 @@ void call_function(Program &prg, std::string function, std::vector<Token> params
 
 // These are for adding syntax
 void add_syntax(std::string name, library_func func);
-std::string token(Program &prg, Token::Token_Type &ret_type, bool add_lines = false);
+std::string token(Program &prg, Token::Token_Type &ret_type);
 int get_line_num(Program &prg);
 void set_string_or_number(Program &prg, std::string name, std::string value);
-void skip_whitespace(Program &prg, bool add_lines = false);
+void skip_whitespace(Program &prg);
 std::string remove_quotes(std::string s);
 
 } // end namespace booboo
