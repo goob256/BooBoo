@@ -84,6 +84,8 @@ struct Program {
 	std::vector<Statement> program;
 	std::vector<int> line_numbers;
 	unsigned int pc;
+
+	std::vector<int> real_line_numbers;
 };
 
 typedef bool (*library_func)(Program &prg, std::vector<Token> &v);

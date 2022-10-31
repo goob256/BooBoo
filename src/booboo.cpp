@@ -44,7 +44,7 @@ std::string remove_quotes(std::string s)
 
 int get_line_num(Program &prg)
 {
-	return prg.line_numbers[prg.pc];
+	return prg.real_line_numbers[prg.line_numbers[prg.pc]];
 }
 
 static std::string tokenfunc_add(booboo::Program &prg)
@@ -243,6 +243,8 @@ bool process_includes(Program &prg)
 		}
 		else if (tok == "include") {
 			std::string name = token(prg, tt);
+			
+			int start_line = prg.line;
 
 			if (name == "") {
 				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected include parameters on line " + util::itos(get_line_num(prg)));
@@ -264,9 +266,27 @@ bool process_includes(Program &prg)
 				new_code = util::load_text(std::string("code/") + name);
 			}
 
+			int nlines = 2;
+			int i = 0;
+			while (new_code[i] != 0) {
+				if (new_code[i] == '\n') {
+					nlines++;
+				}
+				i++;
+			}
+
 			code += std::string("\n");
 			code += new_code;
 			code += std::string("\n");
+			
+			prg.real_line_numbers[start_line] = 1;
+			for (int i = 1; i < nlines; i++) {
+				prg.real_line_numbers.insert(prg.real_line_numbers.begin()+start_line+i, i+1);
+			}
+
+			//for (int i = start_line+nlines; i < prg.real_line_numbers.size(); i++) {
+				//prg.real_line_numbers[i] += nlines-1;
+			//}
 
 			start = prg.p;
 
@@ -329,6 +349,7 @@ static void compile(Program &prg, Pass pass)
 			Program func;
 			func.name = func_name;
 			func.pc = 0;
+			func.real_line_numbers = prg.real_line_numbers;
 			bool is_param = true;
 			std::map<std::string, int> backup;
 			//std::vector<std::string> new_vars;
@@ -457,8 +478,7 @@ static void compile(Program &prg, Pass pass)
 						case Token::SYMBOL:
 							t.s = remove_quotes(util::unescape_string(tok));
 							if (pass == PASS2 && prg.variables_map.find(t.s) == prg.variables_map.end()) {
-	printf("pc=%d lnsize=%d progsize=%d\n", prg.pc, prg.line_numbers.size(), prg.program.size());
-								throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid variable name " + tok + " on line " + util::itos(get_line_num(prg)));
+								throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid variable name " + tok + " on line " + util::itos(get_line_num(func)));
 							}
 							if (pass == PASS2) {
 								t.i = prg.variables_map[t.s];
@@ -555,7 +575,6 @@ static void compile(Program &prg, Pass pass)
 				case Token::SYMBOL:
 					t.s = remove_quotes(util::unescape_string(tok));
 					if (pass == PASS2 && prg.variables_map.find(t.s) == prg.variables_map.end()) {
-	printf("pc=%d lnsize=%d progsize=%d\n", prg.pc, prg.line_numbers.size(), prg.program.size());
 						throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid variable name " + tok + " on line " + util::itos(get_line_num(prg)));
 					}
 					if (pass == PASS2) {
@@ -736,6 +755,16 @@ Program create_program(std::string code)
 {
 	Program prg;
 
+	prg.real_line_numbers.push_back(1);
+	int i = 0;
+	int ln = 2;
+	while (code[i] != 0) {
+		if (code[i] == '\n') {
+			prg.real_line_numbers.push_back(ln++);
+		}
+		i++;
+	}
+
 	prg.code = code;
 	prg.name = "main";
 	prg.mml_id = 0;
@@ -777,7 +806,6 @@ Program create_program(std::string code)
 		}
 	}
 	*/
-	printf("pc=%d lnsize=%d progsize=%d\n", prg.pc, prg.line_numbers.size(), prg.program.size());
 
 	compile(prg, PASS2);
 	
@@ -836,8 +864,13 @@ Program create_program(std::string code)
 		util::debugmsg("\n\n");
 	}
 #endif
-
-	printf("pc=%d lnsize=%d progsize=%d\n", prg.pc, prg.line_numbers.size(), prg.program.size());
+	
+	prg.p = 0;
+	prg.prev_tok_p = 0;
+	prg.line = 1;
+	prg.prev_tok_line = 1;
+	prg.start_line = 0;
+	prg.pc = 0;
 
 	return prg;
 }
