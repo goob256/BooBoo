@@ -216,6 +216,8 @@ bool process_includes(Program &prg)
 {
 	bool ret = false;
 
+	int total_added = 0;
+
 	std::string code;
 
 	std::string tok;
@@ -243,7 +245,7 @@ bool process_includes(Program &prg)
 		}
 		else if (tok == "include") {
 			std::string name = token(prg, tt);
-			
+
 			int start_line = prg.line;
 
 			if (name == "") {
@@ -266,7 +268,7 @@ bool process_includes(Program &prg)
 				new_code = util::load_text(std::string("code/") + name);
 			}
 
-			int nlines = 2;
+			int nlines = 1;
 			int i = 0;
 			while (new_code[i] != 0) {
 				if (new_code[i] == '\n') {
@@ -275,13 +277,11 @@ bool process_includes(Program &prg)
 				i++;
 			}
 
-			code += std::string("\n");
-			code += new_code;
-			code += std::string("\n");
+			code += "\n" + new_code;
 			
-			prg.real_line_numbers[start_line] = 1;
+			prg.real_line_numbers[start_line-1+total_added] = 1;
 			for (int i = 1; i < nlines; i++) {
-				prg.real_line_numbers.insert(prg.real_line_numbers.begin()+start_line+i, i+1);
+				prg.real_line_numbers.insert(prg.real_line_numbers.begin()+start_line+(i-1+total_added), i+1);
 			}
 
 			//for (int i = start_line+nlines; i < prg.real_line_numbers.size(); i++) {
@@ -289,6 +289,8 @@ bool process_includes(Program &prg)
 			//}
 
 			start = prg.p;
+
+			total_added += nlines;
 
 			ret = true;
 		}
@@ -469,6 +471,10 @@ static void compile(Program &prg, Pass pass)
 					func.params.push_back(param_i);
 				}
 				else {
+					if (func.program.size() == 0) {
+						func.line_numbers.push_back(prg.line); // hack
+						throw util::ParseError("Expected keyword on line " + util::itos(get_line_num(func)));
+					}
 					Token t;
 					t.token = tok;
 					t.type = tt;
@@ -480,6 +486,7 @@ static void compile(Program &prg, Pass pass)
 						case Token::SYMBOL:
 							t.s = remove_quotes(util::unescape_string(tok));
 							if (pass == PASS2 && prg.variables_map.find(t.s) == prg.variables_map.end()) {
+								func.line_numbers.push_back(prg.line); // hack
 								throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid variable name " + tok + " on line " + util::itos(get_line_num(func)));
 							}
 							if (pass == PASS2) {
@@ -572,7 +579,7 @@ static void compile(Program &prg, Pass pass)
 			}
 		}
 		else if (prg.program.size() == 0) {
-			throw util::ParseError("Expected keyword");
+			throw util::ParseError("Expected keyword on line " + util::itos(prg.line+prg.start_line));
 		}
 		else {
 			Token t;
@@ -790,6 +797,16 @@ Program create_program(std::string code)
 	prg.pc = 0;
 	
 	while(process_includes(prg));
+
+/*
+FILE *foo = fopen("foobar.txt", "w");
+fprintf(foo, "%s", prg.code.c_str());
+fprintf(foo, "---\n");
+for (size_t i = 0; i < prg.real_line_numbers.size(); i++) {
+	fprintf(foo, "%d\n", prg.real_line_numbers[i]);
+}
+fclose(foo);
+*/
 		
 	compile(prg, PASS1);
 
