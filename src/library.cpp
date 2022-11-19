@@ -211,7 +211,7 @@ static bool corefunc_var(Program &prg, std::vector<Token> &v)
 		var.type = Variable::VECTOR;
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	std::map<std::string, Variable>::iterator it;
@@ -268,7 +268,7 @@ static bool corefunc_set(Program &prg, std::vector<Token> &v)
 			v1.s = buf;
 		}
 		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 		}
 	}
 	else if (v[1].type == Token::STRING || v[1].type == Token::SPECIAL) {
@@ -279,7 +279,7 @@ static bool corefunc_set(Program &prg, std::vector<Token> &v)
 			v1.s = v[1].s;
 		}
 		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 		}
 	}
 	else {
@@ -298,7 +298,7 @@ static bool corefunc_set(Program &prg, std::vector<Token> &v)
 			v1.v = v2.v;
 		}
 		else {
-			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
+			throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands at " + get_error_info(prg));
 		}
 	}
 
@@ -319,7 +319,7 @@ static bool corefunc_add(Program &prg, std::vector<Token> &v)
 		v1.s += buf;
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	return true;
@@ -334,7 +334,7 @@ static bool corefunc_subtract(Program &prg, std::vector<Token> &v)
 		v1.n -= d;
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	return true;
@@ -349,7 +349,7 @@ static bool corefunc_multiply(Program &prg, std::vector<Token> &v)
 		v1.n *= d;
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	return true;
@@ -364,7 +364,7 @@ static bool corefunc_divide(Program &prg, std::vector<Token> &v)
 		v1.n /= d;
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	return true;
@@ -379,7 +379,7 @@ static bool corefunc_intmod(Program &prg, std::vector<Token> &v)
 		v1.n = int(v1.n) % int(d);
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	return true;
@@ -394,7 +394,7 @@ static bool corefunc_fmod(Program &prg, std::vector<Token> &v)
 		v1.n = fmod(v1.n, d);
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	return true;
@@ -408,7 +408,7 @@ static bool corefunc_neg(Program &prg, std::vector<Token> &v)
 		v1.n = -v1.n;
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands at " + get_error_info(prg));
 	}
 
 	return true;
@@ -420,7 +420,7 @@ static bool corefunc_label(Program &prg, std::vector<Token> &v)
 	std::string name = as_string(prg, v[0]);
 
 	if (name[0] != '_' && isalpha(name[0]) == false) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid label name on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid label name at " + get_error_info(prg));
 	}
 
 	Label l;
@@ -612,7 +612,7 @@ static bool corefunc_function(Program &prg, std::vector<Token> &v)
 	}
 	
 	if (tok2 != "{") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Function not terminated on line " + util::itos(save));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Function not terminated at " + util::itos(save));
 	}
 
 	int save_p = prg.p;
@@ -635,7 +635,7 @@ static bool corefunc_function(Program &prg, std::vector<Token> &v)
 	}
 
 	if (tok2 != "}") {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Function not terminated on line " + util::itos(save));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Function not terminated at " + util::itos(save));
 	}
 
 	p.name = name;
@@ -781,7 +781,7 @@ static bool mathfunc_sin(Program &prg, std::vector<Token> &v)
 		v1.n = sin(as_number(prg, v[1]));
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands at " + get_error_info(prg));
 	}
 
 	return true;
@@ -795,7 +795,7 @@ static bool mathfunc_cos(Program &prg, std::vector<Token> &v)
 		v1.n = cos(as_number(prg, v[1]));
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands at " + get_error_info(prg));
 	}
 
 	return true;
@@ -809,7 +809,7 @@ static bool mathfunc_atan2(Program &prg, std::vector<Token> &v)
 		v1.n = atan2(as_number(prg, v[1]), as_number(prg, v[2]));
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands at " + get_error_info(prg));
 	}
 
 	return true;
@@ -823,7 +823,7 @@ static bool mathfunc_abs(Program &prg, std::vector<Token> &v)
 		v1.n = fabs(as_number(prg, v[1]));
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands at " + get_error_info(prg));
 	}
 
 	return true;
@@ -837,7 +837,7 @@ static bool mathfunc_pow(Program &prg, std::vector<Token> &v)
 		v1.n = pow(as_number(prg, v[1]), as_number(prg, v[2]));
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands at " + get_error_info(prg));
 	}
 
 	return true;
@@ -851,7 +851,7 @@ static bool mathfunc_sqrt(Program &prg, std::vector<Token> &v)
 		v1.n = sqrt(as_number(prg, v[1]));
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands at " + get_error_info(prg));
 	}
 
 	return true;
@@ -871,7 +871,7 @@ static bool mathfunc_rand(Program &prg, std::vector<Token> &v)
 		v1.s = util::itos(util::rand(min_incl, max_incl));
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands at " + get_error_info(prg));
 	}
 
 	return true;
@@ -1119,7 +1119,7 @@ static bool mmlfunc_create(Program &prg, std::vector<Token> &v)
 		v1.s = util::itos(prg.mml_id);
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	Uint8 *bytes = (Uint8 *)str.c_str();
@@ -1144,7 +1144,7 @@ static bool mmlfunc_load(Program &prg, std::vector<Token> &v)
 		v1.s = util::itos(prg.mml_id);
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	audio::MML *mml = new audio::MML(remove_quotes(util::unescape_string(name)));
@@ -1161,7 +1161,7 @@ static bool mmlfunc_play(Program &prg, std::vector<Token> &v)
 	bool loop = as_number(prg, v[2]);
 
 	if (id < 0 || id >= (int)prg.mmls.size()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid MML on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid MML at " + get_error_info(prg));
 	}
 
 	audio::MML *mml = prg.mmls[id];
@@ -1176,7 +1176,7 @@ static bool mmlfunc_stop(Program &prg, std::vector<Token> &v)
 	int id = as_number(prg, v[0]);
 
 	if (id < 0 || id >= (int)prg.mmls.size()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid MML on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid MML at " + get_error_info(prg));
 	}
 
 	audio::MML *mml = prg.mmls[id];
@@ -1198,7 +1198,7 @@ static bool imagefunc_load(Program &prg, std::vector<Token> &v)
 		v1.s = util::itos(prg.image_id);
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	gfx::Image *img = new gfx::Image(remove_quotes(util::unescape_string(name)));
@@ -1221,7 +1221,7 @@ static bool imagefunc_draw(Program &prg, std::vector<Token> &v)
 	double flip_v = as_number(prg, v[8]);
 
 	if (id < 0 || id >= prg.images.size()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid Image at " + get_error_info(prg));
 	}
 
 	gfx::Image *img = prg.images[id];
@@ -1264,7 +1264,7 @@ static bool imagefunc_stretch_region(Program &prg, std::vector<Token> &v)
 	double flip_v = as_number(prg, v[14]);
 	
 	if (id < 0 || id >= prg.images.size()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid Image at " + get_error_info(prg));
 	}
 
 	gfx::Image *img = prg.images[id];
@@ -1306,7 +1306,7 @@ static bool imagefunc_draw_rotated_scaled(Program &prg, std::vector<Token> &v)
 	double flip_v = as_number(prg, v[13]);
 
 	if (id < 0 || id >= prg.images.size()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid Image on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid Image at " + get_error_info(prg));
 	}
 
 	gfx::Image *img = prg.images[id];
@@ -1335,7 +1335,7 @@ static bool imagefunc_start(Program &prg, std::vector<Token> &v)
 	double img = as_number(prg, v[0]);
 
 	if (prg.images.find(img) == prg.images.end()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Unknown image on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Unknown image at " + get_error_info(prg));
 	}
 
 	gfx::Image *image = prg.images[img];
@@ -1350,7 +1350,7 @@ static bool imagefunc_end(Program &prg, std::vector<Token> &v)
 	double img = as_number(prg, v[0]);
 
 	if (prg.images.find(img) == prg.images.end()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Unknown image on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Unknown image at " + get_error_info(prg));
 	}
 
 	gfx::Image *image = prg.images[img];
@@ -1368,7 +1368,7 @@ static bool imagefunc_size(Program &prg, std::vector<Token> &v)
 	Variable &v2 = as_variable(prg, v[2]);
 	
 	if (prg.images.find(id) == prg.images.end()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid image on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid image at " + get_error_info(prg));
 	}
 
 	gfx::Image *img = prg.images[id];
@@ -1377,13 +1377,13 @@ static bool imagefunc_size(Program &prg, std::vector<Token> &v)
 		v1.n = img->size.w;
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 	if (v2.type == Variable::NUMBER) {
 		v2.n = img->size.h;
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	return true;
@@ -1404,7 +1404,7 @@ static bool fontfunc_load(Program &prg, std::vector<Token> &v)
 		v1.s = util::itos(prg.font_id);
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	gfx::TTF *font = new gfx::TTF(remove_quotes(util::unescape_string(name)), size, 256);
@@ -1427,7 +1427,7 @@ static bool fontfunc_draw(Program &prg, std::vector<Token> &v)
 	double y = as_number(prg, v[7]);
 
 	if (id < 0 || id >= prg.fonts.size()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid Font on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid Font at " + get_error_info(prg));
 	}
 
 	gfx::TTF *font = prg.fonts[id];
@@ -1457,7 +1457,7 @@ static bool fontfunc_width(Program &prg, std::vector<Token> &v)
 		v1.n = w;
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	return true;
@@ -1476,7 +1476,7 @@ static bool fontfunc_height(Program &prg, std::vector<Token> &v)
 		v1.n = h;
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	return true;
@@ -1490,7 +1490,7 @@ void set_string_or_number(Program &prg, int index, double value)
 		v1.n = value;
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 }
 
@@ -1651,7 +1651,7 @@ static bool joyfunc_count(Program &prg, std::vector<Token> &v)
 		v1.n = input::get_num_joysticks();
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Operation undefined for operands at " + get_error_info(prg));
 	}
 
 	return true;
@@ -1693,7 +1693,7 @@ static bool vectorfunc_size(Program &prg, std::vector<Token> &v)
 		v1.n = id.v.size();
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	return true;
@@ -1705,7 +1705,7 @@ static bool vectorfunc_set(Program &prg, std::vector<Token> &v)
 	double index = as_number(prg, v[1]);
 	
 	if (index < 0 || index >= id.v.size()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index at " + get_error_info(prg));
 	}
 
 	Variable var;
@@ -1737,7 +1737,7 @@ static bool vectorfunc_insert(Program &prg, std::vector<Token> &v)
 	double index = as_number(prg, v[1]);
 
 	if (index < 0 || index > id.v.size()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index at " + get_error_info(prg));
 	}
 
 	Variable var;
@@ -1770,7 +1770,7 @@ static bool vectorfunc_get(Program &prg, std::vector<Token> &v)
 	double index = as_number(prg, v[2]);
 
 	if (index < 0 || index >= id.v.size()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index at " + get_error_info(prg));
 	}
 
 	std::string bak = v1.name;
@@ -1788,7 +1788,7 @@ static bool vectorfunc_erase(Program &prg, std::vector<Token> &v)
 	double index = as_number(prg, v[1]);
 
 	if (index < 0 || index >= id.v.size()) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid index at " + get_error_info(prg));
 	}
 
 	id.v.erase(id.v.begin() + int(index));
@@ -1819,7 +1819,7 @@ static bool cfgfunc_load(Program &prg, std::vector<Token> &v)
 		v1.n = found_cfg;
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	return true;
@@ -1840,7 +1840,7 @@ static bool cfgfunc_get_number(Program &prg, std::vector<Token> &v)
 	std::string name = as_string(prg, v[1]);
 
 	if (v1.type != Variable::NUMBER) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	v1.n = cfg_numbers[name];
@@ -1854,7 +1854,7 @@ static bool cfgfunc_get_string(Program &prg, std::vector<Token> &v)
 	std::string name = as_string(prg, v[1]);
 
 	if (v1.type != Variable::STRING) {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	v1.s = cfg_strings[name];
@@ -1900,7 +1900,7 @@ static bool cfgfunc_number_exists(Program &prg, std::vector<Token> &v)
 		v1.n = found_n;
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	return true;
@@ -1924,7 +1924,7 @@ static bool cfgfunc_string_exists(Program &prg, std::vector<Token> &v)
 		v1.n = found_n;
 	}
 	else {
-		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type on line " + util::itos(get_line_num(prg)));
+		throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid type at " + get_error_info(prg));
 	}
 
 	return true;

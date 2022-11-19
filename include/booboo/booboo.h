@@ -86,11 +86,13 @@ struct Program {
 	unsigned int pc;
 
 	std::vector<int> real_line_numbers;
+	std::vector<std::string> real_file_names;
 };
 
 typedef bool (*library_func)(Program &prg, std::vector<Token> &v);
 
 extern std::string reset_game_name;
+extern std::string main_program_name;
 extern bool load_from_filesystem;
 extern int return_code;
 
@@ -107,6 +109,8 @@ void call_function(Program &prg, std::string function, std::vector<Token> params
 void add_syntax(std::string name, library_func func);
 std::string token(Program &prg, Token::Token_Type &ret_type);
 int get_line_num(Program &prg);
+std::string get_file_name(Program &prg);
+std::string get_error_info(Program &prg);
 void set_string_or_number(Program &prg, std::string name, std::string value);
 void skip_whitespace(Program &prg);
 std::string remove_quotes(std::string s);

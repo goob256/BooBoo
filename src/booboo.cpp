@@ -12,6 +12,7 @@ std::map<std::string, int> library_map;
 std::vector<library_func> library;
 std::map<char, token_func> token_map;
 std::string reset_game_name;
+std::string main_program_name;
 bool load_from_filesystem;
 int return_code;
 
@@ -45,6 +46,16 @@ std::string remove_quotes(std::string s)
 int get_line_num(Program &prg)
 {
 	return prg.real_line_numbers[prg.line_numbers[prg.pc]];
+}
+
+std::string get_file_name(Program &prg)
+{
+	return prg.real_file_names[prg.line_numbers[prg.pc]];
+}
+
+std::string get_error_info(Program &prg)
+{
+	return get_file_name(prg) + ":" + util::itos(get_line_num(prg));
 }
 
 static std::string tokenfunc_add(booboo::Program &prg)
@@ -249,11 +260,11 @@ bool process_includes(Program &prg)
 			int start_line = prg.line;
 
 			if (name == "") {
-				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected include parameters on line " + util::itos(get_line_num(prg)));
+				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Expected include parameters at " + get_error_info(prg));
 			}
 
 			if (name[0] != '"') {
-				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid include name on line " + util::itos(get_line_num(prg)));
+				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid include name at " + get_error_info(prg));
 			}
 
 			name = remove_quotes(util::unescape_string(name));
@@ -261,10 +272,13 @@ bool process_includes(Program &prg)
 			code += prg.code.substr(start, prev-start);
 
 			std::string new_code;
+			std::string fn;
 			if (load_from_filesystem) {
+				fn = name;
 				new_code = util::load_text_from_filesystem(name);
 			}
 			else {
+				fn = "code/" + name;
 				new_code = util::load_text(std::string("code/") + name);
 			}
 
@@ -280,8 +294,10 @@ bool process_includes(Program &prg)
 			code += "\n" + new_code;
 			
 			prg.real_line_numbers[start_line-1+total_added] = 1;
+			prg.real_file_names[start_line-1+total_added] = fn;
 			for (int i = 1; i < nlines; i++) {
 				prg.real_line_numbers.insert(prg.real_line_numbers.begin()+start_line+(i-1+total_added), i+1);
+				prg.real_file_names.insert(prg.real_file_names.begin()+start_line+(i-1+total_added), fn);
 			}
 
 			//for (int i = start_line+nlines; i < prg.real_line_numbers.size(); i++) {
@@ -352,6 +368,7 @@ static void compile(Program &prg, Pass pass)
 			func.name = func_name;
 			func.pc = 0;
 			func.real_line_numbers = prg.real_line_numbers;
+			func.real_file_names = prg.real_file_names;
 			bool is_param = true;
 			bool finished = false;
 			std::map<std::string, int> backup;
@@ -473,7 +490,7 @@ static void compile(Program &prg, Pass pass)
 				else {
 					if (func.program.size() == 0) {
 						func.line_numbers.push_back(prg.line); // hack
-						throw util::ParseError("Expected keyword on line " + util::itos(get_line_num(func)));
+						throw util::ParseError("Expected keyword at " + get_error_info(func));
 					}
 					Token t;
 					t.token = tok;
@@ -487,7 +504,7 @@ static void compile(Program &prg, Pass pass)
 							t.s = remove_quotes(util::unescape_string(tok));
 							if (pass == PASS2 && prg.variables_map.find(t.s) == prg.variables_map.end()) {
 								func.line_numbers.push_back(prg.line); // hack
-								throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid variable name " + tok + " on line " + util::itos(get_line_num(func)));
+								throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid variable name " + tok + " at " + get_error_info(func));
 							}
 							if (pass == PASS2) {
 								t.i = prg.variables_map[t.s];
@@ -593,7 +610,7 @@ static void compile(Program &prg, Pass pass)
 				case Token::SYMBOL:
 					t.s = remove_quotes(util::unescape_string(tok));
 					if (pass == PASS2 && prg.variables_map.find(t.s) == prg.variables_map.end()) {
-						throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid variable name " + tok + " on line " + util::itos(get_line_num(prg)));
+						throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid variable name " + tok + " at " + get_error_info(prg));
 					}
 					if (pass == PASS2) {
 						t.i = prg.variables_map[t.s];
@@ -774,12 +791,14 @@ Program create_program(std::string code)
 	Program prg;
 
 	prg.real_line_numbers.push_back(1);
+	prg.real_file_names.push_back(main_program_name);
 	int i = 0;
 	int ln = 2;
 	while (code[i] != 0) {
 		if (code[i] == '\n') {
 			prg.real_line_numbers.push_back(ln++);
 		}
+		prg.real_file_names.push_back(main_program_name);
 		i++;
 	}
 

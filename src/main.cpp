@@ -810,6 +810,8 @@ again:
 				gui::fatalerror("ERROR", "Program is missing or corrupt!", gui::OK, true);
 			}
 		}
+
+		booboo::main_program_name = fn;
 	}
 	else {
 		if (fn != "") {
@@ -820,16 +822,22 @@ again:
 			catch (util::Error &e) {
 				gui::fatalerror("ERROR", "Program is missing or corrupt!", gui::OK, true);
 			}
+
+			booboo::main_program_name = fn;
 		}
 		else {
 			try {
 				code = util::load_text_from_filesystem("main.boo");
 				booboo::load_from_filesystem = true;
+
+				booboo::main_program_name = "main.boo";
 			}
 			catch (util::Error &e) {
 				try {
 					code = util::load_text("code/main.boo");
 					booboo::load_from_filesystem = false;
+
+					booboo::main_program_name = "code/main.boo";
 				}
 				catch (util::Error &e) {
 					gui::fatalerror("ERROR", "Program is missing or corrupt!", gui::OK, true);
