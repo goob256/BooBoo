@@ -351,6 +351,7 @@ static void compile(Program &prg, Pass pass)
 			func.pc = 0;
 			func.real_line_numbers = prg.real_line_numbers;
 			bool is_param = true;
+			bool finished = false;
 			std::map<std::string, int> backup;
 			//std::vector<std::string> new_vars;
 			while ((tok = token(prg, tt)) != "") {
@@ -367,6 +368,7 @@ static void compile(Program &prg, Pass pass)
 					is_param = false;
 				}
 				else if (tok == "}") {
+					finished = true;
 					break;
 				}
 				else if (tok == ":") {
@@ -491,6 +493,15 @@ static void compile(Program &prg, Pass pass)
 					func.program[func.program.size()-1].data.push_back(t);
 				}
 			}
+
+			if (is_param == true) {
+				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Missing { on line " + util::itos(prg.line+prg.start_line));
+			}
+
+			if (finished == false) {
+				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Missing } on line " + util::itos(prg.line+prg.start_line));
+			}
+
 			prg.functions.push_back(func);
 					
 			std::map<std::string, int>::iterator it;
