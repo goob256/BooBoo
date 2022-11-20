@@ -218,7 +218,8 @@ std::string token(Program &prg, Token::Token_Type &ret_type)
 		return (*it).second(prg);
 	}
 
-	throw util::ParseError(std::string(__FUNCTION__) + ": " + "Parse error on line " + util::itos(prg.line+prg.start_line) + " (pc=" + util::itos(prg.p) + ", tok=\"" + tok + "\")");
+	prg.line_numbers.push_back(prg.line); // hack
+	throw util::ParseError(std::string(__FUNCTION__) + ": " + "Parse error at " + get_error_info(prg) + " (pc=" + util::itos(prg.p) + ", tok=\"" + tok + "\")");
 
 	return "";
 }
@@ -281,6 +282,8 @@ bool process_includes(Program &prg)
 				fn = "code/" + name;
 				new_code = util::load_text(std::string("code/") + name);
 			}
+
+			new_code = util::trim(new_code);
 
 			int nlines = 1;
 			int i = 0;
@@ -519,11 +522,13 @@ static void compile(Program &prg, Pass pass)
 			}
 
 			if (is_param == true) {
-				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Missing { on line " + util::itos(prg.line+prg.start_line));
+				func.line_numbers.push_back(prg.line); // hack
+				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Missing { at " + get_error_info(func));
 			}
 
 			if (finished == false) {
-				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Missing } on line " + util::itos(prg.line+prg.start_line));
+				func.line_numbers.push_back(prg.line); // hack
+				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Missing } at " + get_error_info(func));
 			}
 
 			prg.functions.push_back(func);
@@ -596,7 +601,8 @@ static void compile(Program &prg, Pass pass)
 			}
 		}
 		else if (prg.program.size() == 0) {
-			throw util::ParseError("Expected keyword on line " + util::itos(prg.line+prg.start_line));
+			prg.line_numbers.push_back(prg.line); // hack
+			throw util::ParseError("Expected keyword at " + get_error_info(prg));
 		}
 		else {
 			Token t;
