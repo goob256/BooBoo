@@ -11,9 +11,29 @@ at intervals or shutdown.
 
 ---
 
-var
-	define a number, string or vector
-	e.g. var number x
+reset
+	load a different BooBoo script
+	e.g. reset "next_slide.boo"
+
+exit
+	Exit the app with a return code to the environment
+	e.g. exit 0
+
+return
+	Return a value from a function
+	e.g. return 1
+
+number
+	define a number
+	e.g. number x
+
+string
+	define a string
+	e.g. string s
+
+vector
+	define a vector
+	e.g. vector x
 
 =
 	assign
@@ -82,14 +102,22 @@ jg
 	check comparison flag, jump if greater
 	e.g. jg label
 
-call
-	call a function (two variations)
-	no result: call func param1 param2
-	with result: call_result dest myfunc param1 param2 param3
-
 function
 	define a function. after function comes the function name, followed by variables, then {, then the function body, and finally }
-	e.g. function twice x { return x * 2 }
+	e.g.
+		function twice x
+		{
+			* x 2
+			return x
+		}
+
+call
+	call a function, taking no return
+	e.g. call my_func param1 param2
+
+call_result
+	call a function that takes a return value
+	e.g. call_result my_result my_func param1 param2 param3
 
 ;
 	comment
@@ -106,18 +134,6 @@ string_format
 delay
 	delay an amount of milliseconds
 	e.g. delay 1000
-
-reset
-	load a different BooBoo script
-	e.g. reset "next_slide.boo"
-
-exit
-	Exit the app with a return code to the environment
-	e.g. exit 0
-
-return
-	Return a value from a function
-	e.g. return 1
 
 sin
 	trigonometry functions
@@ -285,6 +301,10 @@ vector_get
 vector_erase
 	remove from a vector
 	e.g. vector_erase v index
+
+vector_clear
+	empty a vector
+	e.g. vector_clear v
 
 cfg_load
 	load a config file checking for success
