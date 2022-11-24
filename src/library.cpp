@@ -1988,10 +1988,6 @@ void start()
 	add_syntax("filled_ellipse", primfunc_filled_ellipse);
 	add_syntax("circle", primfunc_circle);
 	add_syntax("filled_circle", primfunc_filled_circle);
-	add_syntax("mml_create", mmlfunc_create);
-	add_syntax("mml_load", mmlfunc_load);
-	add_syntax("mml_play", mmlfunc_play);
-	add_syntax("mml_stop", mmlfunc_stop);
 	add_syntax("image_load", imagefunc_load);
 	add_syntax("image_draw", imagefunc_draw);
 	add_syntax("image_stretch_region", imagefunc_stretch_region);
@@ -2003,6 +1999,10 @@ void start()
 	add_syntax("font_draw", fontfunc_draw);
 	add_syntax("font_width", fontfunc_width);
 	add_syntax("font_height", fontfunc_height);
+	add_syntax("mml_create", mmlfunc_create);
+	add_syntax("mml_load", mmlfunc_load);
+	add_syntax("mml_play", mmlfunc_play);
+	add_syntax("mml_stop", mmlfunc_stop);
 	add_syntax("joystick_poll", joyfunc_poll);
 	add_syntax("joystick_count", joyfunc_count);
 	add_syntax("vector_add", vectorfunc_add);

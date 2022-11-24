@@ -4,12 +4,24 @@ draw - called at refresh rate
 run - called 60 times per second
 end - called when the program is exiting
 
-The screen is 640x360.
-
 At startup, global code is run. Then the above mentioned callbacks get called
 at intervals or shutdown.
 
----
+The screen is 640x360.
+
+The following sections describe the API:
+	Core Functions
+	Math Functions
+	Graphics Functions
+	Primitives Functions
+	Image Functions
+	Font Functions
+	Audio Functions
+	Joystick Functions
+	Vector Functions
+	Configuration Functions
+
+-- Core Functions ------------------------------------------------------------
 
 reset
 	load a different BooBoo script
@@ -135,6 +147,8 @@ delay
 	delay an amount of milliseconds
 	e.g. delay 1000
 
+-- Math Functions ------------------------------------------------------------
+
 sin
 	trigonometry functions
 	e.g. sin dest 3.14159
@@ -163,6 +177,8 @@ rand
 	random integers between two numbers inclusive
 	e.g. rand r 0 99
 
+-- Graphics Functions --------------------------------------------------------
+
 clear
 	clear the screen
 	e.g. clear r g b
@@ -170,6 +186,8 @@ clear
 flip
 	flip the backbuffer to the screen
 	e.g. flip
+
+-- Primitive Functions -------------------------------------------------------
 
 start_primitives
 	batch primitives for speed
@@ -211,21 +229,7 @@ filled_circle
 	draw a filled circle with give number of pie slices (-1 for auto)
 	e.g. filled_circle r g b a x y radius sections
 
-mml_create
-	create an MML from a string
-	e.g. mml_create dest "A @TYPE1 abcdefg"
-
-mml_load
-	load an MML from file
-	e.g. mml_load dest "sfx/blast.mml"
-
-mml_play
-	play a sound
-	e.g. mml_play blast volume loop
-
-mml_stop
-	stop a looping sound
-	e.g. mml_stop blast
+-- Image Functions -----------------------------------------------------------
 
 image_load
 	load an image
@@ -253,6 +257,8 @@ image_size
 	get image width/height
 	e.g. image_size img w h
 
+-- Font Functions ------------------------------------------------------------
+
 font_load
 	load a TTF font
 	e.g. font_load font "DejaVuSans.ttf" px_size smooth_flag
@@ -270,6 +276,26 @@ font_height
 	get the height of a font
 	e.g. font_height font dest
 
+-- Audio Functions -----------------------------------------------------------
+
+mml_create
+	create an MML from a string
+	e.g. mml_create dest "A @TYPE1 abcdefg"
+
+mml_load
+	load an MML from file
+	e.g. mml_load dest "sfx/blast.mml"
+
+mml_play
+	play a sound
+	e.g. mml_play blast volume loop
+
+mml_stop
+	stop a looping sound
+	e.g. mml_stop blast
+
+-- Joystick Functions --------------------------------------------------------
+
 joystick_poll
 	poll a joystick for input
 	e.g. joystick_poll joystick_number x1 y1 x2 y2 x3 y3 l r u d a b x y lb rb ls rs back start
@@ -277,6 +303,8 @@ joystick_poll
 joystick_count
 	get number of connected joysticks
 	e.g. joystick_count num_joysticks
+
+-- Vector Functions ----------------------------------------------------------
 
 vector_add
 	push a value onto a vector (must be created e.g. var vector v)
@@ -305,6 +333,8 @@ vector_erase
 vector_clear
 	empty a vector
 	e.g. vector_clear v
+
+-- Configuration Functions ---------------------------------------------------
 
 cfg_load
 	load a config file checking for success
@@ -337,4 +367,3 @@ cfg_number_exists
 cfg_string_exists
 	check if a string name exists in config
 	e.g. cfg_string_exists "name"
-
