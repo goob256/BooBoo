@@ -144,6 +144,10 @@ call_result
 	comment
 	e.g. = x 1 ; just a comment
 
+include
+	insert a file of BooBoo code here
+	e.g. include "my_helpful_things.inc"
+
 inspect
 	print a value in a popup for debugging
 	e.g. inspect x
