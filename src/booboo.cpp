@@ -254,6 +254,7 @@ std::string token(Program &prg, Token::Token_Type &ret_type)
 		return (*it).second(prg);
 	}
 
+	prg.line_numbers.push_back(prg.line); // can help give better line number
 	throw util::ParseError(std::string(__FUNCTION__) + ": " + "Parse error at " + get_error_info(prg) + " (pc=" + util::itos(prg.p) + ", tok=\"" + tok + "\")");
 
 	return "";
@@ -527,6 +528,7 @@ static void compile(Program &prg, Pass pass)
 				}
 				else {
 					if (func.program.size() == 0) {
+						func.line_numbers.push_back(prg.line); // can help give better line number
 						throw util::ParseError("Expected keyword at " + get_error_info(func));
 					}
 					Token t;
@@ -540,6 +542,7 @@ static void compile(Program &prg, Pass pass)
 						case Token::SYMBOL:
 							t.s = remove_quotes(util::unescape_string(tok));
 							if (pass == PASS2 && prg.variables_map.find(t.s) == prg.variables_map.end()) {
+								func.line_numbers.push_back(prg.line); // can help give better line number
 								throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid variable name " + tok + " at " + get_error_info(func));
 							}
 							if (pass == PASS2) {
@@ -555,10 +558,12 @@ static void compile(Program &prg, Pass pass)
 			}
 
 			if (is_param == true) {
+				func.line_numbers.push_back(prg.line); // can help give better line number
 				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Missing { at " + get_error_info(func));
 			}
 
 			if (finished == false) {
+				func.line_numbers.push_back(prg.line); // can help give better line number
 				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Missing } at " + get_error_info(func));
 			}
 
@@ -632,6 +637,7 @@ static void compile(Program &prg, Pass pass)
 			}
 		}
 		else if (prg.program.size() == 0) {
+			prg.line_numbers.push_back(prg.line); // can help give better line number
 			throw util::ParseError("Expected keyword at " + get_error_info(prg));
 		}
 		else {
