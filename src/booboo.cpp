@@ -1,3 +1,5 @@
+#define DEBUG_LINE_NUMBERS
+
 #include <cctype>
 
 #include <shim4/shim4.h>
@@ -48,14 +50,14 @@ int get_line_num(Program &prg)
 	return prg.real_line_numbers[prg.line_numbers[prg.pc]];
 }
 
-std::string get_file_name(Program &prg)
-{
-	return prg.real_file_names[prg.line_numbers[prg.pc]];
-}
-
 std::string get_error_info(Program &prg)
 {
 	return get_file_name(prg) + ":" + util::itos(get_line_num(prg));
+}
+
+std::string get_file_name(Program &prg)
+{
+	return prg.real_file_names[prg.line_numbers[prg.pc]];
 }
 
 static std::string tokenfunc_add(booboo::Program &prg)
@@ -823,15 +825,15 @@ Program create_program(std::string code)
 	
 	while(process_includes(prg));
 
-/*
-FILE *foo = fopen("foobar.txt", "w");
+#ifdef DEBUG_LINE_NUMBERS
+FILE *foo = fopen("debug_line_numbers.txt", "w");
 fprintf(foo, "%s", prg.code.c_str());
 fprintf(foo, "---\n");
 for (size_t i = 0; i < prg.real_line_numbers.size(); i++) {
 	fprintf(foo, "%d\n", prg.real_line_numbers[i]);
 }
 fclose(foo);
-*/
+#endif
 		
 	compile(prg, PASS1);
 
@@ -843,81 +845,55 @@ fclose(foo);
 	prg.program.clear();
 	prg.functions.clear();
 
-	/*
-	std::vector<Variable>::iterator it;
-	for (it = prg.variables.begin(); it != prg.variables.end();) {
-		Variable &v = *it;
-		if (v.type != Variable::LABEL && v.type != Variable::FUNCTION) {
-			std::map<std::string, int>::iterator it2 = prg.variables_map.find(v.name);
-			if (it2 != prg.variables_map.end()) {
-				prg.variables_map.erase(it2);
-			}
-			it = prg.variables.erase(it);
-		}
-		else {
-			it++;
-		}
-	}
-	*/
-
 	compile(prg, PASS2);
 	
+#ifdef DEBUG_LINE_NUMBERS
+foo = fopen("debug_line_numbers.txt", "a");
+fprintf(foo, "---\n");
+for (size_t i = 0; i < prg.line_numbers.size(); i++) {
+	if (i >= prg.program.size()) {
+		fprintf(foo, "-- line_numbers bigger than program --\n");
+		break;
+	}
+	Statement &s = prg.program[i];
+	std::map<std::string, int>::iterator it;
+	std::string op = "UNKNOWN";
+	for (it = library_map.begin(); it != library_map.end(); it++) {
+		if ((*it).second == s.method) {
+			op = (*it).first;
+			break;
+		}
+	}
+	fprintf(foo, "%d (%s)\n", prg.line_numbers[i], op.c_str());
+}
+for (size_t i = 0; i < prg.functions.size(); i++) {
+	fprintf(foo, "--- %s ---\n", prg.functions[i].name.c_str());
+	for (size_t j = 0; j < prg.functions[i].line_numbers.size(); j++) {
+		if (j >= prg.functions[i].program.size()) {
+			fprintf(foo, "-- line_numbers bigger than program --\n");
+			break;
+		}
+		Statement &s = prg.functions[i].program[j];
+		std::map<std::string, int>::iterator it;
+		std::string op = "UNKNOWN";
+		for (it = library_map.begin(); it != library_map.end(); it++) {
+			if ((*it).second == s.method) {
+				op = (*it).first;
+				break;
+			}
+		}
+		fprintf(foo, "%d (%s)\n", prg.functions[i].line_numbers[j], op.c_str());
+	}
+}
+fclose(foo);
+#endif
+
 	prg.p = 0;
 	prg.prev_tok_p = 0;
 	prg.line = 1;
 	prg.prev_tok_line = 1;
 	prg.start_line = 0;
 
-#ifdef DEBUG
-	int index = 0;
-	for (it = prg.variables.begin(); it != prg.variables.end(); it++) {
-		Variable &v = *it;
-		util::debugmsg("v[%d] type=%d name='%s'\n", index++, v.type, v.name.c_str());
-	}
-
-	util::debugmsg("---\n");
-	util::debugmsg("main:\n\n");
-	for (size_t i = 0; i < prg.program.size(); i++) {
-		int method = prg.program[i].method;
-		std::string name = "Unknown...";
-		for (std::map<std::string, int>::iterator it = library_map.begin(); it != library_map.end(); it++) {
-			if ((*it).second == method) {
-				name = (*it).first;
-				break;
-			}
-		}
-		std::string s = name + " ";
-		for (size_t j = 0; j < prg.program[i].data.size(); j++) {
-			s += prg.program[i].data[j].token + " ";
-		}
-		s += "\n";
-		util::debugmsg(s.c_str());
-	}
-	util::debugmsg("\n\n");
-	for (size_t k = 0; k < prg.functions.size(); k++) {
-		util::debugmsg("%s:\n\n", prg.functions[k].name.c_str());
-		for (size_t i = 0; i < prg.functions[k].program.size(); i++) {
-			int method = prg.functions[k].program[i].method;
-			std::string name = "Unknown...";
-			for (std::map<std::string, int>::iterator it = library_map.begin(); it != library_map.end(); it++) {
-				if ((*it).second == method) {
-					name = (*it).first;
-					break;
-				}
-			}
-			std::string s;
-			s += name + " ";
-			util::debugmsg("%s ", name.c_str());
-			for (size_t j = 0; j < prg.functions[k].program[i].data.size(); j++) {
-				s += prg.functions[k].program[i].data[j].token + " ";
-			}
-			s += "\n";
-			util::debugmsg(s.c_str());
-		}
-		util::debugmsg("\n\n");
-	}
-#endif
-	
 	prg.p = 0;
 	prg.prev_tok_p = 0;
 	prg.line = 1;
