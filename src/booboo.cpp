@@ -45,19 +45,53 @@ std::string remove_quotes(std::string s)
 	return s.substr(start, count);
 }
 
+std::string get_file_name(Program &prg)
+{
+	if (prg.line_numbers.size() <= prg.pc) {
+		return "UNKNOWN";
+	}
+
+	int l = prg.line_numbers[prg.pc];
+
+	if (prg.real_file_names.size() <= l) {
+		return "UNKNOWN";
+	}
+
+	return prg.real_file_names[prg.line_numbers[prg.pc]];
+}
+
 int get_line_num(Program &prg)
 {
+	int l;
+
+	l = prg.pc;
+
+	if (prg.line_numbers.size() <= l) {
+		if (prg.line_numbers.size() > 0) {
+			return prg.line_numbers[prg.line_numbers.size()-1];
+		}
+		else {
+			return 1;
+		}
+	}
+
+	l = prg.line_numbers[l];
+
+	if (prg.real_line_numbers.size() <= l) {
+		if (prg.real_line_numbers.size() > 0) {
+			return prg.real_line_numbers[prg.real_line_numbers.size()-1];
+		}
+		else {
+			return 1;
+		}
+	}
+
 	return prg.real_line_numbers[prg.line_numbers[prg.pc]];
 }
 
 std::string get_error_info(Program &prg)
 {
 	return get_file_name(prg) + ":" + util::itos(get_line_num(prg));
-}
-
-std::string get_file_name(Program &prg)
-{
-	return prg.real_file_names[prg.line_numbers[prg.pc]];
 }
 
 static std::string tokenfunc_add(booboo::Program &prg)
@@ -220,7 +254,6 @@ std::string token(Program &prg, Token::Token_Type &ret_type)
 		return (*it).second(prg);
 	}
 
-	prg.line_numbers.push_back(prg.line); // hack
 	throw util::ParseError(std::string(__FUNCTION__) + ": " + "Parse error at " + get_error_info(prg) + " (pc=" + util::itos(prg.p) + ", tok=\"" + tok + "\")");
 
 	return "";
@@ -494,7 +527,6 @@ static void compile(Program &prg, Pass pass)
 				}
 				else {
 					if (func.program.size() == 0) {
-						func.line_numbers.push_back(prg.line); // hack
 						throw util::ParseError("Expected keyword at " + get_error_info(func));
 					}
 					Token t;
@@ -508,7 +540,6 @@ static void compile(Program &prg, Pass pass)
 						case Token::SYMBOL:
 							t.s = remove_quotes(util::unescape_string(tok));
 							if (pass == PASS2 && prg.variables_map.find(t.s) == prg.variables_map.end()) {
-								func.line_numbers.push_back(prg.line); // hack
 								throw util::ParseError(std::string(__FUNCTION__) + ": " + "Invalid variable name " + tok + " at " + get_error_info(func));
 							}
 							if (pass == PASS2) {
@@ -524,12 +555,10 @@ static void compile(Program &prg, Pass pass)
 			}
 
 			if (is_param == true) {
-				func.line_numbers.push_back(prg.line); // hack
 				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Missing { at " + get_error_info(func));
 			}
 
 			if (finished == false) {
-				func.line_numbers.push_back(prg.line); // hack
 				throw util::ParseError(std::string(__FUNCTION__) + ": " + "Missing } at " + get_error_info(func));
 			}
 
@@ -603,7 +632,6 @@ static void compile(Program &prg, Pass pass)
 			}
 		}
 		else if (prg.program.size() == 0) {
-			prg.line_numbers.push_back(prg.line); // hack
 			throw util::ParseError("Expected keyword at " + get_error_info(prg));
 		}
 		else {
