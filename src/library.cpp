@@ -1518,26 +1518,48 @@ static bool joyfunc_poll(Program &prg, std::vector<Token> &v)
 	int back = v[19].i;
 	int start = v[20].i;
 
+	int num_keys;
+	const Uint8 *keys = SDL_GetKeyboardState(&num_keys);
+	bool kreturn = keys[SDL_SCANCODE_RETURN];
+	bool kw = keys[SDL_SCANCODE_W];
+	bool ka = keys[SDL_SCANCODE_A];
+	bool ks = keys[SDL_SCANCODE_S];
+	bool kd = keys[SDL_SCANCODE_D];
+	bool kleft = keys[SDL_SCANCODE_LEFT];
+	bool kright = keys[SDL_SCANCODE_RIGHT];
+	bool kup = keys[SDL_SCANCODE_UP];
+	bool kdown = keys[SDL_SCANCODE_DOWN];
+	bool kesc = keys[SDL_SCANCODE_ESCAPE];
+	bool kspace = keys[SDL_SCANCODE_SPACE];
+	float kx1;
+	float ky1;
+	float kx2;
+	float ky2;
+	kx1 = ka ? -1 : (kd ? 1 : 0);
+	ky1 = kw ? -1 : (ks ? 1 : 0);
+	kx2 = kleft ? -1 : (kright ? 1 : 0);
+	ky2 = kup ? -1 : (kdown ? 1 : 0);
+
 	SDL_JoystickID id = input::get_controller_id(num);
 	SDL_GameController *gc = input::get_sdl_gamecontroller(id);
 	bool connected = gc != nullptr;
 
 	if (connected == false) {
-		set_string_or_number(prg, x1, 0);
-		set_string_or_number(prg, y1, 0);
-		set_string_or_number(prg, x2, 0);
-		set_string_or_number(prg, y2, 0);
-		set_string_or_number(prg, a, 0);
-		set_string_or_number(prg, l, 0);
-		set_string_or_number(prg, r, 0);
-		set_string_or_number(prg, u, 0);
-		set_string_or_number(prg, d, 0);
-		set_string_or_number(prg, b, 0);
+		set_string_or_number(prg, x1, kx1);
+		set_string_or_number(prg, y1, ky1);
+		set_string_or_number(prg, x2, kx2);
+		set_string_or_number(prg, y2, ky2);
+		set_string_or_number(prg, a, kspace);
+		set_string_or_number(prg, l, kleft);
+		set_string_or_number(prg, r, kright);
+		set_string_or_number(prg, u, kup);
+		set_string_or_number(prg, d, kdown);
+		set_string_or_number(prg, b, kreturn);
 		set_string_or_number(prg, x, 0);
 		set_string_or_number(prg, y, 0);
 		set_string_or_number(prg, lb, 0);
 		set_string_or_number(prg, rb, 0);
-		set_string_or_number(prg, back, 0);
+		set_string_or_number(prg, back, kesc);
 		set_string_or_number(prg, start, 0);
 		set_string_or_number(prg, ls, 0);
 		set_string_or_number(prg, rs, 0);
@@ -1602,10 +1624,24 @@ static bool joyfunc_poll(Program &prg, std::vector<Token> &v)
 			y3f = si_y3 / 32767.0;
 		}
 
-		set_string_or_number(prg, x1, x1f);
-		set_string_or_number(prg, y1, y1f);
-		set_string_or_number(prg, x2, x2f);
-		set_string_or_number(prg, y2, y2f);
+		if (x1f == 0 && y1f == 0) {
+			set_string_or_number(prg, x1, kx1);
+			set_string_or_number(prg, y1, ky1);
+		}
+		else {
+			set_string_or_number(prg, x1, x1f);
+			set_string_or_number(prg, y1, y1f);
+		}
+
+		if (x2f == 0 && y2f == 0) {
+			set_string_or_number(prg, x2, kx2);
+			set_string_or_number(prg, y2, ky2);
+		}
+		else {
+			set_string_or_number(prg, x2, x2f);
+			set_string_or_number(prg, y2, y2f);
+		}
+
 		set_string_or_number(prg, x3, x3f);
 		set_string_or_number(prg, y3, y3f);
 
@@ -1628,15 +1664,15 @@ static bool joyfunc_poll(Program &prg, std::vector<Token> &v)
 		set_string_or_number(prg, r, _rb);
 		set_string_or_number(prg, u, ub);
 		set_string_or_number(prg, d, db);
-		set_string_or_number(prg, a, ab);
-		set_string_or_number(prg, b, bb);
+		set_string_or_number(prg, a, ab || kspace);
+		set_string_or_number(prg, b, bb || kreturn);
 		set_string_or_number(prg, x, xb);
 		set_string_or_number(prg, y, yb);
 		set_string_or_number(prg, lb, lbb);
 		set_string_or_number(prg, rb, rbb);
 		set_string_or_number(prg, ls, lsb);
 		set_string_or_number(prg, rs, rsb);
-		set_string_or_number(prg, back, backb);
+		set_string_or_number(prg, back, backb || kesc);
 		set_string_or_number(prg, start, startb);
 	}
 
