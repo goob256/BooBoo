@@ -18,6 +18,14 @@ at intervals or shutdown.
 
 The screen is 640x360.
 
+There is a little bit of joystick emulation on the keyboard:
+	WASD/space is X1/Y1/A
+	LRUD/return are X2/Y2/B
+	Escape is Back
+
+Some of the demo games will auto-play by an AI if a joystick isn't connected.
+I'll leave it as an exercise if you want to play them with keyboard.
+
 The following sections describe the API:
 	Core Functions
 	Math Functions
