@@ -21,6 +21,7 @@ The screen is 640x360.
 There is a little bit of joystick emulation on the keyboard:
 	WASD/space is X1/Y1/A
 	LRUD/return are X2/Y2/B
+	LRUD also send DPAD buttons
 	Escape is Back
 
 Some of the demo games will auto-play by an AI if a joystick isn't connected.
