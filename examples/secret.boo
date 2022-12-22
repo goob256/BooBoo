@@ -16,7 +16,7 @@ function run
 {
 	include "poll_joystick.inc"
 
-	? joy_x 0
+	? joy_a 0
 	jne show
 	= hidden 1
 	goto done_logic

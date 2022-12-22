@@ -86,9 +86,9 @@ function run
 	include "poll_joystick.inc"
 
 	number abs_x
-	abs abs_x joy_x1
+	abs abs_x joy_x2
 	number abs_y
-	abs abs_y joy_y1
+	abs abs_y joy_y2
 
 	? abs_x 0.1
 	jge is_moving
@@ -99,10 +99,10 @@ function run
 	= moving 1
 
 	number xx
-	= xx joy_x1
+	= xx joy_x2
 	* xx 10
 	number yy
-	= yy joy_y1
+	= yy joy_y2
 	* yy 10
 
 	+ x xx
@@ -125,7 +125,7 @@ function run
 	= y 288
 
 :do_angle
-	atan2 angle joy_y1 joy_x1
+	atan2 angle joy_y2 joy_x2
 	number pi
 	= pi 3.14159
 	/ pi 2

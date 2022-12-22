@@ -135,8 +135,12 @@ function run
 :end_up_down
 
 	? joy_a 0
+	jne do_run
+:check_b
+	? joy_b 0
 	je finish
 
+:do_run
 	number sz
 	vector_size programs sz
 	? sel sz
