@@ -5,6 +5,9 @@ To run the benchmarks, you should add -vsync +fps to the command line.
 
 To download a binary with examples, go to https://b1stable.com.
 
+If you wish to distribute the binary (or your own compiled binaries) as
+a standalone app (with your main.boo,) you are allowed to do that.
+
 ------------------------------------------------------------------------------
 
 There are 3 functions taking/returning no parameters called from the app:
